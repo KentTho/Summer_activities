@@ -16,12 +16,20 @@ export default function AboutPage() {
         cáo. Dữ liệu trẻ em/học sinh được bảo vệ bằng phân quyền theo Khu phố và
         RLS ở tầng cơ sở dữ liệu.
       </p>
-      <Link
-        href="/login"
-        className="mt-6 inline-block text-sm font-medium text-slate-800 underline"
-      >
-        Đăng nhập →
-      </Link>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Link
+          href="/user/login"
+          className="text-sm font-medium text-indigo-600 hover:underline"
+        >
+          Đăng nhập Người dùng →
+        </Link>
+        <Link
+          href="/admin/login"
+          className="text-sm font-medium text-slate-500 hover:underline"
+        >
+          Cổng Admin →
+        </Link>
+      </div>
     </main>
   );
 }

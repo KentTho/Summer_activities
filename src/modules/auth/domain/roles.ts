@@ -17,11 +17,14 @@ export type Role = (typeof ROLES)[keyof typeof ROLES];
 
 export const ALL_ROLES: readonly Role[] = Object.values(ROLES);
 
-/** Đường dẫn dashboard mặc định theo vai trò. */
+/**
+ * Đường dẫn dashboard mặc định theo vai trò (đích redirect sau đăng nhập).
+ * Admin tách cổng riêng; Bí thư/Phụ huynh nằm trong cổng Người dùng `/user/*`.
+ */
 export const ROLE_HOME: Record<Role, string> = {
   ADMIN: "/admin",
-  SECRETARY: "/secretary",
-  PARENT: "/parent",
+  SECRETARY: "/user/secretary",
+  PARENT: "/user/parent",
 };
 
 export function isRole(value: unknown): value is Role {

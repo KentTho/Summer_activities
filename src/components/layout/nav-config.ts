@@ -18,19 +18,21 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: "Cấu hình", href: "/admin/settings" },
   ],
   SECRETARY: [
-    { label: "Tổng quan", href: "/secretary" },
-    { label: "Học sinh", href: "/secretary/students" },
-    { label: "Buổi sinh hoạt", href: "/secretary/sessions" },
-    { label: "Điểm danh", href: "/secretary/attendance" },
-    { label: "Đơn xin nghỉ", href: "/secretary/leave-requests" },
-    { label: "Thông báo", href: "/secretary/notifications" },
-    { label: "Báo cáo", href: "/secretary/reports" },
+    { label: "Tổng quan", href: "/user/secretary" },
+    { label: "Học sinh", href: "/user/secretary/students" },
+    { label: "Buổi sinh hoạt", href: "/user/secretary/sessions" },
+    { label: "Điểm danh", href: "/user/secretary/attendance" },
+    { label: "Đơn xin nghỉ", href: "/user/secretary/leave-requests" },
+    { label: "Nhập giấy tờ", href: "/user/secretary/import" },
+    { label: "Thông báo", href: "/user/secretary/notifications" },
+    { label: "Báo cáo", href: "/user/secretary/reports" },
   ],
   PARENT: [
-    { label: "Tổng quan", href: "/parent" },
-    { label: "Lịch sinh hoạt", href: "/parent/schedule" },
-    { label: "Xin phép nghỉ", href: "/parent/leave-requests" },
-    { label: "Thông báo", href: "/parent/notifications" },
+    { label: "Tổng quan", href: "/user/parent" },
+    { label: "Lịch sinh hoạt", href: "/user/parent/schedule" },
+    { label: "Lịch sử điểm danh", href: "/user/parent/attendance" },
+    { label: "Xin phép nghỉ", href: "/user/parent/leave-requests" },
+    { label: "Thông báo", href: "/user/parent/notifications" },
   ],
 };
 
@@ -38,4 +40,14 @@ export const ROLE_LABEL: Record<Role, string> = {
   ADMIN: "Quản trị viên",
   SECRETARY: "Bí thư",
   PARENT: "Phụ huynh / Học sinh",
+};
+
+/**
+ * Cổng đăng nhập tương ứng mỗi vai trò — dùng cho nút "Đăng xuất" trong shell.
+ * Admin và Người dùng tách cổng riêng (spec §UI, Prompt 03B).
+ */
+export const ROLE_LOGIN_HREF: Record<Role, string> = {
+  ADMIN: "/admin/login",
+  SECRETARY: "/user/login",
+  PARENT: "/user/login",
 };

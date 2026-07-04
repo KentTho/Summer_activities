@@ -20,7 +20,14 @@
 - Supabase config mẫu (`supabase/`), `.env.example`, CI (`.github/workflows/ci.yml`).
 - Domain enum chính (role, attendance, session type, leave, notification scope).
 
-## Ranh giới Phase 1 (CHƯA làm — có chủ đích)
+## Phase 03B — nâng cấp shell & tách cổng (đã hoàn thành)
+- Tách cổng đăng nhập: **Admin** (`/admin/login` → `/admin`) và **Người dùng**
+  (`/user/login` → `/user/secretary` \| `/user/parent`).
+- Trang chủ `/` thành entry page với 2 nút cổng; route cũ redirect (`next.config.ts`).
+- Nâng cấp shell UI: top bar dính, nav active-state, `AuthShell` dùng chung.
+- Docs mới: `auth-strategy.md`, `ocr-import.md`, `docx-export.md`.
+
+## Ranh giới Phase 1/03B (CHƯA làm — có chủ đích)
 OCR · DOCX export thật · notification thật · CRUD thật · migration/RLS · auth thật.
 Tất cả để lại TODO tại module/lib tương ứng.
 

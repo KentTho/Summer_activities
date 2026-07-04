@@ -1,3 +1,10 @@
 export { DashboardShell } from "./DashboardShell";
+export { AuthShell } from "./AuthShell";
 export { PageHeader } from "./PageHeader";
-export { NAV_BY_ROLE, ROLE_LABEL, type NavItem } from "./nav-config";
+export { SidebarNav } from "./SidebarNav";
+export {
+  NAV_BY_ROLE,
+  ROLE_LABEL,
+  ROLE_LOGIN_HREF,
+  type NavItem,
+} from "./nav-config";
