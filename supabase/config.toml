@@ -1,0 +1,31 @@
+# Supabase config mẫu (Phase 1) — dùng với Supabase CLI (`supabase start`, `supabase db reset`).
+# Chưa kết nối project thật; điều chỉnh project_id khi `supabase link`.
+project_id = "diem-danh-sinh-hoat-he"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+# APP_BASE_URL — trùng với biến môi trường ứng dụng.
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000"]
+jwt_expiry = 3600
+enable_signup = false   # Tài khoản do Admin tạo (spec §3), không cho tự đăng ký.
+
+[storage]
+enabled = true
+# Bucket riêng, KHÔNG public — phát file qua signed URL ngắn hạn (spec §7).
+file_size_limit = "10MiB"

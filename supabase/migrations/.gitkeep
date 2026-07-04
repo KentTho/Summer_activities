@@ -1,0 +1,2 @@
+# Migrations SQL sẽ được thêm ở Phase 2 (schema + RLS).
+# Đặt tên theo chuẩn Supabase CLI: <timestamp>_<mô tả>.sql
