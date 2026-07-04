@@ -21,7 +21,7 @@
 | Phase 9 — Import/OCR staging thật | ⬜ Pending | Chưa làm |
 | Phase 10 — DOCX export thật | ⬜ Pending | Chưa làm |
 | Phase 11 — Notification thật | ⬜ Pending | Chưa làm |
-| Phase 12 — Vercel deploy + hardening | ⬜ Pending | Chưa làm |
+| Phase 12 — Vercel deploy + hardening | 🟡 In progress | Deploy production live, đã sửa 404 (04A); hardening sau |
 
 ## 3. Checklist chi tiết
 
@@ -83,6 +83,16 @@
 
 > Ghi chú: toàn bộ trang 03D là **UI shell + mock data** (nhãn "UI demo"). Chưa
 > có Auth/DB/CRUD/DOCX thật.
+
+### Prompt 04A — Fix Vercel 404 + deployment verification
+- [x] Chẩn đoán 404 (framework preset = null → không chạy builder Next.js)
+- [x] Thêm `vercel.json` khai báo `framework: nextjs` (fix có version control)
+- [x] Build local pass
+- [x] Redeploy production + verify mọi route 200 (`summer-activities-theta.vercel.app`)
+- [x] Report 04A
+- [x] Commit/push
+
+> Deploy production đã hoạt động. Chưa cấu hình Supabase env trên Vercel (phase sau).
 
 ## 4. Next planned prompts
 1. Prompt 04 — Supabase schema + RLS + seed data
