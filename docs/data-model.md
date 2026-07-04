@@ -3,7 +3,10 @@
 Supabase Postgres, **RLS bật ở mọi bảng nghiệp vụ/dữ liệu cá nhân**. Khóa chính `uuid`; có
 `created_at`, `updated_at`, `created_by` cho bảng nhạy cảm; soft delete cho thực thể nghiệp vụ chính.
 
-> Phase 1 **chưa tạo bảng**. Migration + RLS thuộc **Phase 2** (`supabase/migrations`).
+> **Cập nhật 04B:** schema thật + RLS đã được viết trong `supabase/migrations/`
+> (`20260705010000_core_schema`, `…010100_rls_helpers`, `…010200_rls_policies`) +
+> `supabase/seed.sql` (dev) + `supabase/tests/rls_smoke.sql`. Chưa `db push` remote
+> (cần `supabase link` — xem `supabase/README.md`).
 
 ## Bảng chính
 | Bảng | Mục đích |

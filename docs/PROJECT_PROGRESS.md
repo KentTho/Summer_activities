@@ -14,7 +14,7 @@
 | Phase 2 — Route split + UI shell | ✅ Done | Admin/User portal split |
 | Phase 3 — User portal UI pages | ✅ Done (UI shell + mock) | Prompt 03C — chưa nối DB thật |
 | Phase 4 — Admin management UI pages | ✅ Done (UI shell + mock) | Prompt 03D — chưa nối DB thật |
-| Phase 5 — Supabase schema + RLS | ⬜ Pending | Chưa làm DB thật |
+| Phase 5 — Supabase schema + RLS | 🟡 In progress | Migrations/RLS/seed/test viết xong (04B); chưa `db push` remote |
 | Phase 6 — Auth thật + RBAC guard | ⬜ Pending | Chưa làm |
 | Phase 7 — CRUD thật | ⬜ Pending | Chưa làm |
 | Phase 8 — Attendance workflow thật | ⬜ Pending | Chưa làm |
@@ -94,8 +94,24 @@
 
 > Deploy production đã hoạt động. Chưa cấu hình Supabase env trên Vercel (phase sau).
 
+### Prompt 04B — Supabase schema + RLS + seed + policy check
+- [x] Core schema migration (19 bảng, enums, index, trigger, grants)
+- [x] RLS helper functions (security definer, RBAC theo Khu phố/buổi)
+- [x] Bật RLS deny-by-default + 71 policy theo vai trò
+- [x] Seed local/dev (dữ liệu giả, không auth, không production)
+- [x] RLS smoke test (`supabase/tests/rls_smoke.sql`)
+- [x] `config.toml` bật `[db.seed]`; cập nhật `supabase/README.md` + `data-model.md`
+- [x] Report 04B
+- [x] Lint/typecheck/build pass
+- [x] Commit/push
+- [ ] `supabase db push` remote — **chờ bạn `link` project ref** (xem report 04B §J)
+- [ ] `supabase gen types` — chờ có DB local/remote
+
+> Ghi chú: schema/RLS **mới ở dạng file migration**, **chưa** áp lên Supabase thật.
+> Chưa làm Auth/CRUD/OCR/DOCX thật.
+
 ## 4. Next planned prompts
-1. Prompt 04 — Supabase schema + RLS + seed data
+1. Prompt 04C — `db push` + gen types (khi có project ref) hoặc test local
 2. Prompt 05 — Auth thật + RBAC guard
 3. Prompt 06 — CRUD Khu phố/Bí thư/Học sinh
 4. Prompt 07 — Attendance + leave request thật
