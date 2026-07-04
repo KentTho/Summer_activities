@@ -8,6 +8,7 @@ import type { AttendanceStatus } from "@/modules/attendance/domain/attendance-st
 import type { SessionType } from "@/modules/sessions/domain/session-type";
 import type { LeaveStatus } from "@/modules/leave-requests/domain/leave-status";
 import type { NotificationScope } from "@/modules/notifications/domain/scope-type";
+import type { Role } from "@/modules/auth/domain/roles";
 
 export interface Neighborhood {
   code: string;
@@ -74,4 +75,55 @@ export interface MockImportBatch {
   totalRows: number;
   reviewedRows: number;
   status: ImportStatus;
+}
+
+/* ------------------------------------------------------------------ *
+ * Admin view-models (Prompt 03D) — tổng quan toàn hệ thống.
+ * ------------------------------------------------------------------ */
+
+/** Khu phố ở góc nhìn Admin: kèm số liệu tổng hợp. */
+export interface AdminNeighborhood {
+  code: string;
+  name: string;
+  active: boolean;
+  studentCount: number;
+  secretaryCount: number;
+}
+
+export interface MockSecretary {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  /** Mã Khu phố được gán phụ trách (rỗng = chưa gán). */
+  neighborhoodCodes: string[];
+  active: boolean;
+  createdAt: string;
+}
+
+export interface MockAuditLog {
+  id: string;
+  /** "dd/mm/yyyy HH:MM" — chuỗi tĩnh, tránh lệch SSR. */
+  at: string;
+  actorName: string;
+  actorRole: Role;
+  action: string;
+  entity: string;
+  detail: string;
+}
+
+export interface MockDocxTemplate {
+  id: string;
+  name: string;
+  fileName: string;
+  updatedAt: string;
+  active: boolean;
+}
+
+/** Cấu hình hệ thống an toàn — chỉ field whitelist (spec §7). */
+export interface SystemSettings {
+  systemName: string;
+  logoUrl: string;
+  primaryColor: string;
+  footerText: string;
 }

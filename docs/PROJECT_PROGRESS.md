@@ -13,7 +13,7 @@
 | Phase 1 — Scaffold | ✅ Done | Next.js + Supabase shell |
 | Phase 2 — Route split + UI shell | ✅ Done | Admin/User portal split |
 | Phase 3 — User portal UI pages | ✅ Done (UI shell + mock) | Prompt 03C — chưa nối DB thật |
-| Phase 4 — Admin management UI pages | ⬜ Pending | Làm sau |
+| Phase 4 — Admin management UI pages | ✅ Done (UI shell + mock) | Prompt 03D — chưa nối DB thật |
 | Phase 5 — Supabase schema + RLS | ⬜ Pending | Chưa làm DB thật |
 | Phase 6 — Auth thật + RBAC guard | ⬜ Pending | Chưa làm |
 | Phase 7 — CRUD thật | ⬜ Pending | Chưa làm |
@@ -63,15 +63,35 @@
 > Ghi chú: toàn bộ trang 03C là **UI shell + mock data** (nhãn "UI demo" trên mỗi
 > trang). Chưa có nghiệp vụ thật — không tick mục CRUD/attendance/DB ở các phase sau.
 
+### Prompt 03D — Admin management pages
+- [x] Admin dashboard nâng cấp (KPI + cảnh báo phân công + audit gần đây)
+- [x] Quản lý Khu phố (`/admin/neighborhoods`)
+- [x] Quản lý Bí thư (`/admin/secretaries`)
+- [x] Gán Bí thư ↔ Khu phố (`/admin/assignments`)
+- [x] Tổng quan học sinh hệ thống (`/admin/students`)
+- [x] Tổng quan buổi sinh hoạt hệ thống (`/admin/sessions`)
+- [x] Quản lý mẫu báo cáo DOCX (`/admin/templates`)
+- [x] Báo cáo tổng hợp hệ thống (`/admin/reports`)
+- [x] Audit log (`/admin/audit`)
+- [x] Cấu hình hệ thống an toàn (`/admin/settings`)
+- [x] Mock data Admin tách riêng (`src/lib/mock/admin.ts`)
+- [x] Nav Admin cập nhật
+- [x] `docs/admin-management-pages.md`
+- [x] Report 03D
+- [x] Lint/typecheck/build pass
+- [x] Commit/push 03D
+
+> Ghi chú: toàn bộ trang 03D là **UI shell + mock data** (nhãn "UI demo"). Chưa
+> có Auth/DB/CRUD/DOCX thật.
+
 ## 4. Next planned prompts
-1. Prompt 03D — Admin management UI pages
-2. Prompt 04 — Supabase schema + RLS + seed data
-3. Prompt 05 — Auth thật + RBAC guard
-4. Prompt 06 — CRUD Khu phố/Bí thư/Học sinh
-5. Prompt 07 — Attendance + leave request thật
-6. Prompt 08 — Import/OCR staging thật
-7. Prompt 09 — DOCX export thật
-8. Prompt 10 — Notification thật + deploy Vercel
+1. Prompt 04 — Supabase schema + RLS + seed data
+2. Prompt 05 — Auth thật + RBAC guard
+3. Prompt 06 — CRUD Khu phố/Bí thư/Học sinh
+4. Prompt 07 — Attendance + leave request thật
+5. Prompt 08 — Import/OCR staging thật
+6. Prompt 09 — DOCX export thật
+7. Prompt 10 — Notification thật + deploy Vercel
 
 ## 5. Rủi ro đang mở
 - Chưa có DB/RLS thật nên mọi UI hiện tại chỉ là demo.

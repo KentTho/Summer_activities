@@ -12,8 +12,13 @@ export interface NavItem {
 export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ADMIN: [
     { label: "Tổng quan", href: "/admin" },
-    { label: "Tài khoản Bí thư", href: "/admin/secretaries" },
     { label: "Khu phố", href: "/admin/neighborhoods" },
+    { label: "Bí thư", href: "/admin/secretaries" },
+    { label: "Gán phụ trách", href: "/admin/assignments" },
+    { label: "Học sinh", href: "/admin/students" },
+    { label: "Buổi sinh hoạt", href: "/admin/sessions" },
+    { label: "Mẫu báo cáo", href: "/admin/templates" },
+    { label: "Báo cáo", href: "/admin/reports" },
     { label: "Audit log", href: "/admin/audit" },
     { label: "Cấu hình", href: "/admin/settings" },
   ],
