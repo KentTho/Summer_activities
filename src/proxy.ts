@@ -1,20 +1,32 @@
 /**
- * Route guard toàn cục (Next 16: file `middleware.ts` trong spec được đổi tên thành `proxy.ts`).
- * Trách nhiệm: refresh phiên Supabase + (Phase sau) chặn truy cập route theo vai trò.
+ * Route guard toàn cục (Next 16: `middleware.ts` được đổi tên thành `proxy.ts`).
+ * Trách nhiệm (Prompt 05):
+ *   1. Refresh phiên Supabase (đồng bộ cookie).
+ *   2. Chặn truy cập route được bảo vệ khi CHƯA đăng nhập → redirect về login đúng cổng.
  *
- * Phase 1 (scaffold): chỉ refresh phiên; chưa redirect vì auth thật chưa bật.
- * Khung enforcement role đã đặt sẵn ở lib/auth/rbac.ts để phase sau nối vào.
+ * Kiểm tra vai trò cụ thể (đúng cổng theo role) do server layout đảm nhiệm bằng
+ * getCurrentProfile() — vì role phải đọc từ bảng profiles. RLS là chặn cuối cùng.
  */
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSupabaseSession } from "@/lib/supabase/proxy";
+import { requiredRoleForPath } from "@/lib/auth/rbac";
+import { ROLES } from "@/modules/auth/domain/roles";
 
 export async function proxy(request: NextRequest) {
-  // Đồng bộ cookie phiên (no-op khi chưa cấu hình Supabase env).
-  const response = await updateSupabaseSession(request);
+  const { response, user } = await updateSupabaseSession(request);
 
-  // TODO(Phase 2): đọc user + role, dùng lib/auth/rbac.ts để redirect nếu không đủ quyền.
-  //   const required = requiredRoleForPath(request.nextUrl.pathname);
-  //   if (required && role !== required) return NextResponse.redirect(...)
+  const pathname = request.nextUrl.pathname;
+  const required = requiredRoleForPath(pathname);
+
+  // Route được bảo vệ + chưa đăng nhập → về trang login của đúng cổng.
+  if (required && !user) {
+    const loginPath =
+      required === ROLES.ADMIN ? "/admin/login" : "/user/login";
+    const url = request.nextUrl.clone();
+    url.pathname = loginPath;
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
 
   return response;
 }

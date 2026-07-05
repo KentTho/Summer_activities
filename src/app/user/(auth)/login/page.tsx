@@ -1,41 +1,30 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/forms/LoginForm";
+import { signInUser } from "@/lib/auth/actions";
+import { getCurrentProfile } from "@/lib/auth/session";
+import { homeForRole } from "@/lib/auth/rbac";
 
 /**
- * Đăng nhập Người dùng (Phase 03B shell) — chưa gọi Supabase Auth.
- * Sau khi bật auth thật, đăng nhập thành công sẽ redirect theo vai trò
- * (SECRETARY → /user/secretary, PARENT → /user/parent) qua ROLE_HOME.
- * Chiến lược tài khoản: xem docs/auth-strategy.md.
+ * Đăng nhập Người dùng (Auth thật — Prompt 05) — Bí thư & Phụ huynh/Học sinh.
+ * Đăng nhập thành công sẽ redirect theo vai trò (SECRETARY → /user/secretary,
+ * PARENT → /user/parent) qua ROLE_HOME. Hiện dùng email + mật khẩu.
+ * Chiến lược định danh phụ huynh: xem docs/auth-strategy.md.
  */
-export default function UserLoginPage() {
+export default async function UserLoginPage() {
+  const profile = await getCurrentProfile();
+  if (profile) redirect(homeForRole(profile.role));
+
   return (
     <LoginForm
-      accountLabel="Tài khoản"
-      accountPlaceholder="Email / số điện thoại / mã tài khoản"
-      submitLabel="Đăng nhập (chưa kích hoạt)"
+      action={signInUser}
+      accountLabel="Email"
+      accountPlaceholder="email@example.com"
+      submitLabel="Đăng nhập"
       footer={
-        <>
-          <p>
-            Phase 03B: khung đăng nhập. Đăng nhập thành công sẽ tự chuyển đến khu
-            vực theo vai trò (Bí thư hoặc Phụ huynh/Học sinh).
-          </p>
-          <p className="mt-2 text-slate-400">
-            Xem trước shell:{" "}
-            <Link
-              href="/user/secretary"
-              className="font-medium text-indigo-600 hover:underline"
-            >
-              Bí thư
-            </Link>{" "}
-            ·{" "}
-            <Link
-              href="/user/parent"
-              className="font-medium text-indigo-600 hover:underline"
-            >
-              Phụ huynh / Học sinh
-            </Link>
-          </p>
-        </>
+        <p>
+          Đăng nhập thành công sẽ tự chuyển đến khu vực theo vai trò (Bí thư hoặc
+          Phụ huynh/Học sinh). Tài khoản do Quản trị/Bí thư cấp.
+        </p>
       }
     />
   );

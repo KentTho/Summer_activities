@@ -15,7 +15,7 @@
 | Phase 3 — User portal UI pages | ✅ Done (UI shell + mock) | Prompt 03C — chưa nối DB thật |
 | Phase 4 — Admin management UI pages | ✅ Done (UI shell + mock) | Prompt 03D — chưa nối DB thật |
 | Phase 5 — Supabase schema + RLS | ✅ Done | Migrations áp remote (04D), RLS bật, types thật sinh + nối vào code |
-| Phase 6 — Auth thật + RBAC guard | ⬜ Pending | Chưa làm |
+| Phase 6 — Auth thật + RBAC guard | ✅ Done | Prompt 05 — Supabase Auth, guard 2 lớp, redirect vai trò, logout |
 | Phase 7 — CRUD thật | ⬜ Pending | Chưa làm |
 | Phase 8 — Attendance workflow thật | ⬜ Pending | Chưa làm |
 | Phase 9 — Import/OCR staging thật | ⬜ Pending | Chưa làm |
@@ -142,16 +142,34 @@
 > `SUPABASE_SERVICE_ROLE_KEY` chưa set (chỉ cần khi CRUD/Auth phase sau, server-side).
 > Vẫn **chưa** làm Auth/CRUD/OCR/DOCX/Notification thật.
 
+### Prompt 05 — Auth thật + RBAC guard + role redirect
+- [x] Server Actions login (`signInAdmin`/`signInUser`) + `signOut` (Supabase Auth)
+- [x] `getCurrentProfile()` thật (`auth.getUser()` → `profiles`)
+- [x] Guard middleware `proxy.ts`: chưa đăng nhập + route bảo vệ → login đúng cổng (test 307)
+- [x] Guard layout theo vai trò: sai vai trò → `ROLE_HOME` (Parent/Secretary/Admin cách ly)
+- [x] Redirect vai trò: ADMIN→/admin, SECRETARY→/user/secretary, PARENT→/user/parent
+- [x] Login form thật (`useActionState`, lỗi + pending); logout form (Server Action)
+- [x] Admin client server-only (`lib/supabase/admin.ts`, service role) — không ra client
+- [x] Script bootstrap demo users (`npm run bootstrap:auth`) — idempotent, gated service role
+- [x] `docs/IMPLEMENTATION_HISTORY.md` + cập nhật `auth-strategy.md`
+- [x] Lint/typecheck/build pass
+- [x] Report 05
+- [ ] Chạy bootstrap demo users — **skip**: thiếu `SUPABASE_SERVICE_ROLE_KEY` trong `.env.local`
+
+> Ghi chú: Đăng nhập hiện dùng **email + mật khẩu** (định danh phụ huynh bằng SĐT/mã tài
+> khoản để phase sau). Chưa có demo users → chưa test đăng nhập end-to-end; guard "chưa đăng
+> nhập" đã test (307). Chưa làm CRUD/Attendance/OCR/DOCX/Notification thật.
+
 ## 4. Next planned prompts
-1. Prompt 05 — Auth thật + RBAC guard
-3. Prompt 06 — CRUD Khu phố/Bí thư/Học sinh
-4. Prompt 07 — Attendance + leave request thật
-5. Prompt 08 — Import/OCR staging thật
-6. Prompt 09 — DOCX export thật
-7. Prompt 10 — Notification thật + deploy Vercel
+1. Prompt 06 — CRUD Khu phố/Bí thư/Học sinh (Admin tạo tài khoản Bí thư/Phụ huynh)
+2. Prompt 07 — Attendance + leave request thật
+3. Prompt 08 — Import/OCR staging thật
+4. Prompt 09 — DOCX export thật
+5. Prompt 10 — Notification thật + deploy Vercel
 
 ## 5. Rủi ro đang mở
-- Chưa có DB/RLS thật nên mọi UI hiện tại chỉ là demo.
-- Chưa có auth thật nên route guard chưa bảo vệ dữ liệu.
+- Auth thật đã bật, nhưng **chưa có demo/real users** (thiếu service role key) → chưa test
+  đăng nhập end-to-end trên môi trường.
+- UI nghiệp vụ vẫn dùng **mock data** (chưa nối CRUD thật) — dữ liệu hiển thị chưa phản ánh DB.
 - OCR/import phải qua staging review, không được auto-import thẳng.
 - DOCX export phải render server-side và log audit khi làm thật.

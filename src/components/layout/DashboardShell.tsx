@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
-import type { Role } from "@/modules/auth/domain/roles";
+import { ROLES, type Role } from "@/modules/auth/domain/roles";
+import { signOut } from "@/lib/auth/actions";
 import { DemoNotice } from "@/components/ui";
-import { NAV_BY_ROLE, ROLE_LABEL, ROLE_LOGIN_HREF } from "./nav-config";
+import { NAV_BY_ROLE, ROLE_LABEL } from "./nav-config";
 import { SidebarNav } from "./SidebarNav";
 
 interface DashboardShellProps {
   role: Role;
+  /** Tên hiển thị người đăng nhập (từ profiles.full_name). */
+  fullName?: string;
   children: ReactNode;
 }
 
@@ -15,8 +17,13 @@ interface DashboardShellProps {
  * - Top bar dính trên cùng: thương hiệu, nhãn vai trò, lối "Đăng xuất".
  * - Điều hướng: thanh cuộn ngang trên mobile, cột dọc (sidebar) từ md trở lên.
  */
-export function DashboardShell({ role, children }: DashboardShellProps) {
+export function DashboardShell({
+  role,
+  fullName,
+  children,
+}: DashboardShellProps) {
   const nav = NAV_BY_ROLE[role];
+  const portal = role === ROLES.ADMIN ? "admin" : "user";
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800">
@@ -30,12 +37,21 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
             <p className="text-xs text-slate-500">{ROLE_LABEL[role]}</p>
           </div>
         </div>
-        <Link
-          href={ROLE_LOGIN_HREF[role]}
-          className="rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-        >
-          Đăng xuất
-        </Link>
+        <div className="flex items-center gap-2">
+          {fullName ? (
+            <span className="hidden text-sm text-slate-600 sm:inline">
+              {fullName}
+            </span>
+          ) : null}
+          <form action={signOut.bind(null, portal)}>
+            <button
+              type="submit"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+            >
+              Đăng xuất
+            </button>
+          </form>
+        </div>
       </header>
 
       <div className="flex flex-1 flex-col md:flex-row">

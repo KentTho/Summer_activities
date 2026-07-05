@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Script vận hành chạy bằng Node (không thuộc bundle app).
+    "scripts/**",
   ]),
 ]);
 

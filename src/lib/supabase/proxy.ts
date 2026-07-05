@@ -1,23 +1,29 @@
 /**
  * Helper refresh phiên Supabase trong proxy.ts (Next 16 đổi tên middleware -> proxy).
- * Trả về NextResponse đã đồng bộ cookie phiên.
+ * Trả về NextResponse đã đồng bộ cookie phiên + user hiện tại (null nếu chưa đăng nhập).
  *
- * Phase 1: nếu chưa cấu hình Supabase env thì trả về pass-through để scaffold chạy được.
- * Route guard thật (kiểm tra role + phạm vi) triển khai từ Phase 1.5/2 dựa trên khung này.
+ * Nếu chưa cấu hình Supabase env thì pass-through (user = null) để scaffold chạy được.
+ * Guard theo vai trò (role) do server layout đảm nhiệm; RLS là chặn cuối cùng.
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import type { User } from "@supabase/supabase-js";
 import { env, hasSupabaseEnv } from "@/lib/env";
 import type { Database } from "@/lib/database.types";
 
+export interface SupabaseSessionResult {
+  response: NextResponse;
+  user: User | null;
+}
+
 export async function updateSupabaseSession(
   request: NextRequest,
-): Promise<NextResponse> {
+): Promise<SupabaseSessionResult> {
   const response = NextResponse.next({ request });
 
   if (!hasSupabaseEnv()) {
-    // Chưa kết nối DB thật — không chặn request ở Phase 1.
-    return response;
+    // Chưa kết nối DB thật — không chặn request.
+    return { response, user: null };
   }
 
   const supabase = createServerClient<Database>(
@@ -38,7 +44,9 @@ export async function updateSupabaseSession(
   );
 
   // Chạm tới auth để token được refresh và ghi lại cookie.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  return response;
+  return { response, user };
 }

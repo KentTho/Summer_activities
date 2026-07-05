@@ -1,7 +1,8 @@
 # Chiến lược tài khoản & đăng nhập
 
-> Cập nhật ở Prompt 03B (tách cổng Admin/User). Bổ trợ cho `security.md` (spec §7).
-> **Trạng thái:** kế hoạch — Auth thật **chưa** bật (Phase 2+).
+> Cập nhật ở Prompt 05. Bổ trợ cho `security.md` (spec §7).
+> **Trạng thái:** ✅ Auth thật **đã bật** (Supabase Auth email + mật khẩu, RBAC guard theo
+> `profiles.role`, redirect theo vai trò, logout). Xem `docs/reports/PROMPT-05-...report.md`.
 
 ## 1. Tách hai cổng đăng nhập
 
@@ -47,7 +48,18 @@ trang login của mỗi cổng nằm trong `PUBLIC_PATHS` để không bị guar
 4. Rate limit đăng nhập theo IP + user; reset mật khẩu chặt hơn (xem `security.md`).
 5. `SUPABASE_SERVICE_ROLE_KEY` **chỉ dùng server-side**, không bao giờ vào client component.
 
-## 5. Chưa làm trong Prompt 03B (có chủ đích)
+## 5. Đã triển khai ở Prompt 05
 
-Auth thật · gọi Supabase · phiên/cookie thật · guard redirect thật · CRUD tài khoản.
-Tất cả để lại TODO tại `lib/auth/*` và `proxy.ts`.
+- **Login thật:** `signInWithPassword` qua Server Action (`lib/auth/actions.ts`);
+  kiểm tra vai trò khớp cổng; redirect theo `ROLE_HOME`.
+- **Session thật:** `lib/auth/session.ts#getCurrentProfile()` → `auth.getUser()` + `profiles`.
+- **Guard 2 lớp:** middleware `proxy.ts` (chưa đăng nhập → login đúng cổng) + server layout
+  (sai vai trò → về khu vực đúng vai trò). RLS Postgres là chặn cuối cùng.
+- **Logout thật:** Server Action `signOut` trong `DashboardShell`.
+- **Admin client server-only:** `lib/supabase/admin.ts` (service role, không ra client).
+- **Bootstrap demo users:** `scripts/bootstrap-auth-users.mjs` (chỉ chạy khi có service role key).
+
+### Còn để lại (phase sau)
+- Định danh phụ huynh bằng SĐT/mã tài khoản (hiện dùng email).
+- Rate limit đăng nhập theo IP + user; reset mật khẩu.
+- CRUD tài khoản (Admin tạo Bí thư/Phụ huynh) — Prompt CRUD.

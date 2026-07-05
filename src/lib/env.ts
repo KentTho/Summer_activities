@@ -25,6 +25,14 @@ export function hasSupabaseEnv(): boolean {
   return Boolean(env.supabaseUrl && env.supabasePublishableKey);
 }
 
+/**
+ * true khi có service role key (server-only). Dùng để bật/tắt các thao tác admin
+ * (vd bootstrap demo users). KHÔNG bao giờ gọi hàm này ở client component.
+ */
+export function hasServiceRoleKey(): boolean {
+  return Boolean(env.supabaseUrl && env.supabaseServiceRoleKey);
+}
+
 /** Ném lỗi rõ ràng khi thiếu env ở nơi bắt buộc phải có kết nối Supabase. */
 export function assertSupabaseEnv(): void {
   if (!hasSupabaseEnv()) {
