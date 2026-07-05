@@ -34,6 +34,7 @@ hợp lệ, footer. **Không** có trường nhập CSS/JS/HTML tùy ý.
 API đọc dữ liệu nhạy cảm (throttle ở edge/proxy).
 
 ## Environment variables
-`NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` · `SUPABASE_SERVICE_ROLE_KEY` ·
+`NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+(tên cũ `NEXT_PUBLIC_SUPABASE_ANON_KEY` vẫn đọc được — backward-compat) · `SUPABASE_SERVICE_ROLE_KEY` ·
 `APP_BASE_URL` · (sau) `AUDIT_LOG_SECRET`, `DOCX_TEMPLATE_BUCKET`, `IMPORT_BUCKET`, OCR key.
 Xem `.env.example`. **Không hardcode secret; không commit `.env.local`.**

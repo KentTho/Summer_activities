@@ -9,7 +9,12 @@
 
 export const env = {
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+  // Khóa public mới của Supabase (publishable). Giữ backward-compat với tên cũ
+  // `NEXT_PUBLIC_SUPABASE_ANON_KEY` để code/CI cũ vẫn chạy được.
+  supabasePublishableKey:
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+    "",
   // Chỉ dùng ở server-side (route handler / server action). Không bao giờ expose ra client.
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
   appBaseUrl: process.env.APP_BASE_URL ?? "http://localhost:3000",
@@ -17,14 +22,15 @@ export const env = {
 
 /** true khi đã cấu hình đủ Supabase public env để khởi tạo client. */
 export function hasSupabaseEnv(): boolean {
-  return Boolean(env.supabaseUrl && env.supabaseAnonKey);
+  return Boolean(env.supabaseUrl && env.supabasePublishableKey);
 }
 
 /** Ném lỗi rõ ràng khi thiếu env ở nơi bắt buộc phải có kết nối Supabase. */
 export function assertSupabaseEnv(): void {
   if (!hasSupabaseEnv()) {
     throw new Error(
-      "Thiếu NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY. " +
+      "Thiếu NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY " +
+        "(hoặc NEXT_PUBLIC_SUPABASE_ANON_KEY cũ). " +
         "Sao chép .env.example thành .env.local và điền giá trị.",
     );
   }

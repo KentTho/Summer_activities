@@ -1,6 +1,6 @@
-# Supabase config mẫu (Phase 1) — dùng với Supabase CLI (`supabase start`, `supabase db reset`).
-# Chưa kết nối project thật; điều chỉnh project_id khi `supabase link`.
-project_id = "diem-danh-sinh-hoat-he"
+# Supabase config — dùng với Supabase CLI (`supabase start`, `supabase db reset`, `supabase link`).
+# project_id = project ref của Supabase remote (dùng cho `supabase link --project-ref`).
+project_id = "ymtogeacpnlmthjlryrd"
 
 [api]
 enabled = true

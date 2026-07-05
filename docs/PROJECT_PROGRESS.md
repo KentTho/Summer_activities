@@ -14,7 +14,7 @@
 | Phase 2 — Route split + UI shell | ✅ Done | Admin/User portal split |
 | Phase 3 — User portal UI pages | ✅ Done (UI shell + mock) | Prompt 03C — chưa nối DB thật |
 | Phase 4 — Admin management UI pages | ✅ Done (UI shell + mock) | Prompt 03D — chưa nối DB thật |
-| Phase 5 — Supabase schema + RLS | 🟡 In progress | Migrations/RLS/seed/test viết xong (04B); chưa `db push` remote |
+| Phase 5 — Supabase schema + RLS | 🟡 In progress | Migrations/RLS/seed/test xong (04B); env naming mới + Vercel env public xong (04C); `db push`/`gen types` chờ auth |
 | Phase 6 — Auth thật + RBAC guard | ⬜ Pending | Chưa làm |
 | Phase 7 — CRUD thật | ⬜ Pending | Chưa làm |
 | Phase 8 — Attendance workflow thật | ⬜ Pending | Chưa làm |
@@ -110,8 +110,24 @@
 > Ghi chú: schema/RLS **mới ở dạng file migration**, **chưa** áp lên Supabase thật.
 > Chưa làm Auth/CRUD/OCR/DOCX thật.
 
+### Prompt 04C — Connect Supabase remote + env naming + Vercel env
+- [x] Đổi env naming: `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (giữ backward-compat `..._ANON_KEY`)
+- [x] Cập nhật `env.ts` + `client.ts` / `server.ts` / `proxy.ts` dùng publishable key
+- [x] Cập nhật `.env.example`, `ci.yml`, `supabase/README.md`, `docs/security.md`
+- [x] `config.toml.project_id` → project ref thật (`ymtogeacpnlmthjlryrd`)
+- [x] Đẩy public env (URL + publishable key) lên Vercel (production/preview/development)
+- [x] Rà soát tĩnh migration 04B: 19 bảng, 71 policy, không drop/disable RLS → an toàn push
+- [x] Lint/typecheck/build pass
+- [x] Report 04C
+- [ ] `supabase link` + `supabase db push` remote — **chờ bạn cài CLI + login + DB password**
+- [ ] `supabase gen types` → `src/lib/database.types.ts` — chờ CLI + login
+
+> Ghi chú: Supabase CLI chưa cài + chưa login + không có DB password → các bước chạm DB
+> remote **hoãn**; xem hướng dẫn ở report 04C §F. `SUPABASE_SERVICE_ROLE_KEY` **chưa** cấu hình
+> (chưa có giá trị đầy đủ).
+
 ## 4. Next planned prompts
-1. Prompt 04C — `db push` + gen types (khi có project ref) hoặc test local
+1. Prompt 04D — `supabase link` + `db push` + `gen types` (sau khi bạn xác thực CLI + DB password)
 2. Prompt 05 — Auth thật + RBAC guard
 3. Prompt 06 — CRUD Khu phố/Bí thư/Học sinh
 4. Prompt 07 — Attendance + leave request thật

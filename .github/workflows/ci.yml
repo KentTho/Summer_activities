@@ -41,4 +41,4 @@ jobs:
           # Placeholder public env để build không phụ thuộc secret thật.
           # Secret production cấu hình ở Vercel / GitHub Environments.
           NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: example-anon-key
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_example
