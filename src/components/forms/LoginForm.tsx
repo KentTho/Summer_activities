@@ -41,17 +41,17 @@ export function LoginForm({
       <form action={formAction} className="space-y-4">
         <div>
           <label
-            htmlFor="email"
+            htmlFor="identifier"
             className="mb-1 block text-sm font-medium text-slate-700"
           >
             {accountLabel}
           </label>
           <input
-            id="email"
-            name="email"
-            type="email"
+            id="identifier"
+            name="identifier"
+            type="text"
             required
-            autoComplete="email"
+            autoComplete="username"
             placeholder={accountPlaceholder}
             className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
           />

@@ -12,6 +12,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { loadProfileForAuthUser } from "@/lib/auth/session";
+import { identifierToEmail } from "@/lib/auth/identifier";
 import { homeForRole } from "@/lib/auth/rbac";
 import { ROLES } from "@/modules/auth/domain/roles";
 
@@ -22,7 +23,7 @@ export interface SignInState {
 type Portal = "admin" | "user";
 
 const credentialsSchema = z.object({
-  email: z.string().trim().email("Email không hợp lệ."),
+  identifier: z.string().trim().min(1, "Vui lòng nhập tài khoản."),
   password: z.string().min(1, "Vui lòng nhập mật khẩu."),
 });
 
@@ -31,7 +32,7 @@ async function signInWithPortal(
   formData: FormData,
 ): Promise<SignInState> {
   const parsed = credentialsSchema.safeParse({
-    email: formData.get("email"),
+    identifier: formData.get("identifier"),
     password: formData.get("password"),
   });
   if (!parsed.success) {
@@ -40,7 +41,7 @@ async function signInWithPortal(
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: parsed.data.email,
+    email: identifierToEmail(parsed.data.identifier),
     password: parsed.data.password,
   });
 

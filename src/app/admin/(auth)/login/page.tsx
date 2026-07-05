@@ -16,8 +16,8 @@ export default async function AdminLoginPage() {
   return (
     <LoginForm
       action={signInAdmin}
-      accountLabel="Email quản trị"
-      accountPlaceholder="admin@example.com"
+      accountLabel="Tài khoản quản trị"
+      accountPlaceholder="Admin"
       submitLabel="Đăng nhập Quản trị"
       footer={
         <>

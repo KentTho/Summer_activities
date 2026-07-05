@@ -1,54 +1,46 @@
-import { Badge, Button, Card } from "@/components/ui";
+import { Badge, Card } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
-import { SECRETARIES, neighborhoodName } from "@/lib/mock";
+import { listSecretaries } from "@/lib/data/admin";
 
-export default function AdminSecretariesPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminSecretariesPage() {
+  const secretaries = await listSecretaries();
+
   return (
     <>
       <PageHeader
-        title="Quản lý Bí thư"
-        description="Tài khoản Bí thư do Admin tạo (không tự đăng ký). Tạo/khóa/reset mật khẩu bật ở phase auth."
+        title="Bí thư"
+        description="Tài khoản Bí thư (dữ liệu thật). Tạo/khóa/reset mật khẩu sẽ bật ở prompt CRUD Admin."
       />
-
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-slate-500">{SECRETARIES.length} tài khoản (dữ liệu demo)</p>
-        <Button disabled variant="secondary" className="h-9 px-3 text-xs">
-          + Tạo Bí thư (chưa kết nối)
-        </Button>
-      </div>
-
-      <div className="grid gap-3">
-        {SECRETARIES.map((s) => (
-          <Card key={s.id}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="font-medium text-slate-900">{s.fullName}</p>
-                <p className="mt-0.5 truncate text-xs text-slate-500">
-                  {s.email} · {s.phone} · tạo {s.createdAt}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {s.neighborhoodCodes.length === 0 ? (
-                    <Badge tone="amber">Chưa gán Khu phố</Badge>
-                  ) : (
-                    s.neighborhoodCodes.map((code) => (
-                      <Badge key={code} tone="indigo">{neighborhoodName(code)}</Badge>
-                    ))
-                  )}
+      <p className="mb-2 text-sm text-slate-500">{secretaries.length} tài khoản</p>
+      <Card className="p-0">
+        {secretaries.length === 0 ? (
+          <p className="px-4 py-6 text-center text-sm text-slate-500">
+            Chưa có Bí thư nào. Chạy bootstrap để tạo tài khoản mẫu.
+          </p>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {secretaries.map((s) => (
+              <li
+                key={s.id}
+                className="flex items-center justify-between gap-3 px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-slate-900">{s.full_name}</p>
+                  <p className="mt-0.5 truncate text-xs text-slate-500">
+                    {s.phone ?? "—"}
+                    {s.email ? ` · ${s.email}` : ""}
+                  </p>
                 </div>
-              </div>
-              <div className="flex flex-col items-end gap-2">
                 <Badge tone={s.active ? "green" : "slate"}>
                   {s.active ? "Hoạt động" : "Đã khóa"}
                 </Badge>
-                <div className="flex gap-1">
-                  <Button disabled variant="ghost" className="h-8 px-2 text-xs">Sửa</Button>
-                  <Button disabled variant="ghost" className="h-8 px-2 text-xs">Reset MK</Button>
-                </div>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
     </>
   );
 }

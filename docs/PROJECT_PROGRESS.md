@@ -16,9 +16,9 @@
 | Phase 4 — Admin management UI pages | ✅ Done (UI shell + mock) | Prompt 03D — chưa nối DB thật |
 | Phase 5 — Supabase schema + RLS | ✅ Done | Migrations áp remote (04D), RLS bật, types thật sinh + nối vào code |
 | Phase 6 — Auth thật + RBAC guard | ✅ Done | Prompt 05 — Supabase Auth, guard 2 lớp, redirect vai trò, logout |
-| Phase 7 — CRUD thật | ⬜ Pending | Chưa làm |
-| Phase 8 — Attendance workflow thật | ⬜ Pending | Chưa làm |
-| Phase 9 — Import/OCR staging thật | ⬜ Pending | Chưa làm |
+| Phase 7 — CRUD thật | 🟡 In progress | 06A: CRUD học sinh (Bí thư) qua RLS + Admin đọc thật; CRUD Admin đầy đủ để sau |
+| Phase 8 — Attendance workflow thật | ⬜ Pending | Chưa làm (06A chỉ đọc tỉ lệ cho dashboard) |
+| Phase 9 — Import/OCR staging thật | 🟡 In progress | 06A: import staging DB thật + confirm; OCR AI để sau |
 | Phase 10 — DOCX export thật | ⬜ Pending | Chưa làm |
 | Phase 11 — Notification thật | ⬜ Pending | Chưa làm |
 | Phase 12 — Vercel deploy + hardening | 🟡 In progress | Deploy production live, đã sửa 404 (04A); hardening sau |
@@ -156,20 +156,35 @@
 - [x] Report 05
 - [ ] Chạy bootstrap demo users — **skip**: thiếu `SUPABASE_SERVICE_ROLE_KEY` trong `.env.local`
 
-> Ghi chú: Đăng nhập hiện dùng **email + mật khẩu** (định danh phụ huynh bằng SĐT/mã tài
-> khoản để phase sau). Chưa có demo users → chưa test đăng nhập end-to-end; guard "chưa đăng
-> nhập" đã test (307). Chưa làm CRUD/Attendance/OCR/DOCX/Notification thật.
+> Ghi chú: Chưa có users → chưa test đăng nhập end-to-end; guard "chưa đăng nhập" đã test (307).
+
+### Prompt 06A — Bootstrap accounts + Secretary CRUD + dashboard + import staging
+- [x] Migration additive `students` (birth_date/school/guardian_name/guardian_phone) → push remote + gen types
+- [x] Đăng nhập bằng identifier (`identifierToEmail`): Admin="Admin", Bí thư="0932077136"
+- [x] CRUD học sinh (Bí thư) qua RLS: thêm/sửa/xóa mềm/tìm/lọc (Khu phố·Trường·Trạng thái)
+- [x] Dashboard Bí thư dữ liệu thật (HS trong phạm vi, buổi sắp tới, đơn nghỉ, tỉ lệ điểm danh)
+- [x] Import staging DB thật: lô nháp + dòng nháp + **confirm mới tạo học sinh** (không auto-import)
+- [x] Admin dashboard + Khu phố/Bí thư/Phân công đọc thật (chỉ đọc)
+- [x] Bỏ banner DemoNotice cố định (nhiều trang đã dữ liệu thật)
+- [x] Lint/typecheck/build pass; guard smoke (307) cho trang mới
+- [x] Report 06A + cập nhật history/progress
+- [ ] Chạy `npm run bootstrap:auth` (tạo Admin/`admin@123`, `0932077136`/`tho@123`, KP01, phân công)
+      — **skip**: thiếu `SUPABASE_SERVICE_ROLE_KEY` trong `.env.local`
+
+> Ghi chú: CRUD/import đi qua RLS (không service role ở UI). Chưa làm OCR AI/DOCX/Notification/
+> Attendance workflow thật; full CRUD Admin để prompt sau.
 
 ## 4. Next planned prompts
-1. Prompt 06 — CRUD Khu phố/Bí thư/Học sinh (Admin tạo tài khoản Bí thư/Phụ huynh)
+1. Prompt 06B — Full CRUD Admin (Khu phố/Bí thư/Phân công) + tạo tài khoản Phụ huynh
 2. Prompt 07 — Attendance + leave request thật
 3. Prompt 08 — Import/OCR staging thật
 4. Prompt 09 — DOCX export thật
 5. Prompt 10 — Notification thật + deploy Vercel
 
 ## 5. Rủi ro đang mở
-- Auth thật đã bật, nhưng **chưa có demo/real users** (thiếu service role key) → chưa test
-  đăng nhập end-to-end trên môi trường.
-- UI nghiệp vụ vẫn dùng **mock data** (chưa nối CRUD thật) — dữ liệu hiển thị chưa phản ánh DB.
-- OCR/import phải qua staging review, không được auto-import thẳng.
+- **Chưa có users** (thiếu `SUPABASE_SERVICE_ROLE_KEY`) → chưa chạy bootstrap, chưa test
+  đăng nhập/CRUD/import end-to-end trên môi trường. Cần thêm key rồi `npm run bootstrap:auth`.
+- Một số trang còn **mock data** (attendance/notifications/reports Bí thư, cổng Phụ huynh);
+  Bí thư students/import/dashboard và Admin dashboard/list đã dùng **DB thật**.
+- OCR/import phải qua staging review, không được auto-import thẳng (đã enforce: confirm mới tạo HS).
 - DOCX export phải render server-side và log audit khi làm thật.

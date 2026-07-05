@@ -17,8 +17,8 @@ export default async function UserLoginPage() {
   return (
     <LoginForm
       action={signInUser}
-      accountLabel="Email"
-      accountPlaceholder="email@example.com"
+      accountLabel="Tài khoản (số điện thoại hoặc email)"
+      accountPlaceholder="0932077136"
       submitLabel="Đăng nhập"
       footer={
         <p>

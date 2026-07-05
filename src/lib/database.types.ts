@@ -703,35 +703,47 @@ export type Database = {
       students: {
         Row: {
           active: boolean
+          birth_date: string | null
           birth_year: number | null
           created_at: string
           created_by: string | null
           deleted_at: string | null
           full_name: string
+          guardian_name: string | null
+          guardian_phone: string | null
           id: string
           neighborhood_id: string
+          school: string | null
           updated_at: string
         }
         Insert: {
           active?: boolean
+          birth_date?: string | null
           birth_year?: number | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
           full_name: string
+          guardian_name?: string | null
+          guardian_phone?: string | null
           id?: string
           neighborhood_id: string
+          school?: string | null
           updated_at?: string
         }
         Update: {
           active?: boolean
+          birth_date?: string | null
           birth_year?: number | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
           full_name?: string
+          guardian_name?: string | null
+          guardian_phone?: string | null
           id?: string
           neighborhood_id?: string
+          school?: string | null
           updated_at?: string
         }
         Relationships: [

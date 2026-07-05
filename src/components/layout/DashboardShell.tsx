@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { ROLES, type Role } from "@/modules/auth/domain/roles";
 import { signOut } from "@/lib/auth/actions";
-import { DemoNotice } from "@/components/ui";
 import { NAV_BY_ROLE, ROLE_LABEL } from "./nav-config";
 import { SidebarNav } from "./SidebarNav";
 
@@ -59,10 +58,7 @@ export function DashboardShell({
           <SidebarNav items={nav} />
         </aside>
         <main className="flex-1 px-4 py-6 md:px-8">
-          <div className="mx-auto w-full max-w-5xl">
-            <DemoNotice className="mb-5" />
-            {children}
-          </div>
+          <div className="mx-auto w-full max-w-5xl">{children}</div>
         </main>
       </div>
     </div>

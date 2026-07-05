@@ -1,49 +1,71 @@
 import Link from "next/link";
 import { Badge, Card, StatCard } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
-import {
-  LEAVE_REQUESTS,
-  SESSIONS,
-  STUDENTS,
-  SESSION_TONE,
-} from "@/lib/mock";
+import { getSecretaryOverview } from "@/lib/data/secretary-dashboard";
 import { SESSION_TYPE_LABEL } from "@/modules/sessions/domain/session-type";
-import { LEAVE_STATUS } from "@/modules/leave-requests/domain/leave-status";
 
-export default function SecretaryDashboard() {
-  const activeStudents = STUDENTS.filter((s) => s.active).length;
-  const pendingLeaves = LEAVE_REQUESTS.filter(
-    (l) => l.status === LEAVE_STATUS.SUBMITTED,
-  );
-  const nextSession = SESSIONS[0];
+export const dynamic = "force-dynamic";
+
+export default async function SecretaryDashboard() {
+  const o = await getSecretaryOverview();
+  const nextSession = o.upcomingSessions[0];
 
   return (
     <>
       <PageHeader
         title="Bảng điều khiển Bí thư"
-        description="Tổng quan nhanh trong phạm vi Khu phố phụ trách (KP01, KP02)."
+        description="Tổng quan trong phạm vi Khu phố phụ trách (dữ liệu thật từ hệ thống)."
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Học sinh đang học" value={activeStudents} hint="Trong Khu phố phụ trách" />
-        <StatCard label="Buổi sắp tới" value={SESSIONS.length} hint="7 ngày tới" />
-        <StatCard label="Cần điểm danh" value={nextSession.expectedCount} hint={nextSession.title} />
-        <StatCard label="Đơn chờ xử lý" value={pendingLeaves.length} hint="Xin phép nghỉ" />
+        <StatCard
+          label="Học sinh đang học"
+          value={o.activeStudents}
+          hint={`Tổng ${o.totalStudents} hồ sơ`}
+        />
+        <StatCard
+          label="Buổi sắp tới"
+          value={o.upcomingSessions.length}
+          hint={nextSession ? `Gần nhất: ${nextSession.session_date}` : "Chưa có lịch"}
+        />
+        <StatCard
+          label="Đơn chờ xử lý"
+          value={o.pendingLeaveCount}
+          hint="Xin phép nghỉ"
+        />
+        <StatCard
+          label="Tỉ lệ điểm danh tháng"
+          value={o.attendanceRateThisMonth === null ? "—" : `${o.attendanceRateThisMonth}%`}
+          hint={o.attendanceRateThisMonth === null ? "Chưa có dữ liệu" : "Có mặt / tổng"}
+        />
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <Card title="Buổi sinh hoạt kế tiếp">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="font-medium text-slate-900">{nextSession.title}</p>
-              <p className="mt-1 text-sm text-slate-500">
-                {nextSession.date} · {nextSession.time} · {nextSession.location}
-              </p>
-            </div>
-            <Badge tone={SESSION_TONE[nextSession.type]}>
-              {SESSION_TYPE_LABEL[nextSession.type]}
-            </Badge>
-          </div>
+        <Card title="Buổi sinh hoạt sắp tới">
+          {o.upcomingSessions.length === 0 ? (
+            <p className="text-sm text-slate-500">Chưa có buổi nào được lên lịch.</p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {o.upcomingSessions.map((s) => (
+                <li
+                  key={s.id}
+                  className="flex items-center justify-between gap-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-slate-900">
+                      {s.title}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {s.session_date}
+                      {s.start_time ? ` · ${s.start_time}` : ""}
+                      {s.location ? ` · ${s.location}` : ""}
+                    </p>
+                  </div>
+                  <Badge tone="blue">{SESSION_TYPE_LABEL[s.session_type]}</Badge>
+                </li>
+              ))}
+            </ul>
+          )}
           <Link
             href="/user/secretary/attendance"
             className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:underline"
@@ -52,28 +74,33 @@ export default function SecretaryDashboard() {
           </Link>
         </Card>
 
-        <Card title="Đơn xin nghỉ chờ xử lý">
-          {pendingLeaves.length === 0 ? (
-            <p className="text-sm text-slate-500">Không có đơn nào.</p>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {pendingLeaves.map((l) => (
-                <li key={l.id} className="flex items-center justify-between py-2 text-sm">
-                  <span className="text-slate-700">
-                    {l.studentName}
-                    <span className="text-slate-400"> · {l.sessionTitle}</span>
-                  </span>
-                  <Badge tone="blue">Chờ xử lý</Badge>
-                </li>
-              ))}
-            </ul>
-          )}
-          <Link
-            href="/user/secretary/leave-requests"
-            className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:underline"
-          >
-            Xem tất cả đơn →
-          </Link>
+        <Card title="Lối tắt">
+          <ul className="space-y-2 text-sm">
+            <li>
+              <Link
+                href="/user/secretary/students"
+                className="font-medium text-indigo-600 hover:underline"
+              >
+                Quản lý học sinh →
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/user/secretary/import"
+                className="font-medium text-indigo-600 hover:underline"
+              >
+                Nhập giấy tờ (staging) →
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/user/secretary/leave-requests"
+                className="font-medium text-indigo-600 hover:underline"
+              >
+                Đơn xin nghỉ →
+              </Link>
+            </li>
+          </ul>
         </Card>
       </div>
     </>
