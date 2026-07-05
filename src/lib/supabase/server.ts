@@ -6,24 +6,29 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { env } from "@/lib/env";
+import type { Database } from "@/lib/database.types";
 
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
 
-  return createServerClient(env.supabaseUrl, env.supabasePublishableKey, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
-      },
-      setAll(cookiesToSet) {
-        try {
-          for (const { name, value, options } of cookiesToSet) {
-            cookieStore.set(name, value, options);
+  return createServerClient<Database>(
+    env.supabaseUrl,
+    env.supabasePublishableKey,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            for (const { name, value, options } of cookiesToSet) {
+              cookieStore.set(name, value, options);
+            }
+          } catch {
+            // Được gọi từ Server Component — bỏ qua; việc refresh session do proxy.ts đảm nhiệm.
           }
-        } catch {
-          // Được gọi từ Server Component — bỏ qua; việc refresh session do proxy.ts đảm nhiệm.
-        }
+        },
       },
     },
-  });
+  );
 }

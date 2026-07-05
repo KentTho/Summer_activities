@@ -1,0 +1,5 @@
+# Supabase CLI — file cục bộ / metadata remote, KHÔNG commit.
+.branches
+.temp
+# File môi trường Supabase (nếu có), tránh lộ secret.
+.env

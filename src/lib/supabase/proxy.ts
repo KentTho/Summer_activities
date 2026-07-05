@@ -8,6 +8,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { env, hasSupabaseEnv } from "@/lib/env";
+import type { Database } from "@/lib/database.types";
 
 export async function updateSupabaseSession(
   request: NextRequest,
@@ -19,18 +20,22 @@ export async function updateSupabaseSession(
     return response;
   }
 
-  const supabase = createServerClient(env.supabaseUrl, env.supabasePublishableKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        for (const { name, value, options } of cookiesToSet) {
-          response.cookies.set(name, value, options);
-        }
+  const supabase = createServerClient<Database>(
+    env.supabaseUrl,
+    env.supabasePublishableKey,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          for (const { name, value, options } of cookiesToSet) {
+            response.cookies.set(name, value, options);
+          }
+        },
       },
     },
-  });
+  );
 
   // Chạm tới auth để token được refresh và ghi lại cookie.
   await supabase.auth.getUser();

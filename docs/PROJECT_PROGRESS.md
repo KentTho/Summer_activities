@@ -14,7 +14,7 @@
 | Phase 2 — Route split + UI shell | ✅ Done | Admin/User portal split |
 | Phase 3 — User portal UI pages | ✅ Done (UI shell + mock) | Prompt 03C — chưa nối DB thật |
 | Phase 4 — Admin management UI pages | ✅ Done (UI shell + mock) | Prompt 03D — chưa nối DB thật |
-| Phase 5 — Supabase schema + RLS | 🟡 In progress | Migrations/RLS/seed/test xong (04B); env naming mới + Vercel env public xong (04C); `db push`/`gen types` chờ auth |
+| Phase 5 — Supabase schema + RLS | ✅ Done | Migrations áp remote (04D), RLS bật, types thật sinh + nối vào code |
 | Phase 6 — Auth thật + RBAC guard | ⬜ Pending | Chưa làm |
 | Phase 7 — CRUD thật | ⬜ Pending | Chưa làm |
 | Phase 8 — Attendance workflow thật | ⬜ Pending | Chưa làm |
@@ -126,9 +126,24 @@
 > remote **hoãn**; xem hướng dẫn ở report 04C §F. `SUPABASE_SERVICE_ROLE_KEY` **chưa** cấu hình
 > (chưa có giá trị đầy đủ).
 
+### Prompt 04D — Finalize Supabase apply + types + deploy check
+- [x] Xác nhận link remote đúng `ymtogeacpnlmthjlryrd` (`.temp/linked-project.json`)
+- [x] `supabase migration list`: cả 3 migration đã áp remote (local ↔ remote khớp)
+- [x] Remote chỉ chứa migration dự án (không bảng/dữ liệu lạ) → an toàn, không cần push lại
+- [x] `gen types --linked` → `src/lib/database.types.ts` (diff IDENTICAL với file có sẵn)
+- [x] Nối types thật: `types/index.ts` re-export `Database` + helper; client/server/proxy `createClient<Database>`
+- [x] `supabase/.gitignore` (ignore `.branches`/`.temp`/`.env`)
+- [x] `/api/health` local + production `supabaseConfigured: true`; phase → `5-db-schema-rls`
+- [x] Lint/typecheck/build pass
+- [x] Report 04D
+- [x] Commit/push + redeploy Vercel
+
+> Ghi chú: `config.toml.major_version=15` (local) vs remote 17 — chỉ ảnh hưởng local dev.
+> `SUPABASE_SERVICE_ROLE_KEY` chưa set (chỉ cần khi CRUD/Auth phase sau, server-side).
+> Vẫn **chưa** làm Auth/CRUD/OCR/DOCX/Notification thật.
+
 ## 4. Next planned prompts
-1. Prompt 04D — `supabase link` + `db push` + `gen types` (sau khi bạn xác thực CLI + DB password)
-2. Prompt 05 — Auth thật + RBAC guard
+1. Prompt 05 — Auth thật + RBAC guard
 3. Prompt 06 — CRUD Khu phố/Bí thư/Học sinh
 4. Prompt 07 — Attendance + leave request thật
 5. Prompt 08 — Import/OCR staging thật
