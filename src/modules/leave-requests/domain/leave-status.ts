@@ -20,3 +20,10 @@ export const LEAVE_STATUS_LABEL: Record<LeaveStatus, string> = {
   ACKNOWLEDGED: "Đã ghi nhận",
   REJECTED: "Từ chối",
 };
+
+/** Tone Badge cho từng trạng thái đơn (subset của BadgeTone). */
+export const LEAVE_TONE: Record<LeaveStatus, "blue" | "green" | "red"> = {
+  SUBMITTED: "blue",
+  ACKNOWLEDGED: "green",
+  REJECTED: "red",
+};

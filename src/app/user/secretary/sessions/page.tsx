@@ -1,46 +1,80 @@
 import Link from "next/link";
-import { Badge, Button, Card } from "@/components/ui";
+import { Badge, Card } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
-import { SESSIONS, neighborhoodName, SESSION_TONE } from "@/lib/mock";
-import { SESSION_TYPE_LABEL } from "@/modules/sessions/domain/session-type";
+import { listSessions } from "@/lib/data/sessions";
+import { listNeighborhoodsInScope } from "@/lib/data/students";
+import { SESSION_TYPE_LABEL, SESSION_TONE } from "@/modules/sessions/domain/session-type";
+import { CreateSessionForm } from "./CreateSessionForm";
 
-export default function SecretarySessionsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function SecretarySessionsPage() {
+  const [items, neighborhoods] = await Promise.all([
+    listSessions(),
+    listNeighborhoodsInScope(),
+  ]);
+
   return (
     <>
       <PageHeader
         title="Buổi sinh hoạt"
-        description="Lập lịch buổi thường và buổi chung nhiều Khu phố. Tạo/sửa bật ở phase sau."
+        description="Tạo buổi thường/buổi chung, xem danh sách và vào điểm danh từng buổi."
       />
 
-      <div className="mb-4 flex justify-end">
-        <Button disabled variant="secondary" className="h-9 px-3 text-xs">
-          + Tạo buổi (chưa kết nối)
-        </Button>
-      </div>
+      {neighborhoods.length === 0 ? (
+        <Card className="mb-4 border-amber-200 bg-amber-50">
+          <p className="text-sm text-amber-800">
+            Bạn chưa được gán Khu phố phụ trách nên chưa thể tạo buổi.
+          </p>
+        </Card>
+      ) : (
+        <CreateSessionForm neighborhoods={neighborhoods} />
+      )}
 
+      <p className="mb-2 text-sm font-medium text-slate-700">Danh sách buổi</p>
       <div className="grid gap-3">
-        {SESSIONS.map((s) => (
-          <Card key={s.id}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-medium text-slate-900">{s.title}</p>
-                <p className="mt-1 text-sm text-slate-500">
-                  {s.date} · {s.time} · {s.location}
-                </p>
-                <p className="mt-1 text-xs text-slate-400">
-                  Khu phố: {s.neighborhoodCodes.map(neighborhoodName).join(", ")} · Dự kiến {s.expectedCount} em
-                </p>
-              </div>
-              <Badge tone={SESSION_TONE[s.type]}>{SESSION_TYPE_LABEL[s.type]}</Badge>
-            </div>
-            <Link
-              href="/user/secretary/attendance"
-              className="mt-3 inline-block text-sm font-medium text-indigo-600 hover:underline"
-            >
-              Điểm danh buổi này →
-            </Link>
+        {items.length === 0 ? (
+          <Card>
+            <p className="text-sm text-slate-500">Chưa có buổi nào.</p>
           </Card>
-        ))}
+        ) : (
+          items.map(({ session, neighborhoods: ns, counts }) => {
+            const closed = Boolean(session.closed_at);
+            return (
+              <Card key={session.id}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-slate-900">{session.title}</p>
+                      <Badge tone={SESSION_TONE[session.session_type]}>
+                        {SESSION_TYPE_LABEL[session.session_type]}
+                      </Badge>
+                      <Badge tone={closed ? "slate" : "green"}>
+                        {closed ? "Đã chốt" : "Đang mở"}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {session.session_date}
+                      {session.start_time ? ` · ${session.start_time.slice(0, 5)}` : ""}
+                      {session.location ? ` · ${session.location}` : ""}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Khu phố: {ns.map((n) => n.name).join(", ") || "—"} · Đã điểm danh{" "}
+                      {counts.marked} (CM {counts.present} · CP {counts.excused} · KP{" "}
+                      {counts.unexcused})
+                    </p>
+                  </div>
+                  <Link
+                    href={`/user/secretary/sessions/${session.id}`}
+                    className="shrink-0 text-sm font-medium text-indigo-600 hover:underline"
+                  >
+                    Điểm danh →
+                  </Link>
+                </div>
+              </Card>
+            );
+          })
+        )}
       </div>
     </>
   );

@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       activity_sessions: {
         Row: {
+          closed_at: string | null
           created_at: string
           created_by: string | null
           deleted_at: string | null
@@ -28,6 +29,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          closed_at?: string | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -40,6 +42,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          closed_at?: string | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -867,6 +870,10 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_guardian_of: { Args: { target_student: string }; Returns: boolean }
+      is_guardian_of_session: {
+        Args: { target_session: string }
+        Returns: boolean
+      }
       is_secretary: { Args: never; Returns: boolean }
     }
     Enums: {

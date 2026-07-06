@@ -17,7 +17,7 @@
 | Phase 5 — Supabase schema + RLS | ✅ Done | Migrations áp remote (04D), RLS bật, types thật sinh + nối vào code |
 | Phase 6 — Auth thật + RBAC guard | ✅ Done | Prompt 05 — Supabase Auth, guard 2 lớp, redirect vai trò, logout |
 | Phase 7 — CRUD thật | 🟡 In progress | 06A: CRUD học sinh (Bí thư) qua RLS + Admin đọc thật; CRUD Admin đầy đủ để sau |
-| Phase 8 — Attendance workflow thật | ⬜ Pending | Chưa làm (06A chỉ đọc tỉ lệ cho dashboard) |
+| Phase 8 — Attendance workflow thật | ✅ Done | **07: tạo buổi, điểm danh (4 trạng thái), sửa/chốt buổi, xin nghỉ, dashboard thật** — qua RLS |
 | Phase 9 — Import/OCR staging thật | 🟡 In progress | 06A: staging + confirm; **06B: OCR thật server-side (OCR.space) + duyệt tay**; lưu ảnh/audit để sau |
 | Phase 10 — DOCX export thật | ⬜ Pending | Chưa làm |
 | Phase 11 — Notification thật | ⬜ Pending | Chưa làm |
@@ -192,6 +192,27 @@
 > Ghi chú: OCR **không lưu ảnh gốc** (OCR tại chỗ, chỉ giữ text đã duyệt) — lưu ảnh
 > vào bucket private + audit để phase sau. Vẫn chưa làm Attendance/DOCX/Notification thật.
 
+### Prompt 07 — Attendance workflow + Leave requests + engineering guardrails
+- [x] Migration additive: `activity_sessions.closed_at` + sửa deadlock `snb_insert` (người tạo gắn Khu phố)
+- [x] Migration additive: `sessions_select` thêm nhánh `created_by` (buổi mới select được)
+- [x] Migration additive: helper `is_guardian_of_session` + phụ huynh xem buổi/Khu phố của con
+- [x] Bí thư tạo buổi (thường/chung), danh sách buổi, chi tiết buổi
+- [x] Điểm danh 4 trạng thái: PRESENT / EXCUSED / UNEXCUSED / NOT_MARKED (NOT_MARKED = xóa bản ghi)
+- [x] Sửa điểm danh khi buổi mở; **chốt buổi** (khóa sửa) + mở lại
+- [x] Phụ huynh gửi xin nghỉ (chỉ con liên kết — RLS is_guardian_of); Bí thư duyệt/từ chối
+- [x] Duyệt đơn → gợi ý ghi điểm danh EXCUSED cho đúng buổi (nếu buổi còn mở)
+- [x] Dashboard Bí thư: buổi hôm nay/sắp tới, số cần điểm danh, CM/CP/KP tháng, tỉ lệ tham gia
+- [x] Cổng Phụ huynh dữ liệu thật: lịch sinh hoạt, đơn xin nghỉ, lịch sử điểm danh
+- [x] Admin xem tổng quan buổi thật (read-only)
+- [x] Docs guardrails: `engineering-guardrails.md` (4 nhóm ghi chú, chọn lọc)
+- [x] Lint/typecheck/build pass; **smoke test RLS ký tên Bí thư + Phụ huynh thật** (tạo→sạch)
+- [x] Report 07 + cập nhật history/progress
+
+> Ghi chú: mọi thao tác đi qua **RLS** (không service role ở UI). Attendance/leave đã thật.
+> Chưa làm: DOCX export, Notification thật (đúng phạm vi). Chưa có tài khoản Phụ huynh thật
+> trên môi trường (flow đã verify bằng parent tạm trong smoke test rồi xóa) — liên kết
+> guardian↔student do Bí thư/Admin làm ở phase sau.
+
 ## 4. Next planned prompts
 1. Prompt 06B — Full CRUD Admin (Khu phố/Bí thư/Phân công) + tạo tài khoản Phụ huynh
 2. Prompt 07 — Attendance + leave request thật
@@ -202,8 +223,10 @@
 ## 5. Rủi ro đang mở
 - ✅ (Đã gỡ) Bootstrap đã chạy: 2 tài khoản Admin/Bí thư đăng nhập được; service role key có sẵn.
   **Nên bắt đổi mật khẩu** sau đăng nhập đầu (đã đặt cờ `must_change_password`).
-- Một số trang còn **mock data** (attendance/notifications/reports Bí thư, cổng Phụ huynh);
-  Bí thư students/import/dashboard và Admin dashboard/list đã dùng **DB thật**.
+- Trang còn **mock data**: `notifications` (Bí thư + Phụ huynh) và `reports` Bí thư. Các trang
+  buổi/điểm danh/xin nghỉ/lịch/lịch sử/dashboard (Bí thư + Phụ huynh) và Admin sessions đã **DB thật**.
+- **Chưa có tài khoản Phụ huynh + liên kết guardian↔student trên môi trường** → cổng Phụ huynh
+  hiển thị rỗng cho tới khi Bí thư/Admin tạo liên kết. Flow đã verify bằng parent tạm (smoke, đã xóa).
 - OCR/import phải qua staging review, không auto-import (đã enforce: confirm chỉ tạo từ dòng đã duyệt).
 - **OCR key phụ thuộc `.env.local`/env Vercel.** Muốn OCR chạy trên production phải thêm
   `OCR_SPACE_API_KEY` vào env server của Vercel (không `NEXT_PUBLIC_`). Thiếu → chỉ nhập tay.

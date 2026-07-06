@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Badge, Card, StatCard } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
 import { getSecretaryOverview } from "@/lib/data/secretary-dashboard";
-import { SESSION_TYPE_LABEL } from "@/modules/sessions/domain/session-type";
+import { SESSION_TYPE_LABEL, SESSION_TONE } from "@/modules/sessions/domain/session-type";
 
 export const dynamic = "force-dynamic";
 
@@ -24,85 +24,84 @@ export default async function SecretaryDashboard() {
           hint={`Tổng ${o.totalStudents} hồ sơ`}
         />
         <StatCard
-          label="Buổi sắp tới"
-          value={o.upcomingSessions.length}
-          hint={nextSession ? `Gần nhất: ${nextSession.session_date}` : "Chưa có lịch"}
+          label="Buổi hôm nay"
+          value={o.todaySessions.length}
+          hint={o.toMarkToday > 0 ? `${o.toMarkToday} em cần điểm danh` : "Đã điểm danh xong"}
         />
+        <StatCard label="Đơn chờ xử lý" value={o.pendingLeaveCount} hint="Xin phép nghỉ" />
         <StatCard
-          label="Đơn chờ xử lý"
-          value={o.pendingLeaveCount}
-          hint="Xin phép nghỉ"
-        />
-        <StatCard
-          label="Tỉ lệ điểm danh tháng"
+          label="Tỉ lệ tham gia tháng"
           value={o.attendanceRateThisMonth === null ? "—" : `${o.attendanceRateThisMonth}%`}
-          hint={o.attendanceRateThisMonth === null ? "Chưa có dữ liệu" : "Có mặt / tổng"}
+          hint={
+            o.attendanceRateThisMonth === null
+              ? "Chưa có dữ liệu"
+              : `CM ${o.monthPresent} · CP ${o.monthExcused} · KP ${o.monthUnexcused}`
+          }
         />
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <Card title="Buổi sinh hoạt sắp tới">
-          {o.upcomingSessions.length === 0 ? (
-            <p className="text-sm text-slate-500">Chưa có buổi nào được lên lịch.</p>
+        <Card title="Buổi hôm nay">
+          {o.todaySessions.length === 0 ? (
+            <p className="text-sm text-slate-500">Hôm nay không có buổi nào.</p>
           ) : (
             <ul className="divide-y divide-slate-100">
-              {o.upcomingSessions.map((s) => (
-                <li
-                  key={s.id}
-                  className="flex items-center justify-between gap-3 py-2"
-                >
+              {o.todaySessions.map((s) => (
+                <li key={s.id} className="flex items-center justify-between gap-3 py-2">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-900">
-                      {s.title}
-                    </p>
+                    <p className="truncate text-sm font-medium text-slate-900">{s.title}</p>
                     <p className="text-xs text-slate-500">
-                      {s.session_date}
-                      {s.start_time ? ` · ${s.start_time}` : ""}
+                      {s.start_time ? s.start_time.slice(0, 5) : ""}
                       {s.location ? ` · ${s.location}` : ""}
                     </p>
                   </div>
-                  <Badge tone="blue">{SESSION_TYPE_LABEL[s.session_type]}</Badge>
+                  <Link
+                    href={`/user/secretary/sessions/${s.id}`}
+                    className="shrink-0 text-sm font-medium text-indigo-600 hover:underline"
+                  >
+                    {s.closed_at ? "Xem →" : "Điểm danh →"}
+                  </Link>
                 </li>
               ))}
             </ul>
           )}
-          <Link
-            href="/user/secretary/attendance"
-            className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:underline"
-          >
-            Vào điểm danh →
-          </Link>
         </Card>
 
-        <Card title="Lối tắt">
-          <ul className="space-y-2 text-sm">
-            <li>
-              <Link
-                href="/user/secretary/students"
-                className="font-medium text-indigo-600 hover:underline"
-              >
-                Quản lý học sinh →
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/user/secretary/import"
-                className="font-medium text-indigo-600 hover:underline"
-              >
-                Nhập giấy tờ (staging) →
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/user/secretary/leave-requests"
-                className="font-medium text-indigo-600 hover:underline"
-              >
-                Đơn xin nghỉ →
-              </Link>
-            </li>
-          </ul>
+        <Card title="Buổi sắp tới">
+          {o.upcomingSessions.length === 0 ? (
+            <p className="text-sm text-slate-500">Chưa có buổi nào sắp tới.</p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {o.upcomingSessions.map((s) => (
+                <li key={s.id} className="flex items-center justify-between gap-3 py-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-slate-900">{s.title}</p>
+                    <p className="text-xs text-slate-500">
+                      {s.session_date}
+                      {s.start_time ? ` · ${s.start_time.slice(0, 5)}` : ""}
+                    </p>
+                  </div>
+                  <Badge tone={SESSION_TONE[s.session_type]}>
+                    {SESSION_TYPE_LABEL[s.session_type]}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="mt-4 flex flex-wrap gap-4 text-sm">
+            <Link href="/user/secretary/sessions" className="font-medium text-indigo-600 hover:underline">
+              Quản lý buổi →
+            </Link>
+            <Link href="/user/secretary/leave-requests" className="font-medium text-indigo-600 hover:underline">
+              Đơn xin nghỉ →
+            </Link>
+          </div>
         </Card>
       </div>
+
+      <p className="mt-4 text-xs text-slate-400">
+        {nextSession ? `Buổi kế tiếp: ${nextSession.title} · ${nextSession.session_date}` : ""}
+      </p>
     </>
   );
 }

@@ -16,3 +16,9 @@ export const SESSION_TYPE_LABEL: Record<SessionType, string> = {
   REGULAR: "Buổi thường",
   JOINT: "Buổi chung nhiều Khu phố",
 };
+
+/** Tone Badge cho loại buổi (subset của BadgeTone). */
+export const SESSION_TONE: Record<SessionType, "blue" | "indigo"> = {
+  REGULAR: "blue",
+  JOINT: "indigo",
+};

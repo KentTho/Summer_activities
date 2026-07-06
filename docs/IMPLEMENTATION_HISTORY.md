@@ -16,6 +16,7 @@
 | 05 | **Auth thật + RBAC guard + logout** | Login/logout Supabase Auth, guard theo `profiles.role`, redirect theo vai trò, admin client server-only, script bootstrap demo | `PROMPT-05-...report.md` |
 | 06A | **Secretary CRUD + dashboard thật + import staging + login identifier** | Migration additive (birth_date/school/guardian), CRUD học sinh qua RLS, dashboard/admin dữ liệu thật, import staging (confirm mới tạo HS), đăng nhập bằng identifier; bootstrap tài khoản thật (chưa chạy — thiếu service role key) | `PROMPT-06A-...report.md` |
 | 06B | **Bootstrap chạy thật + OCR import (server-side) + security/devops notes** | Xác nhận 2 tài khoản đăng nhập OK; OCR.space server-side → dòng nháp chưa duyệt → sửa/duyệt tay → confirm mới tạo HS; validate file + key server-only; move key khỏi `.env.example`; docs session/JWT + devops rollback/backup + AI security | `PROMPT-06B-...report.md` |
+| 07 | **Attendance workflow + Leave requests thật + guardrails** | 3 migration additive (closed_at, snb_insert creator, guardian session visibility); tạo buổi/điểm danh 4 trạng thái/chốt buổi; phụ huynh xin nghỉ + Bí thư duyệt→EXCUSED; dashboard Bí thư/Phụ huynh + admin sessions thật; smoke test RLS ký tên thật; `engineering-guardrails.md` | `PROMPT-07-...report.md` |
 
 ## Chi tiết Prompt 05 (Auth thật)
 
@@ -81,3 +82,36 @@ Google Vision/Gemini; nâng cấp UI lớn.
 
 **Ghi chú vận hành:** OCR chạy production cần thêm `OCR_SPACE_API_KEY` vào env server Vercel
 (không `NEXT_PUBLIC_`). Thiếu key → nút OCR vô hiệu, vẫn nhập tay được.
+
+## Chi tiết Prompt 07 (Attendance workflow + Leave requests thật)
+
+**Migration (additive, đã áp remote + gen types):**
+- `20260706010000_session_lifecycle`: `activity_sessions.closed_at` (vòng đời buổi) + sửa
+  **deadlock** `snb_insert` (buổi mới chưa có link → `can_access_session`=false → cho **người
+  tạo** gắn Khu phố trong phạm vi).
+- `20260706020000_sessions_select_creator`: `sessions_select` thêm `created_by = current_profile_id()`
+  (tránh lỗi RLS khi `insert().select()` buổi mới; app cũng sinh id client-side, không dùng returning-select).
+- `20260706030000_guardian_session_visibility`: helper **SECURITY DEFINER** `is_guardian_of_session`
+  + `sessions_select`/`snb_select` cho **phụ huynh** xem buổi/Khu phố của con (nhánh join trước đây
+  bị RLS của bảng tham chiếu chặn).
+
+**Đã làm (qua RLS, KHÔNG service role):**
+- Buổi: `lib/data/sessions.ts` (list/detail/roster + đếm); `sessions/actions.ts`
+  (`createSession` sinh id client-side + gắn `session_neighborhoods`; `closeSession`/`reopenSession`).
+- Điểm danh: `attendance/actions.ts#markAttendance` (upsert PRESENT/EXCUSED/UNEXCUSED;
+  NOT_MARKED = xóa bản ghi; khóa khi `closed_at`). UI roster form server-render 4 nút/trạng thái.
+- Xin nghỉ: `parent/leave-requests/actions.ts#submitLeaveRequest` (RLS is_guardian_of);
+  `secretary/leave-requests/actions.ts` duyệt/từ chối; duyệt → upsert EXCUSED (nếu buổi mở).
+- Dashboard Bí thư (`secretary-dashboard.ts`): buổi hôm nay/sắp tới, số cần điểm danh, CM/CP/KP
+  tháng + tỉ lệ. Cổng Phụ huynh (`parent.ts`): con, lịch (RLS), lịch sử điểm danh. Admin sessions read-only.
+
+**Sự cố đã xử lý (đúng gốc):**
+- `insert().select()` buổi mới bị RLS chặn ở **returning-select** (chưa có link → chưa select được):
+  sinh id client-side + policy `created_by`.
+- Phụ huynh không thấy buổi: nhánh join `session_neighborhoods` trong policy chịu RLS bảng đó →
+  dùng helper SECURITY DEFINER `is_guardian_of_session`.
+- Đã verify bằng **smoke test ký tên Bí thư + Phụ huynh thật** (tạo student/session/attendance/leave,
+  kiểm quyền, rồi **xóa sạch** — DB về 2 profiles/0 nghiệp vụ).
+
+**Chưa làm (đúng phạm vi):** DOCX export, Notification thật, nâng cấp UI lớn. Chưa có tài khoản
+Phụ huynh thật + liên kết guardian↔student trên môi trường (do Bí thư/Admin làm sau).

@@ -1,61 +1,89 @@
-import { Badge, Button, Card, StatCard } from "@/components/ui";
+import Link from "next/link";
+import { Badge, Card } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
-import { ATTENDANCE_BS001, SESSIONS, ATTENDANCE_TONE } from "@/lib/mock";
-import {
-  ATTENDANCE_STATUS_LABEL,
-  type AttendanceStatus,
-} from "@/modules/attendance/domain/attendance-status";
+import { listSessions } from "@/lib/data/sessions";
+import { SESSION_TYPE_LABEL, SESSION_TONE } from "@/modules/sessions/domain/session-type";
 
-export default function SecretaryAttendancePage() {
-  const session = SESSIONS[0];
-  const rows = ATTENDANCE_BS001;
+export const dynamic = "force-dynamic";
 
-  const count = (status: AttendanceStatus) =>
-    rows.filter((r) => r.status === status).length;
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export default async function SecretaryAttendancePage() {
+  const items = await listSessions();
+  const today = todayISO();
+
+  const todaySessions = items.filter((i) => i.session.session_date === today);
+  const others = items.filter((i) => i.session.session_date !== today);
+
+  const renderItem = ({
+    session,
+    neighborhoods,
+    counts,
+  }: (typeof items)[number]) => {
+    const closed = Boolean(session.closed_at);
+    return (
+      <Card key={session.id}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-medium text-slate-900">{session.title}</p>
+              <Badge tone={SESSION_TONE[session.session_type]}>
+                {SESSION_TYPE_LABEL[session.session_type]}
+              </Badge>
+              <Badge tone={closed ? "slate" : "green"}>
+                {closed ? "Đã chốt" : "Đang mở"}
+              </Badge>
+            </div>
+            <p className="mt-1 text-sm text-slate-500">
+              {session.session_date}
+              {session.start_time ? ` · ${session.start_time.slice(0, 5)}` : ""}
+              {session.location ? ` · ${session.location}` : ""}
+            </p>
+            <p className="mt-1 text-xs text-slate-400">
+              Khu phố: {neighborhoods.map((n) => n.name).join(", ") || "—"} · Đã điểm danh{" "}
+              {counts.marked}
+            </p>
+          </div>
+          <Link
+            href={`/user/secretary/sessions/${session.id}`}
+            className="shrink-0 text-sm font-medium text-indigo-600 hover:underline"
+          >
+            {closed ? "Xem →" : "Điểm danh →"}
+          </Link>
+        </div>
+      </Card>
+    );
+  };
 
   return (
     <>
       <PageHeader
         title="Điểm danh"
-        description="Chọn buổi và đánh dấu trạng thái từng em. Ghi nhận thật bật ở phase sau."
+        description="Chọn buổi để điểm danh. Buổi hôm nay được ưu tiên phía trên."
       />
 
-      <Card className="mb-4">
-        <p className="text-xs uppercase tracking-wide text-slate-400">Đang điểm danh</p>
-        <p className="mt-1 font-medium text-slate-900">{session.title}</p>
-        <p className="text-sm text-slate-500">
-          {session.date} · {session.time} · {session.location}
-        </p>
-      </Card>
-
-      <div className="mb-4 grid gap-4 sm:grid-cols-3">
-        <StatCard label="Có mặt" value={count("PRESENT")} />
-        <StatCard label="Nghỉ có phép" value={count("EXCUSED")} />
-        <StatCard label="Nghỉ không phép" value={count("UNEXCUSED")} />
+      <p className="mb-2 text-sm font-medium text-slate-700">Buổi hôm nay</p>
+      <div className="mb-6 grid gap-3">
+        {todaySessions.length === 0 ? (
+          <Card>
+            <p className="text-sm text-slate-500">Hôm nay không có buổi nào.</p>
+          </Card>
+        ) : (
+          todaySessions.map(renderItem)
+        )}
       </div>
 
-      <Card className="p-0">
-        <ul className="divide-y divide-slate-100">
-          {rows.map((r) => (
-            <li key={r.studentId} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <span className="font-medium text-slate-900">{r.studentName}</span>
-                <Badge tone={ATTENDANCE_TONE[r.status]}>
-                  {ATTENDANCE_STATUS_LABEL[r.status]}
-                </Badge>
-              </div>
-              <div className="flex gap-1.5">
-                <Button disabled variant="secondary" className="h-8 px-2 text-xs">Có mặt</Button>
-                <Button disabled variant="secondary" className="h-8 px-2 text-xs">Có phép</Button>
-                <Button disabled variant="secondary" className="h-8 px-2 text-xs">Không phép</Button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </Card>
-
-      <div className="mt-4 flex justify-end">
-        <Button disabled className="px-4 text-sm">Lưu điểm danh (chưa kết nối)</Button>
+      <p className="mb-2 text-sm font-medium text-slate-700">Các buổi khác</p>
+      <div className="grid gap-3">
+        {others.length === 0 ? (
+          <Card>
+            <p className="text-sm text-slate-500">Chưa có buổi nào khác.</p>
+          </Card>
+        ) : (
+          others.map(renderItem)
+        )}
       </div>
     </>
   );
