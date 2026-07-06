@@ -1,44 +1,87 @@
-# Import giấy tờ & OCR (kế hoạch)
+# Import giấy tờ & OCR
 
-> Cập nhật ở Prompt 03B. Tương ứng Phase 6 trong `roadmap.md`.
-> **Trạng thái:** kế hoạch — **KHÔNG** có OCR/import thật ở phase hiện tại.
+> Cập nhật ở **Prompt 06B** — OCR đã triển khai thật (server-side, staging-first).
+> Trước đó (03B/06A): chỉ kế hoạch + staging nhập tay. Xem `roadmap.md` Phase 9.
 
 ## 1. Mục tiêu
 
 Hỗ trợ Bí thư nhập nhanh danh sách học sinh từ **ảnh/PDF scan giấy tờ** (danh sách
-lớp, phiếu đăng ký), nhưng luôn qua **staging + duyệt tay** trước khi ghi chính thức.
-OCR là **tùy chọn hỗ trợ**, không phải nguồn sự thật.
+lớp, phiếu đăng ký). OCR chỉ là **gợi ý hỗ trợ**, KHÔNG phải nguồn sự thật: mọi kết
+quả đều qua **staging + duyệt tay** trước khi ghi vào bảng `students`.
 
-## 2. Luồng import (staging-first)
+## 2. Luồng import (đã triển khai — staging-first, không auto-import)
 
-1. **Upload** ảnh/PDF vào bucket riêng, **không public** (signed URL ngắn hạn).
-   - Whitelist định dạng (ảnh, PDF), kiểm mime + extension + size + hash
-     (`lib/security`). Chặn file thực thi/macro.
-2. **Trích xuất (tùy chọn OCR)** → sinh bản ghi *nháp* vào bảng staging
-   (chưa vào bảng `students` thật).
-3. **Duyệt tay:** Bí thư đối chiếu, sửa, chuẩn hóa (SĐT/ngày sinh/tên/Khu phố) rồi
-   xác nhận từng bản ghi hoặc theo lô.
-4. **Commit:** chỉ bản ghi đã duyệt mới ghi vào bảng thật; ghi **audit log**
-   (ai/khi nào/nguồn file/hash).
+```
+Tạo lô (import_batches, DRAFT)
+   │
+   ├── (A) OCR ảnh/PDF  ──► server-side OCR ──► parser ──► import_batch_rows (reviewed=FALSE)
+   │                                                         "AI đọc — cần kiểm tra"
+   ├── (B) Nhập tay     ──────────────────────► import_batch_rows (reviewed=TRUE)
+   │
+   ▼
+Kiểm tra & sửa từng dòng ("Lưu & duyệt" → reviewed=TRUE)
+   │
+   ▼
+Xác nhận lô  ──► CHỈ dòng reviewed=TRUE + có Họ tên ──► tạo students (Khu phố theo lô)
+                 → đánh dấu created_student_id; hết dòng chờ → lô COMMITTED
+```
+
+Điểm mấu chốt (khớp guardrails Prompt 06B):
+
+- **OCR chạy server-side** (Server Action `ocrExtractRows`). API key **không bao giờ**
+  ở client.
+- Ảnh/scan **không auto-import** thẳng vào `students`.
+- Kết quả OCR **chỉ tạo `import_batch_rows`** (`reviewed=false`).
+- Bí thư **kiểm tra/sửa tay**; "Lưu & duyệt" đặt `reviewed=true`.
+- **Chỉ khi confirm** mới tạo học sinh; confirm **bỏ qua dòng chưa duyệt**
+  (enforce "sửa tay trước khi confirm").
 
 ## 3. Vị trí trong mã nguồn
 
-- Module: `modules/imports/{domain,application,infrastructure}` — hiện là placeholder.
-- Domain: định nghĩa trạng thái staging (`draft` → `reviewed` → `committed`/`rejected`).
-- Infrastructure: adapter OCR (provider tách rời) + kho staging.
+| Thành phần | File |
+| --- | --- |
+| Interface + kiểu OCR | `src/lib/ocr/types.ts` |
+| Adapter OCR.space (server) | `src/lib/ocr/ocrspace.ts` |
+| Parser text → dòng ứng viên (VN) | `src/lib/ocr/parse.ts` |
+| Factory + `extractStudentsFromImage()` | `src/lib/ocr/index.ts` |
+| Server Actions (ocr/update/confirm) | `src/app/user/secretary/import/actions.ts` |
+| UI tải ảnh OCR | `src/app/user/secretary/import/[batchId]/OcrUploadForm.tsx` |
+| UI sửa dòng (duyệt) | `src/app/user/secretary/import/[batchId]/EditableRow.tsx` |
+| Validate file upload | `src/lib/security/index.ts` (`checkOcrUploadFile`) |
+| Cấu hình env | `src/lib/env.ts` (`hasOcrConfigured`) |
 
-## 4. OCR provider
+## 4. OCR provider (ưu tiên free/low-cost)
 
-- Cấu hình qua env `OCR_PROVIDER_KEY` (server-only, xem `.env.example`) — **chưa bật**.
-- Provider đặt sau interface trong `application/` để thay thế được, không khóa nhà cung cấp.
-- Xử lý OCR chạy **server-side**; không gửi khóa provider ra client.
+- **Primary: OCR.space Free OCR API** — `OCR_PROVIDER=ocrspace`, key ở
+  `OCR_SPACE_API_KEY` (server-only). Giới hạn free ~1MB/tệp → app chặn ≤ 1MB.
+  Ngôn ngữ mặc định `vie` (giữ dấu), engine `1`.
+- **Optional sau:** Google Cloud Vision OCR (độ chính xác cao hơn), Gemini API để
+  chuẩn hóa text → JSON. Đặt sau cùng interface `OcrProvider` để thay thế được,
+  không khóa nhà cung cấp.
+- **Thiếu key:** UI/flow vẫn chạy; nút OCR bị vô hiệu + báo "OCR chưa cấu hình".
+  KHÔNG gọi API thật.
 
-## 5. Ranh giới & bảo mật
+## 5. Parser (best-effort, tiếng Việt)
 
-- OCR **không tự động ghi** dữ liệu thật — bắt buộc bước duyệt tay.
-- Dữ liệu trẻ em nhạy cảm: phân quyền theo Khu phố, RLS ở Postgres, audit đầy đủ.
-- MVP không đặt mục tiêu OCR độ chính xác cao nhiều mẫu (xem `00-overview.md`).
+`parseOcrText()` tách từng dòng:
+- **SĐT:** `0xxxxxxxxx` / `+84…` → chuẩn hóa (bỏ dấu cách, `+84`→`0`).
+- **Ngày sinh:** `d/m/yyyy`, `d-m-yy`, `d.m.yyyy` → `YYYY-MM-DD` (validate tháng/ngày).
+- **Tên:** phần còn lại sau khi bỏ SĐT/ngày, bỏ STT đầu dòng ("1.", "2)"), gộp
+  khoảng trắng. Bỏ dòng tiêu đề ("STT", "Họ tên", "Danh sách"…).
+Chỉ nhận dòng có **tên hợp lệ** hoặc **SĐT**. Đây chỉ là gợi ý — Bí thư sửa tay.
 
-## 6. Chưa làm trong Prompt 03B
+## 6. Ranh giới & bảo mật
 
-Upload thật · gọi OCR · bảng staging · UI duyệt · commit vào bảng thật.
+- File: whitelist mime (JPG/PNG/WebP/PDF), chặn thực thi/macro, giới hạn 1MB
+  (`checkOcrUploadFile`). Body Server Action nới 2MB (`next.config.ts`).
+- OCR **không tự động ghi** dữ liệu thật — bắt buộc duyệt tay.
+- Dữ liệu trẻ em nhạy cảm: phân quyền theo Khu phố (RLS Postgres) vẫn là chặn cuối.
+- Không log nội dung ảnh/PII ra console; chỉ log tên provider khi cần.
+- Xem thêm `docs/ai-security-checklist.md`.
+
+## 7. Chưa làm (để phase sau)
+
+- Lưu ảnh gốc vào bucket riêng + signed URL + hash/audit (hiện chỉ OCR tại chỗ,
+  không lưu ảnh).
+- Google Vision / Gemini normalization.
+- Ghép `import_batch_rows` ↔ bảng `guardians` (hiện denormalize lên `students`).

@@ -18,7 +18,7 @@
 | Phase 6 — Auth thật + RBAC guard | ✅ Done | Prompt 05 — Supabase Auth, guard 2 lớp, redirect vai trò, logout |
 | Phase 7 — CRUD thật | 🟡 In progress | 06A: CRUD học sinh (Bí thư) qua RLS + Admin đọc thật; CRUD Admin đầy đủ để sau |
 | Phase 8 — Attendance workflow thật | ⬜ Pending | Chưa làm (06A chỉ đọc tỉ lệ cho dashboard) |
-| Phase 9 — Import/OCR staging thật | 🟡 In progress | 06A: import staging DB thật + confirm; OCR AI để sau |
+| Phase 9 — Import/OCR staging thật | 🟡 In progress | 06A: staging + confirm; **06B: OCR thật server-side (OCR.space) + duyệt tay**; lưu ảnh/audit để sau |
 | Phase 10 — DOCX export thật | ⬜ Pending | Chưa làm |
 | Phase 11 — Notification thật | ⬜ Pending | Chưa làm |
 | Phase 12 — Vercel deploy + hardening | 🟡 In progress | Deploy production live, đã sửa 404 (04A); hardening sau |
@@ -174,6 +174,24 @@
 > Ghi chú: CRUD/import đi qua RLS (không service role ở UI). Chưa làm OCR AI/DOCX/Notification/
 > Attendance workflow thật; full CRUD Admin để prompt sau.
 
+### Prompt 06B — Bootstrap accounts (chạy thật) + OCR import + security/devops notes
+- [x] Xác nhận DB sau reset: 2 auth users, KP01, 1 phân công, 0 học sinh (sạch)
+- [x] **Bootstrap đã chạy** (service role key có sẵn): Admin/`admin@123`, `0932077136`/`tho@123`
+- [x] **Test login thật** cả 2 tài khoản → OK (ADMIN + SECRETARY, đúng role)
+- [x] OCR server-side (`src/lib/ocr/*`): interface + adapter OCR.space + parser VN + factory
+- [x] Server Action `ocrExtractRows` (upload ảnh/PDF → OCR → dòng nháp `reviewed=false`)
+- [x] Kiểm tra/sửa tay: `EditableRow` + `updateRow` ("Lưu & duyệt" → `reviewed=true`)
+- [x] Confirm **chỉ tạo học sinh từ dòng đã duyệt**; đóng lô khi hết dòng chờ
+- [x] Validate file (mime whitelist + ≤1MB) + body Server Action 2MB; key OCR server-only
+- [x] Move key OCR khỏi `.env.example` (bị commit) → `.env.local`; sửa `.env.example` placeholder
+- [x] Docs: rewrite `ocr-import.md`; bổ sung `security.md` (session/JWT/AI); mới
+      `devops-deploy-rollback-backup.md` + `ai-security-checklist.md`
+- [x] Lint/typecheck/build pass; parser + OCR.space auth verify (script)
+- [x] Report 06B + cập nhật history/progress
+
+> Ghi chú: OCR **không lưu ảnh gốc** (OCR tại chỗ, chỉ giữ text đã duyệt) — lưu ảnh
+> vào bucket private + audit để phase sau. Vẫn chưa làm Attendance/DOCX/Notification thật.
+
 ## 4. Next planned prompts
 1. Prompt 06B — Full CRUD Admin (Khu phố/Bí thư/Phân công) + tạo tài khoản Phụ huynh
 2. Prompt 07 — Attendance + leave request thật
@@ -182,9 +200,12 @@
 5. Prompt 10 — Notification thật + deploy Vercel
 
 ## 5. Rủi ro đang mở
-- **Chưa có users** (thiếu `SUPABASE_SERVICE_ROLE_KEY`) → chưa chạy bootstrap, chưa test
-  đăng nhập/CRUD/import end-to-end trên môi trường. Cần thêm key rồi `npm run bootstrap:auth`.
+- ✅ (Đã gỡ) Bootstrap đã chạy: 2 tài khoản Admin/Bí thư đăng nhập được; service role key có sẵn.
+  **Nên bắt đổi mật khẩu** sau đăng nhập đầu (đã đặt cờ `must_change_password`).
 - Một số trang còn **mock data** (attendance/notifications/reports Bí thư, cổng Phụ huynh);
   Bí thư students/import/dashboard và Admin dashboard/list đã dùng **DB thật**.
-- OCR/import phải qua staging review, không được auto-import thẳng (đã enforce: confirm mới tạo HS).
+- OCR/import phải qua staging review, không auto-import (đã enforce: confirm chỉ tạo từ dòng đã duyệt).
+- **OCR key phụ thuộc `.env.local`/env Vercel.** Muốn OCR chạy trên production phải thêm
+  `OCR_SPACE_API_KEY` vào env server của Vercel (không `NEXT_PUBLIC_`). Thiếu → chỉ nhập tay.
+- OCR chưa lưu ảnh gốc/audit; độ chính xác parser là best-effort (đã có bước duyệt tay bù lại).
 - DOCX export phải render server-side và log audit khi làm thật.

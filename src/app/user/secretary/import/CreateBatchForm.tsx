@@ -6,8 +6,8 @@ import { createBatch, type ImportActionState } from "./actions";
 import type { NeighborhoodRow } from "@/lib/data/students";
 
 /**
- * Tạo lô import nháp. Có thể chọn ảnh/PDF giấy tờ để lấy TÊN tệp làm nhãn lô
- * (chưa OCR, chưa upload nội dung). Nhập dòng nháp thủ công ở trang chi tiết.
+ * Tạo lô import nháp. Có thể chọn ảnh/PDF giấy tờ để lấy TÊN tệp làm nhãn lô.
+ * OCR nhận dạng + nhập/sửa dòng nháp thực hiện ở trang chi tiết của lô.
  */
 export function CreateBatchForm({
   neighborhoods,
@@ -25,7 +25,7 @@ export function CreateBatchForm({
       <form action={formAction} className="grid gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label className="mb-1 block text-xs font-medium text-slate-600">
-            Ảnh/PDF giấy tờ (tùy chọn — chỉ lấy tên tệp, chưa OCR)
+            Ảnh/PDF giấy tờ (tùy chọn — chỉ lấy tên tệp; OCR ở bước sau)
           </label>
           <input
             type="file"

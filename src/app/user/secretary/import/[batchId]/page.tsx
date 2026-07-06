@@ -2,13 +2,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge, Card } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
+import { hasOcrConfigured } from "@/lib/ocr";
 import {
   getImportBatch,
   listImportRows,
   rowData,
 } from "@/lib/data/imports";
 import { AddRowForm } from "./AddRowForm";
-import { confirmBatch, deleteRow } from "../actions";
+import { OcrUploadForm } from "./OcrUploadForm";
+import { EditableRow } from "./EditableRow";
+import { confirmBatch } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -24,13 +27,20 @@ export default async function ImportBatchDetailPage({ params }: PageProps) {
   const rows = await listImportRows(batchId);
   const committed = batch.status === "COMMITTED";
   const createdCount = rows.filter((r) => r.created_student_id).length;
-  const pendingCount = rows.length - createdCount;
+
+  const pendingRows = rows.filter((r) => !r.created_student_id);
+  const reviewedPending = pendingRows.filter(
+    (r) => r.reviewed && String(rowData(r).full_name ?? "").trim(),
+  ).length;
+  const unreviewedPending = pendingRows.length - reviewedPending;
+
+  const ocrReady = hasOcrConfigured();
 
   return (
     <>
       <PageHeader
         title={batch.file_name}
-        description="Nhập/sửa dòng nháp rồi xác nhận để tạo học sinh thật. Xác nhận là bước bắt buộc — không auto-import."
+        description="OCR ảnh giấy tờ tạo dòng nháp → kiểm tra/sửa tay → xác nhận mới tạo học sinh. Xác nhận là bước bắt buộc — không auto-import."
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-slate-500">
@@ -40,24 +50,42 @@ export default async function ImportBatchDetailPage({ params }: PageProps) {
         <Badge tone={committed ? "green" : "slate"}>
           {committed ? "Đã ghi nhận" : "Nháp"}
         </Badge>
-        <span>{rows.length} dòng · đã tạo {createdCount}</span>
+        <span>
+          {rows.length} dòng · đã tạo {createdCount}
+          {unreviewedPending > 0 ? ` · ${unreviewedPending} chờ duyệt` : ""}
+        </span>
       </div>
 
       {!committed ? (
-        <Card title="Thêm dòng nháp" className="mb-4">
-          <AddRowForm batchId={batchId} />
-        </Card>
+        <>
+          <OcrUploadForm batchId={batchId} configured={ocrReady} />
+          <Card title="Thêm dòng nháp (nhập tay)" className="mb-4">
+            <AddRowForm batchId={batchId} />
+          </Card>
+        </>
       ) : null}
 
       <Card className="p-0">
         {rows.length === 0 ? (
           <p className="px-4 py-6 text-center text-sm text-slate-500">
-            Chưa có dòng nào. Thêm dòng nháp phía trên.
+            Chưa có dòng nào. Dùng OCR hoặc nhập tay phía trên.
           </p>
         ) : (
           <ul className="divide-y divide-slate-100">
             {rows.map((r) => {
               const d = rowData(r);
+              const editable = !committed && !r.created_student_id;
+              if (editable) {
+                return (
+                  <EditableRow
+                    key={r.id}
+                    rowId={r.id}
+                    batchId={batchId}
+                    data={d}
+                    reviewed={r.reviewed}
+                  />
+                );
+              }
               return (
                 <li
                   key={r.id}
@@ -73,25 +101,11 @@ export default async function ImportBatchDetailPage({ params }: PageProps) {
                       {d.school ? ` · ${d.school}` : ""}
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {r.created_student_id ? (
-                      <Badge tone="green">Đã tạo</Badge>
-                    ) : (
-                      <Badge tone="slate">Nháp</Badge>
-                    )}
-                    {!committed && !r.created_student_id ? (
-                      <form action={deleteRow}>
-                        <input type="hidden" name="row_id" value={r.id} />
-                        <input type="hidden" name="batch_id" value={batchId} />
-                        <button
-                          type="submit"
-                          className="rounded-md px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
-                        >
-                          Xóa
-                        </button>
-                      </form>
-                    ) : null}
-                  </div>
+                  {r.created_student_id ? (
+                    <Badge tone="green">Đã tạo</Badge>
+                  ) : (
+                    <Badge tone="slate">Nháp</Badge>
+                  )}
                 </li>
               );
             })}
@@ -99,17 +113,24 @@ export default async function ImportBatchDetailPage({ params }: PageProps) {
         )}
       </Card>
 
-      {!committed && pendingCount > 0 ? (
+      {!committed && unreviewedPending > 0 ? (
+        <p className="mt-3 text-xs text-amber-700">
+          Còn {unreviewedPending} dòng OCR chưa duyệt. Sửa và bấm “Lưu &amp; duyệt” ở từng
+          dòng để đưa vào danh sách tạo học sinh.
+        </p>
+      ) : null}
+
+      {!committed && reviewedPending > 0 ? (
         <form action={confirmBatch} className="mt-4">
           <input type="hidden" name="batch_id" value={batchId} />
           <button
             type="submit"
             className="inline-flex h-11 items-center rounded-lg bg-green-600 px-5 text-sm font-semibold text-white hover:bg-green-700"
           >
-            Xác nhận & tạo {pendingCount} học sinh
+            Xác nhận &amp; tạo {reviewedPending} học sinh
           </button>
           <p className="mt-2 text-xs text-slate-400">
-            Chỉ các dòng có Họ tên và chưa tạo mới được ghi vào danh sách học sinh
+            Chỉ các dòng đã duyệt, có Họ tên và chưa tạo mới được ghi vào danh sách học sinh
             (Khu phố theo lô).
           </p>
         </form>

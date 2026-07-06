@@ -36,5 +36,36 @@ API đọc dữ liệu nhạy cảm (throttle ở edge/proxy).
 ## Environment variables
 `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 (tên cũ `NEXT_PUBLIC_SUPABASE_ANON_KEY` vẫn đọc được — backward-compat) · `SUPABASE_SERVICE_ROLE_KEY` ·
-`APP_BASE_URL` · (sau) `AUDIT_LOG_SECRET`, `DOCX_TEMPLATE_BUCKET`, `IMPORT_BUCKET`, OCR key.
+`APP_BASE_URL` · `OCR_PROVIDER` / `OCR_SPACE_API_KEY` (server-only) · (sau) `AUDIT_LOG_SECRET`,
+`DOCX_TEMPLATE_BUCKET`, `IMPORT_BUCKET`.
 Xem `.env.example`. **Không hardcode secret; không commit `.env.local`.**
+
+> ⚠️ **Không đặt key thật trong `.env.example`** (file này được commit). Chỉ để placeholder
+> rỗng; giá trị thật nằm ở `.env.local` (gitignored) hoặc biến môi trường của Vercel.
+
+---
+
+## Session / Auth / JWT (bổ sung Prompt 06B)
+
+Nền tảng: **Supabase Auth** (không tự cuộn crypto). Tóm tắt cách dự án dùng phiên:
+
+- **Access token = JWT ngắn hạn** (mặc định ~1h) + **refresh token** dài hạn. Client
+  không tự parse/verify JWT để phân quyền — luôn hỏi lại Auth server.
+- **Xác thực chứ không tin cookie thô:** phía server dùng `supabase.auth.getUser()`
+  (`src/lib/auth/session.ts`) để **xác minh** token với Auth server, **không** dùng
+  `getSession()` (đọc cookie chưa verify) cho quyết định bảo mật.
+- **Guard 2 lớp** (Prompt 05): middleware `proxy.ts` (chưa đăng nhập → login đúng cổng)
+  + layout theo vai trò (sai vai trò → `ROLE_HOME`). **Chặn cuối cùng vẫn là RLS.**
+- **Cookie phiên** do `@supabase/ssr` quản lý: `HttpOnly`, `Secure` (prod), `SameSite=Lax`
+  → giảm XSS đánh cắp token + CSRF cơ bản. Server Actions của Next kiểm origin (chống CSRF).
+- **Service role JWT** (`SUPABASE_SERVICE_ROLE_KEY`) bỏ qua RLS → **chỉ** dùng server-side
+  trong script bootstrap; **không** dùng ở UI/CRUD (đi qua RLS). Guard runtime chặn client
+  (`src/lib/supabase/admin.ts`).
+- **Xoay/rút phiên:** đăng xuất gọi `auth.signOut()` (thu hồi refresh token phía server).
+  Đổi mật khẩu → buộc đăng nhập lại. Tài khoản khởi tạo đặt cờ `must_change_password`.
+- **Đề xuất tiếp:** bật rate-limit đăng nhập/refresh, rút ngắn TTL cho vai trò nhạy cảm,
+  log phiên bất thường (đổi IP/UA đột ngột) vào audit.
+
+## AI / OCR (bổ sung Prompt 06B)
+Xem `docs/ai-security-checklist.md`. Nguyên tắc cốt lõi: **key AI ở server**, OCR
+**không auto-ghi** dữ liệu thật, mọi output AI qua **duyệt tay** trước khi commit.

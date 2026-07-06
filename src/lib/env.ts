@@ -18,6 +18,15 @@ export const env = {
   // Chỉ dùng ở server-side (route handler / server action). Không bao giờ expose ra client.
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
   appBaseUrl: process.env.APP_BASE_URL ?? "http://localhost:3000",
+  // --- OCR (server-only). API key TUYỆT ĐỐI không được expose ra client. ---
+  // Provider mặc định: OCR.space Free OCR API (nhỏ, free, đủ cho MVP).
+  ocrProvider: (process.env.OCR_PROVIDER ?? "ocrspace").toLowerCase(),
+  // Ưu tiên tên mới; chấp nhận tên cũ OCR_PROVIDER_KEY để backward-compat.
+  ocrSpaceApiKey: process.env.OCR_SPACE_API_KEY ?? process.env.OCR_PROVIDER_KEY ?? "",
+  ocrSpaceApiUrl: process.env.OCR_SPACE_API_URL ?? "https://api.ocr.space/parse/image",
+  // Ngôn ngữ + engine của OCR.space (vie = tiếng Việt; engine 1 hỗ trợ diacritics tốt hơn).
+  ocrSpaceLanguage: process.env.OCR_SPACE_LANGUAGE ?? "vie",
+  ocrSpaceEngine: process.env.OCR_SPACE_ENGINE ?? "1",
 } as const;
 
 /** true khi đã cấu hình đủ Supabase public env để khởi tạo client. */
@@ -31,6 +40,16 @@ export function hasSupabaseEnv(): boolean {
  */
 export function hasServiceRoleKey(): boolean {
   return Boolean(env.supabaseUrl && env.supabaseServiceRoleKey);
+}
+
+/**
+ * true khi OCR provider đã được cấu hình đủ để gọi API thật (server-only).
+ * Thiếu key → UI/flow vẫn chạy nhưng KHÔNG gọi API; báo người dùng cấu hình.
+ * KHÔNG bao giờ gọi hàm này (hoặc đọc key) ở client component.
+ */
+export function hasOcrConfigured(): boolean {
+  if (env.ocrProvider === "ocrspace") return Boolean(env.ocrSpaceApiKey);
+  return false;
 }
 
 /** Ném lỗi rõ ràng khi thiếu env ở nơi bắt buộc phải có kết nối Supabase. */

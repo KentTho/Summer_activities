@@ -31,7 +31,7 @@ export default async function SecretaryImportPage() {
     <>
       <PageHeader
         title="Nhập giấy tờ (staging)"
-        description="Tạo lô nháp từ giấy tờ → nhập/sửa tay Họ tên · Ngày sinh · SĐT phụ huynh → xác nhận mới tạo học sinh. Không auto-import."
+        description="Tạo lô → OCR ảnh giấy tờ hoặc nhập tay → kiểm tra/sửa → xác nhận mới tạo học sinh. Không auto-import."
       />
 
       {neighborhoods.length === 0 ? (

@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Upload ảnh giấy tờ cho OCR đi qua Server Action (multipart). Mặc định 1MB
+    // quá nhỏ — nới lên 2MB (ảnh OCR giới hạn 1MB + overhead multipart boundaries).
+    serverActions: {
+      bodySizeLimit: "2mb",
+    },
+  },
   /**
    * Redirect route cũ (Prompt 03A) sang cấu trúc tách cổng Admin/User (Prompt 03B).
    * Tạm thời (307) vì cấu trúc còn tiến hóa; đổi permanent khi ổn định.
