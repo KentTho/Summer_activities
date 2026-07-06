@@ -16,11 +16,11 @@
 | Phase 4 — Admin management UI pages | ✅ Done (UI shell + mock) | Prompt 03D — chưa nối DB thật |
 | Phase 5 — Supabase schema + RLS | ✅ Done | Migrations áp remote (04D), RLS bật, types thật sinh + nối vào code |
 | Phase 6 — Auth thật + RBAC guard | ✅ Done | Prompt 05 — Supabase Auth, guard 2 lớp, redirect vai trò, logout |
-| Phase 7 — CRUD thật | 🟡 In progress | 06A: CRUD học sinh (Bí thư) qua RLS + Admin đọc thật; CRUD Admin đầy đủ để sau |
+| Phase 7 — CRUD thật | ✅ Done | 06A: CRUD học sinh (Bí thư); **08A: Admin CRUD tài khoản Bí thư/Chi Đoàn + Phụ huynh + gán/khóa/reset + liên kết** |
 | Phase 8 — Attendance workflow thật | ✅ Done | **07: tạo buổi, điểm danh (4 trạng thái), sửa/chốt buổi, xin nghỉ, dashboard thật** — qua RLS |
 | Phase 9 — Import/OCR staging thật | 🟡 In progress | 06A: staging + confirm; **06B: OCR thật server-side (OCR.space) + duyệt tay**; lưu ảnh/audit để sau |
-| Phase 10 — DOCX export thật | ⬜ Pending | Chưa làm |
-| Phase 11 — Notification thật | ⬜ Pending | Chưa làm |
+| Phase 10 — DOCX export thật | 🟡 In progress | **08A: nền tảng mẫu (Admin duyệt bật/tắt, .docx-only, Bí thư xem)**; upload binary + render DOCX ở 08B |
+| Phase 11 — Notification thật | 🟡 In progress | **08A: Bí thư/Chi Đoàn gửi thông báo phụ huynh theo buổi (RLS thật); Phụ huynh nhận thật** |
 | Phase 12 — Vercel deploy + hardening | 🟡 In progress | Deploy production live, đã sửa 404 (04A); hardening sau |
 
 ## 3. Checklist chi tiết
@@ -213,6 +213,25 @@
 > trên môi trường (flow đã verify bằng parent tạm trong smoke test rồi xóa) — liên kết
 > guardian↔student do Bí thư/Admin làm ở phase sau.
 
+### Prompt 08A — Admin Control Center + staff/parent accounts + session defaults + notifications
+- [x] Migration additive: `profiles.staff_title`, `activity_sessions.canceled_at`
+- [x] Migration corrective: sửa **đệ quy RLS** notifications ↔ notification_recipients (42P17) bằng helper SECURITY DEFINER
+- [x] Tách public entry: trang `/` chỉ hiện cổng Người dùng; Admin tự vào `/admin` (bảo mật vẫn Auth/RBAC/RLS)
+- [x] `staff_title` cho SECRETARY: **Bí thư / Chi Đoàn** (chung quyền, khác nhãn — không role mới)
+- [x] Admin tạo tài khoản Bí thư/Chi Đoàn + Phụ huynh (service role CHỈ tạo auth user, sau requireAdmin)
+- [x] Reset mật khẩu tạm (`must_change_password`, hiện 1 lần, không log); khóa/mở (deactivate, không hard-delete)
+- [x] Gán/bỏ gán Bí thư ↔ Khu phố; liên kết Phụ huynh ↔ Học sinh (mở khóa cổng Phụ huynh)
+- [x] Audit log **thật**: ghi thao tác Admin (append-only) + trang xem `/admin/audit`
+- [x] Buổi: dừng/hủy (`canceled_at`) + khôi phục, dời ngày/giờ, buổi chung nhiều Khu phố (đã có)
+- [x] Bí thư/Chi Đoàn gửi **thông báo cho phụ huynh** liên quan buổi (RLS); Phụ huynh/Bí thư notifications thật
+- [x] Điểm danh: **tìm theo tên HS / SĐT phụ huynh** trên roster; đánh dấu nhanh (đã có)
+- [x] Report templates foundation: Admin thêm/duyệt (bật/tắt) mẫu `.docx` (chặn `.docm`); Bí thư xem mẫu đang bật
+- [x] Lint/typecheck/build pass; **smoke test RLS ký tên Admin + Bí thư + Phụ huynh thật** (tạo→sạch)
+- [x] Report 08A + cập nhật history/progress
+
+> Ghi chú: service role **chỉ** dùng tạo/reset auth user trong action đã `requireAdmin()`; mọi
+> read/write còn lại qua RLS. DOCX render thật + upload binary để **Prompt 08B**.
+
 ## 4. Next planned prompts
 1. Prompt 06B — Full CRUD Admin (Khu phố/Bí thư/Phân công) + tạo tài khoản Phụ huynh
 2. Prompt 07 — Attendance + leave request thật
@@ -223,10 +242,12 @@
 ## 5. Rủi ro đang mở
 - ✅ (Đã gỡ) Bootstrap đã chạy: 2 tài khoản Admin/Bí thư đăng nhập được; service role key có sẵn.
   **Nên bắt đổi mật khẩu** sau đăng nhập đầu (đã đặt cờ `must_change_password`).
-- Trang còn **mock data**: `notifications` (Bí thư + Phụ huynh) và `reports` Bí thư. Các trang
-  buổi/điểm danh/xin nghỉ/lịch/lịch sử/dashboard (Bí thư + Phụ huynh) và Admin sessions đã **DB thật**.
-- **Chưa có tài khoản Phụ huynh + liên kết guardian↔student trên môi trường** → cổng Phụ huynh
-  hiển thị rỗng cho tới khi Bí thư/Admin tạo liên kết. Flow đã verify bằng parent tạm (smoke, đã xóa).
+- ✅ (Đã gỡ) Notifications (Bí thư + Phụ huynh) và reports Bí thư nay là **DB thật** (08A).
+  Toàn bộ trang nghiệp vụ chính đã dùng DB thật; còn `/admin/students`,`/admin/reports`,`/admin/settings`,
+  `/admin/neighborhoods`,`/admin/assignments` một số vẫn đọc mock/tối giản (không thuộc scope 08A cốt lõi).
+- ✅ (Đã gỡ) Admin có thể **tạo tài khoản Phụ huynh + liên kết guardian↔student** (08A) → mở khóa cổng Phụ huynh.
+- **Đã sửa bug RLS đệ quy** notifications ↔ notification_recipients (42P17) bằng helper SECURITY DEFINER
+  (migration 20260707020000). Rút kinh nghiệm: policy tham chiếu chéo 2 bảng phải dùng security-definer.
 - OCR/import phải qua staging review, không auto-import (đã enforce: confirm chỉ tạo từ dòng đã duyệt).
 - **OCR key phụ thuộc `.env.local`/env Vercel.** Muốn OCR chạy trên production phải thêm
   `OCR_SPACE_API_KEY` vào env server của Vercel (không `NEXT_PUBLIC_`). Thiếu → chỉ nhập tay.

@@ -127,6 +127,7 @@ export interface RosterEntry {
   studentId: string;
   fullName: string;
   neighborhoodId: string;
+  guardianPhone: string | null;
   status: AttendanceStatus | null;
   note: string | null;
 }
@@ -134,8 +135,12 @@ export interface RosterEntry {
 /**
  * Danh sách điểm danh của một buổi: học sinh thuộc các Khu phố của buổi (trong
  * phạm vi RLS) + trạng thái đã ghi (null = CHƯA điểm danh / NOT_MARKED).
+ * `q` (tùy chọn): tìm theo tên học sinh hoặc SĐT phụ huynh.
  */
-export async function getSessionRoster(sessionId: string): Promise<RosterEntry[]> {
+export async function getSessionRoster(
+  sessionId: string,
+  q?: string,
+): Promise<RosterEntry[]> {
   const supabase = await createSupabaseServerClient();
 
   const { data: snb } = await supabase
@@ -145,14 +150,21 @@ export async function getSessionRoster(sessionId: string): Promise<RosterEntry[]
   const neighborhoodIds = (snb ?? []).map((r) => r.neighborhood_id);
   if (neighborhoodIds.length === 0) return [];
 
+  let studentQuery = supabase
+    .from("students")
+    .select("id, full_name, neighborhood_id, guardian_phone")
+    .in("neighborhood_id", neighborhoodIds)
+    .is("deleted_at", null)
+    .eq("active", true);
+
+  const term = q?.trim();
+  if (term) {
+    const safe = term.replace(/[%,()]/g, " ");
+    studentQuery = studentQuery.or(`full_name.ilike.%${safe}%,guardian_phone.ilike.%${safe}%`);
+  }
+
   const [{ data: students }, { data: att }] = await Promise.all([
-    supabase
-      .from("students")
-      .select("id, full_name, neighborhood_id")
-      .in("neighborhood_id", neighborhoodIds)
-      .is("deleted_at", null)
-      .eq("active", true)
-      .order("full_name"),
+    studentQuery.order("full_name"),
     supabase
       .from("attendance_records")
       .select("student_id, status, note")
@@ -168,6 +180,7 @@ export async function getSessionRoster(sessionId: string): Promise<RosterEntry[]
       studentId: s.id,
       fullName: s.full_name,
       neighborhoodId: s.neighborhood_id,
+      guardianPhone: s.guardian_phone,
       status: rec?.status ?? null,
       note: rec?.note ?? null,
     };

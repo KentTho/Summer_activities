@@ -1,10 +1,12 @@
 import Link from "next/link";
 
 /**
- * Landing / entry page. Giới thiệu ngắn gọn hệ thống và tách hai cổng:
- * - Cổng Quản trị (Admin)
- * - Cổng Người dùng (Bí thư · Phụ huynh/Học sinh)
- * Sau khi bật auth thật, mỗi cổng đăng nhập sẽ redirect theo vai trò (ROLE_HOME).
+ * Landing / entry page. Trang công khai CHỈ hiển thị **cổng Người dùng**
+ * (Bí thư · Chi Đoàn · Phụ huynh/Học sinh). Cổng Quản trị KHÔNG hiện ở trang chủ —
+ * Admin tự truy cập `/admin` hoặc `/admin/login`.
+ *
+ * Lưu ý bảo mật: ẩn link Admin CHỈ là giảm bề mặt/nhiễu cho người dùng thường.
+ * Bảo mật thật vẫn là Auth + RBAC (layout guard) + RLS Postgres — không dựa vào ẩn link.
  */
 export default function Home() {
   const features = [
@@ -40,23 +42,14 @@ export default function Home() {
         </ul>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3">
         <Link
           href="/user/login"
           className="flex flex-col rounded-2xl bg-indigo-600 px-5 py-4 text-white shadow-sm transition-colors hover:bg-indigo-700"
         >
           <span className="text-base font-semibold">Vào cổng Người dùng</span>
           <span className="mt-0.5 text-sm text-indigo-100">
-            Bí thư · Phụ huynh / Học sinh
-          </span>
-        </Link>
-        <Link
-          href="/admin/login"
-          className="flex flex-col rounded-2xl border border-slate-200 bg-white px-5 py-4 text-slate-800 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50"
-        >
-          <span className="text-base font-semibold">Vào cổng Admin</span>
-          <span className="mt-0.5 text-sm text-slate-500">
-            Quản trị hệ thống
+            Bí thư · Chi Đoàn · Phụ huynh / Học sinh
           </span>
         </Link>
       </div>

@@ -29,13 +29,13 @@ export async function markAttendance(formData: FormData): Promise<void> {
 
   const supabase = await createSupabaseServerClient();
 
-  // Chốt buổi thì khóa sửa (kiểm tra ở tầng ứng dụng; RLS lo phần "ai được ghi").
+  // Chốt/hủy buổi thì khóa sửa (kiểm tra ở tầng ứng dụng; RLS lo phần "ai được ghi").
   const { data: session } = await supabase
     .from("activity_sessions")
-    .select("closed_at")
+    .select("closed_at, canceled_at")
     .eq("id", parsed.data.session_id)
     .maybeSingle();
-  if (!session || session.closed_at) return;
+  if (!session || session.closed_at || session.canceled_at) return;
 
   if (parsed.data.status === "NOT_MARKED") {
     await supabase

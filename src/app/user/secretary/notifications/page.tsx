@@ -1,50 +1,55 @@
-import { Badge, Button, Card } from "@/components/ui";
+import Link from "next/link";
+import { Badge, Card } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
-import { NOTIFICATIONS } from "@/lib/mock";
+import { listMyNotifications } from "@/lib/data/notifications";
 import { NOTIFICATION_SCOPE_LABEL } from "@/modules/notifications/domain/scope-type";
 
-export default function SecretaryNotificationsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function SecretaryNotificationsPage() {
+  const items = await listMyNotifications();
+
   return (
     <>
       <PageHeader
-        title="Thông báo"
-        description="Soạn thông báo theo Khu phố hoặc theo buổi. Gửi thật bật ở phase notification."
+        title="Thông báo đã gửi"
+        description="Thông báo bạn đã gửi cho phụ huynh. Soạn thông báo theo buổi tại trang chi tiết buổi sinh hoạt."
       />
 
-      <Card className="mb-4">
-        <p className="text-sm font-medium text-slate-700">Soạn nhanh</p>
-        <div className="mt-3 space-y-3">
-          <input
-            disabled
-            placeholder="Tiêu đề thông báo"
-            className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none disabled:bg-slate-50"
-          />
-          <textarea
-            disabled
-            rows={3}
-            placeholder="Nội dung gửi tới phụ huynh/học sinh…"
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none disabled:bg-slate-50"
-          />
-          <div className="flex justify-end">
-            <Button disabled className="h-9 px-4 text-sm">Gửi thông báo (chưa kết nối)</Button>
-          </div>
-        </div>
+      <Card className="mb-4 border-slate-200 bg-slate-50">
+        <p className="text-sm text-slate-600">
+          Để gửi thông báo cho phụ huynh của một buổi: vào{" "}
+          <Link href="/user/secretary/sessions" className="font-medium text-indigo-600 hover:underline">
+            Buổi sinh hoạt
+          </Link>{" "}
+          → chọn buổi → “Gửi thông báo cho phụ huynh”.
+        </p>
       </Card>
 
-      <p className="mb-2 text-sm font-medium text-slate-700">Đã gửi gần đây</p>
       <div className="grid gap-3">
-        {NOTIFICATIONS.map((n) => (
-          <Card key={n.id}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-medium text-slate-900">{n.title}</p>
-                <p className="mt-1 text-sm text-slate-600">{n.body}</p>
-                <p className="mt-1 text-xs text-slate-400">{n.createdAt}</p>
-              </div>
-              <Badge tone="indigo">{NOTIFICATION_SCOPE_LABEL[n.scope]}</Badge>
-            </div>
+        {items.length === 0 ? (
+          <Card>
+            <p className="text-sm text-slate-500">Chưa gửi thông báo nào.</p>
           </Card>
-        ))}
+        ) : (
+          items.map((n) => (
+            <Card key={n.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium text-slate-900">{n.title}</p>
+                  {n.body ? <p className="mt-1 text-sm text-slate-600">{n.body}</p> : null}
+                  <p className="mt-1 text-xs text-slate-400">
+                    {n.sessionTitle ? `${n.sessionTitle} · ` : ""}
+                    {n.createdAt.slice(0, 16).replace("T", " ")}
+                  </p>
+                </div>
+                <Badge tone="indigo">
+                  {NOTIFICATION_SCOPE_LABEL[n.scope as keyof typeof NOTIFICATION_SCOPE_LABEL] ?? n.scope}
+                </Badge>
+              </div>
+            </Card>
+          ))
+        )}
       </div>
     </>
   );

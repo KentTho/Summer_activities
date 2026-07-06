@@ -17,6 +17,7 @@
 | 06A | **Secretary CRUD + dashboard thật + import staging + login identifier** | Migration additive (birth_date/school/guardian), CRUD học sinh qua RLS, dashboard/admin dữ liệu thật, import staging (confirm mới tạo HS), đăng nhập bằng identifier; bootstrap tài khoản thật (chưa chạy — thiếu service role key) | `PROMPT-06A-...report.md` |
 | 06B | **Bootstrap chạy thật + OCR import (server-side) + security/devops notes** | Xác nhận 2 tài khoản đăng nhập OK; OCR.space server-side → dòng nháp chưa duyệt → sửa/duyệt tay → confirm mới tạo HS; validate file + key server-only; move key khỏi `.env.example`; docs session/JWT + devops rollback/backup + AI security | `PROMPT-06B-...report.md` |
 | 07 | **Attendance workflow + Leave requests thật + guardrails** | 3 migration additive (closed_at, snb_insert creator, guardian session visibility); tạo buổi/điểm danh 4 trạng thái/chốt buổi; phụ huynh xin nghỉ + Bí thư duyệt→EXCUSED; dashboard Bí thư/Phụ huynh + admin sessions thật; smoke test RLS ký tên thật; `engineering-guardrails.md` | `PROMPT-07-...report.md` |
+| 08A | **Admin Control Center + tài khoản staff/phụ huynh + session defaults + notifications** | 2 migration additive (staff_title, canceled_at) + 1 corrective (fix đệ quy RLS notifications); Admin tạo/reset/khóa tài khoản (service role chỉ cho auth user sau requireAdmin) + gán Khu phố + liên kết phụ huynh↔HS; audit log thật; hủy/dời buổi + gửi thông báo phụ huynh; roster search; templates foundation; tách cổng public; smoke test Admin+Bí thư+Phụ huynh | `PROMPT-08A-...report.md` |
 
 ## Chi tiết Prompt 05 (Auth thật)
 
@@ -115,3 +116,39 @@ Google Vision/Gemini; nâng cấp UI lớn.
 
 **Chưa làm (đúng phạm vi):** DOCX export, Notification thật, nâng cấp UI lớn. Chưa có tài khoản
 Phụ huynh thật + liên kết guardian↔student trên môi trường (do Bí thư/Admin làm sau).
+
+## Chi tiết Prompt 08A (Admin Control Center + accounts + session defaults + notifications)
+
+**Migration:**
+- `20260707010000_admin_center` (additive): `profiles.staff_title` (Bí thư/Chi Đoàn — chung quyền
+  SECRETARY), `activity_sessions.canceled_at` (dừng/hủy buổi).
+- `20260707020000_fix_notification_rls_recursion` (corrective): sửa **đệ quy RLS 42P17** giữa
+  `notifications` ↔ `notification_recipients` bằng helper SECURITY DEFINER `is_notification_recipient`/
+  `is_notification_creator` (cùng logic, hết đệ quy; không nới quyền).
+
+**Đã làm:**
+- **Tách cổng public:** `/` chỉ hiện cổng Người dùng; Admin tự vào `/admin` (bảo mật vẫn Auth/RBAC/RLS).
+- **Provisioning (service role CHỈ cho auth user, sau `requireAdmin`):** `lib/admin/accounts.ts`
+  (`createAuthUser`/`resetAuthPassword`, temp password không log). Hồ sơ/gán/liên kết qua **RLS server client**.
+- **Staff** (`/admin/secretaries`): tạo Bí thư/Chi Đoàn, gán/bỏ Khu phố, reset mật khẩu tạm, khóa/mở.
+- **Phụ huynh** (`/admin/parents`): tạo tài khoản + guardian, liên kết/bỏ liên kết học sinh (mở khóa cổng Phụ huynh).
+- **Audit** (`lib/admin/audit.ts` + `/admin/audit`): ghi/append-only + xem; không log mật khẩu/token.
+- **Buổi** (`sessions/actions.ts`): `cancelSession`/`uncancelSession`, `rescheduleSession`,
+  `notifySessionParents` (gửi phụ huynh theo buổi qua RLS). Điểm danh khóa khi chốt/hủy.
+- **Roster search:** `getSessionRoster(sessionId, q)` — tìm theo tên HS / SĐT phụ huynh.
+- **Notifications thật:** `lib/data/notifications.ts` + trang Bí thư/Phụ huynh.
+- **Templates foundation** (`/admin/templates` + `secretary/reports`): thêm/duyệt (bật/tắt), chặn `.docm`.
+- Dashboard Admin thật (thêm phụ huynh/buổi hôm nay/đơn nghỉ chờ).
+
+**Sự cố đã xử lý (đúng gốc):**
+- **RLS đệ quy 42P17** notifications↔notification_recipients (lộ khi non-admin insert+select thông báo)
+  → helper SECURITY DEFINER; verify insert+select OK sau fix.
+- `gen types --linked` báo **Unauthorized** (thiếu access token) → thêm cột vào `database.types.ts`
+  thủ công (khớp gen), verify cột tồn tại trên remote bằng service role.
+
+**Verify:** smoke test ký tên **Admin + Bí thư + Phụ huynh thật**: tạo staff (staff_title), gán Khu phố,
+khóa/mở, reset password, audit, tạo+liên kết phụ huynh, gửi thông báo buổi → phụ huynh nhận. **Dọn sạch**
+(DB về 2 profiles/0 nghiệp vụ). Lint/typecheck/build pass.
+
+**Chưa làm (đúng phạm vi):** upload binary DOCX + render thật (08B); một vài trang admin phụ (students/reports/
+settings/neighborhoods/assignments) chưa CRUD đầy đủ; nâng cấp UI lớn.

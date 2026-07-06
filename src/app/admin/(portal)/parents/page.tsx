@@ -1,42 +1,41 @@
 import { Badge, Card } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
-import { listStaff, listNeighborhoods } from "@/lib/data/admin";
-import { CreateStaffForm } from "./CreateStaffForm";
+import { listParents, listStudentsBrief } from "@/lib/data/admin";
+import { CreateParentForm } from "./CreateParentForm";
 import { ResetPasswordButton } from "../ResetPasswordButton";
 import { setAccountActive } from "../account-actions";
-import { assignNeighborhood, unassignNeighborhood } from "./actions";
+import { linkStudent, unlinkStudent } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminSecretariesPage() {
-  const [staff, neighborhoods] = await Promise.all([listStaff(), listNeighborhoods()]);
+export default async function AdminParentsPage() {
+  const [parents, students] = await Promise.all([listParents(), listStudentsBrief()]);
 
   return (
     <>
       <PageHeader
-        title="Bí thư / Chi Đoàn"
-        description="Tạo tài khoản, gán Khu phố, reset mật khẩu tạm, khóa/mở. Hai chức danh dùng chung quyền SECRETARY."
+        title="Phụ huynh / Học sinh"
+        description="Tạo tài khoản phụ huynh, liên kết với học sinh, reset mật khẩu tạm, khóa/mở. Liên kết mở khóa cổng Phụ huynh."
       />
 
-      <CreateStaffForm />
+      <CreateParentForm />
 
-      <p className="mb-2 text-sm text-slate-500">{staff.length} tài khoản</p>
+      <p className="mb-2 text-sm text-slate-500">{parents.length} tài khoản</p>
       <div className="grid gap-3">
-        {staff.length === 0 ? (
+        {parents.length === 0 ? (
           <Card>
-            <p className="text-sm text-slate-500">Chưa có tài khoản nào.</p>
+            <p className="text-sm text-slate-500">Chưa có tài khoản phụ huynh nào.</p>
           </Card>
         ) : (
-          staff.map(({ profile, neighborhoods: assigned }) => {
-            const assignedIds = new Set(assigned.map((n) => n.id));
-            const available = neighborhoods.filter((n) => !assignedIds.has(n.id));
+          parents.map(({ profile, students: linked }) => {
+            const linkedIds = new Set(linked.map((s) => s.id));
+            const available = students.filter((s) => !linkedIds.has(s.id));
             return (
               <Card key={profile.id}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-medium text-slate-900">{profile.full_name}</p>
-                      <Badge tone="indigo">{profile.staff_title ?? "Bí thư"}</Badge>
                       <Badge tone={profile.active ? "green" : "slate"}>
                         {profile.active ? "Hoạt động" : "Đã khóa"}
                       </Badge>
@@ -67,37 +66,37 @@ export default async function AdminSecretariesPage() {
                 </div>
 
                 <div className="mt-3 border-t border-slate-100 pt-3">
-                  <p className="mb-1.5 text-xs font-medium text-slate-600">Khu phố phụ trách</p>
+                  <p className="mb-1.5 text-xs font-medium text-slate-600">Học sinh liên kết</p>
                   <div className="flex flex-wrap items-center gap-2">
-                    {assigned.length === 0 ? (
-                      <span className="text-xs text-slate-400">Chưa gán Khu phố nào.</span>
+                    {linked.length === 0 ? (
+                      <span className="text-xs text-slate-400">Chưa liên kết học sinh nào.</span>
                     ) : (
-                      assigned.map((n) => (
-                        <form key={n.id} action={unassignNeighborhood} className="inline-flex">
-                          <input type="hidden" name="secretary_id" value={profile.id} />
-                          <input type="hidden" name="neighborhood_id" value={n.id} />
+                      linked.map((s) => (
+                        <form key={s.id} action={unlinkStudent} className="inline-flex">
+                          <input type="hidden" name="parent_id" value={profile.id} />
+                          <input type="hidden" name="student_id" value={s.id} />
                           <button
                             type="submit"
-                            title="Bỏ gán"
+                            title="Bỏ liên kết"
                             className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700 hover:bg-rose-50 hover:text-rose-700"
                           >
-                            {n.name} ✕
+                            {s.full_name} ✕
                           </button>
                         </form>
                       ))
                     )}
                   </div>
                   {available.length > 0 ? (
-                    <form action={assignNeighborhood} className="mt-2 flex items-center gap-2">
-                      <input type="hidden" name="secretary_id" value={profile.id} />
+                    <form action={linkStudent} className="mt-2 flex items-center gap-2">
+                      <input type="hidden" name="parent_id" value={profile.id} />
                       <select
-                        name="neighborhood_id"
+                        name="student_id"
                         defaultValue={available[0].id}
-                        className="h-8 rounded-lg border border-slate-200 px-2 text-xs"
+                        className="h-8 max-w-[220px] rounded-lg border border-slate-200 px-2 text-xs"
                       >
-                        {available.map((n) => (
-                          <option key={n.id} value={n.id}>
-                            {n.name}
+                        {available.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.full_name}
                           </option>
                         ))}
                       </select>
@@ -105,10 +104,14 @@ export default async function AdminSecretariesPage() {
                         type="submit"
                         className="rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-indigo-700"
                       >
-                        + Gán
+                        + Liên kết
                       </button>
                     </form>
-                  ) : null}
+                  ) : (
+                    <p className="mt-2 text-xs text-slate-400">
+                      Không còn học sinh để liên kết (tạo học sinh ở cổng Bí thư).
+                    </p>
+                  )}
                 </div>
               </Card>
             );

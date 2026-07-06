@@ -117,3 +117,148 @@ export async function reopenSession(formData: FormData): Promise<void> {
   revalidatePath(`${SESSIONS_PATH}/${id.data}`);
   revalidatePath(SESSIONS_PATH);
 }
+
+/** Dừng/hủy buổi (canceled_at). Có thể hoàn tác bằng uncancelSession. */
+export async function cancelSession(formData: FormData): Promise<void> {
+  const id = z.string().uuid().safeParse(formData.get("session_id"));
+  if (!id.success) return;
+  const supabase = await createSupabaseServerClient();
+  await supabase
+    .from("activity_sessions")
+    .update({ canceled_at: new Date().toISOString() })
+    .eq("id", id.data)
+    .is("canceled_at", null);
+  revalidatePath(`${SESSIONS_PATH}/${id.data}`);
+  revalidatePath(SESSIONS_PATH);
+}
+
+export async function uncancelSession(formData: FormData): Promise<void> {
+  const id = z.string().uuid().safeParse(formData.get("session_id"));
+  if (!id.success) return;
+  const supabase = await createSupabaseServerClient();
+  await supabase.from("activity_sessions").update({ canceled_at: null }).eq("id", id.data);
+  revalidatePath(`${SESSIONS_PATH}/${id.data}`);
+  revalidatePath(SESSIONS_PATH);
+}
+
+const rescheduleSchema = z.object({
+  session_id: z.string().uuid(),
+  session_date: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/u),
+  start_time: z
+    .string()
+    .trim()
+    .regex(/^\d{2}:\d{2}$/u)
+    .or(z.literal(""))
+    .optional(),
+});
+
+/** Dời buổi sang ngày khác (+ giờ nếu có). */
+export async function rescheduleSession(formData: FormData): Promise<void> {
+  const parsed = rescheduleSchema.safeParse({
+    session_id: formData.get("session_id"),
+    session_date: formData.get("session_date"),
+    start_time: formData.get("start_time") ?? "",
+  });
+  if (!parsed.success) return;
+  const supabase = await createSupabaseServerClient();
+  const patch: { session_date: string; start_time?: string | null } = {
+    session_date: parsed.data.session_date,
+  };
+  if (parsed.data.start_time !== undefined) {
+    patch.start_time = parsed.data.start_time ? parsed.data.start_time : null;
+  }
+  await supabase.from("activity_sessions").update(patch).eq("id", parsed.data.session_id);
+  revalidatePath(`${SESSIONS_PATH}/${parsed.data.session_id}`);
+  revalidatePath(SESSIONS_PATH);
+}
+
+export interface NotifyState {
+  error?: string;
+  ok?: boolean;
+  count?: number;
+}
+
+const notifySchema = z.object({
+  session_id: z.string().uuid(),
+  title: z.string().trim().min(2, "Tiêu đề quá ngắn.").max(150),
+  body: z.string().trim().max(1000).optional().transform((v) => (v ? v : null)),
+});
+
+/**
+ * Bí thư/Chi Đoàn gửi thông báo cho phụ huynh liên quan buổi (scope SESSION).
+ * Người nhận = phụ huynh của học sinh thuộc Khu phố của buổi. Qua RLS (không service role).
+ */
+export async function notifySessionParents(
+  _prev: NotifyState,
+  formData: FormData,
+): Promise<NotifyState> {
+  const parsed = notifySchema.safeParse({
+    session_id: formData.get("session_id"),
+    title: formData.get("title"),
+    body: formData.get("body") ?? "",
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Dữ liệu không hợp lệ." };
+
+  const profile = await getCurrentProfile();
+  if (!profile) return { error: "Phiên đăng nhập không hợp lệ." };
+
+  const supabase = await createSupabaseServerClient();
+
+  // Khu phố của buổi → học sinh → phụ huynh (profile_id).
+  const { data: snb } = await supabase
+    .from("session_neighborhoods")
+    .select("neighborhood_id")
+    .eq("session_id", parsed.data.session_id);
+  const nIds = (snb ?? []).map((r) => r.neighborhood_id);
+  if (nIds.length === 0) return { error: "Buổi chưa gắn Khu phố." };
+
+  const { data: students } = await supabase
+    .from("students")
+    .select("id")
+    .in("neighborhood_id", nIds)
+    .is("deleted_at", null);
+  const studentIds = (students ?? []).map((s) => s.id);
+  if (studentIds.length === 0) return { error: "Không có học sinh nào trong Khu phố của buổi." };
+
+  const { data: links } = await supabase
+    .from("student_guardians")
+    .select("guardian_id")
+    .in("student_id", studentIds);
+  const guardianIds = [...new Set((links ?? []).map((l) => l.guardian_id))];
+  if (guardianIds.length === 0) {
+    return { error: "Chưa có phụ huynh nào được liên kết với học sinh của buổi." };
+  }
+
+  const { data: guardians } = await supabase
+    .from("guardians")
+    .select("profile_id")
+    .in("id", guardianIds)
+    .not("profile_id", "is", null);
+  const profileIds = [...new Set((guardians ?? []).map((g) => g.profile_id).filter((v): v is string => !!v))];
+  if (profileIds.length === 0) {
+    return { error: "Phụ huynh chưa có tài khoản để nhận thông báo." };
+  }
+
+  const { data: notif, error: nErr } = await supabase
+    .from("notifications")
+    .insert({
+      title: parsed.data.title,
+      body: parsed.data.body,
+      scope: "SESSION",
+      session_id: parsed.data.session_id,
+      created_by: profile.profileId,
+    })
+    .select("id")
+    .single();
+  if (nErr || !notif) return { error: "Không tạo được thông báo. " + (nErr?.message ?? "") };
+
+  const recipients = profileIds.map((profile_id) => ({
+    notification_id: notif.id,
+    profile_id,
+  }));
+  const { error: rErr } = await supabase.from("notification_recipients").insert(recipients);
+  if (rErr) return { error: "Tạo thông báo nhưng gửi người nhận lỗi. " + rErr.message };
+
+  revalidatePath(`${SESSIONS_PATH}/${parsed.data.session_id}`);
+  return { ok: true, count: profileIds.length };
+}

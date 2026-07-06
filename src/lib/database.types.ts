@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       activity_sessions: {
         Row: {
+          canceled_at: string | null
           closed_at: string | null
           created_at: string
           created_by: string | null
@@ -29,6 +30,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          canceled_at?: string | null
           closed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -42,6 +44,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          canceled_at?: string | null
           closed_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -536,6 +539,7 @@ export type Database = {
           id: string
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
+          staff_title: string | null
           updated_at: string
         }
         Insert: {
@@ -547,6 +551,7 @@ export type Database = {
           id?: string
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          staff_title?: string | null
           updated_at?: string
         }
         Update: {
@@ -558,6 +563,7 @@ export type Database = {
           id?: string
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          staff_title?: string | null
           updated_at?: string
         }
         Relationships: []
