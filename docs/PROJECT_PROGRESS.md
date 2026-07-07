@@ -18,7 +18,7 @@
 | Phase 6 — Auth thật + RBAC guard | ✅ Done | Prompt 05 — Supabase Auth, guard 2 lớp, redirect vai trò, logout |
 | Phase 7 — CRUD thật | ✅ Done | 06A: CRUD học sinh (Bí thư); 08A: Admin CRUD tài khoản; **08B: CRUD Khu phố + phân công phụ trách có vai trò (chính/phối hợp)** |
 | Phase 8 — Attendance workflow thật | ✅ Done | **07: tạo buổi, điểm danh (4 trạng thái), sửa/chốt buổi, xin nghỉ, dashboard thật** — qua RLS |
-| Phase 9 — Import/OCR staging thật | 🟡 In progress | 06A: staging + confirm; **06B: OCR thật server-side (OCR.space) + duyệt tay**; lưu ảnh/audit để sau |
+| Phase 9 — Import ảnh (AI) staging thật | ✅ Done (MVP) | 06A: staging + confirm; 06B: OCR.space (đã gỡ); **09B: Gemini Vision đọc ảnh → JSON → dòng nháp → duyệt tay → confirm**; lưu ảnh/audit để sau |
 | Phase 10 — DOCX export thật | ✅ Done (MVP) | **08C: upload binary mẫu vào Storage private + render DOCX thật server-side** (DS học sinh, điểm danh buổi, tổng hợp hệ thống) qua bộ ghi ZIP/OOXML zero-dependency |
 | Phase 11 — Notification thật | 🟡 In progress | **08A: Bí thư/Chi Đoàn gửi thông báo phụ huynh theo buổi (RLS thật); Phụ huynh nhận thật** |
 | Phase 12 — Vercel deploy + hardening | 🟡 In progress | Deploy production live, đã sửa 404 (04A); hardening sau |
@@ -285,6 +285,24 @@
 > lần tới (đúng thiết kế). Placeholder-merge là **MVP**: placeholder phải gọn trong 1 run, không hỗ trợ
 > vòng lặp — mẫu không hợp lệ thì fallback DOCX tự sinh. Không build logout-all/token-version (chỉ backlog).
 
+### Prompt 09B — Bỏ OCR.space + Gemini AI import + monitoring nhẹ
+- [x] Gỡ **hoàn toàn** OCR.space: xóa `src/lib/ocr/*`, env `OCR_*`, UI copy "OCR", docs vận hành; không dead code
+- [x] **Gemini Vision** server-side (`src/lib/ai-import/*`): `fetch` REST, JSON schema chặt (Zod), strip code fence
+- [x] Chuẩn hóa: SĐT VN `+84→0`, ngày `d/m/y → YYYY-MM-DD`; thiếu field/độ tin cậy thấp → `needs_review`
+- [x] Giữ **staging bắt buộc**: AI → dòng nháp `reviewed=false` → duyệt tay → confirm mới tạo `students` (không auto-import)
+- [x] Thiếu key / `AI_IMPORT_ENABLED=false` / quota-timeout → thông báo thân thiện, **nhập tay vẫn chạy**
+- [x] UI: "AI đọc ảnh (Gemini)", cảnh báo "AI có thể đọc sai — kiểm tra trước khi xác nhận", hiện confidence/needs_review
+- [x] `/api/health` phase `09b-gemini-ai-import` + cờ `geminiConfigured/aiImportReady`; preflight quét `GEMINI_API_KEY`
+- [x] Monitoring nhẹ `lib/monitoring/server-log.ts` (redact PII/key/base64) + audit `AI_IMPORT` (không PII)
+- [x] Docs: `gemini-ai-import.md`, `ai-import-test-plan.md`; cập nhật security/checklist/playbook; retire `ocr-*`
+- [x] preflight/lint/typecheck/build pass; **live smoke Gemini** (ảnh test → 3 dòng đúng, ngày/SĐT chuẩn hóa)
+- [x] Report 09B (Gợi ý tiếp theo + Điểm cần tu sửa + Không nên làm ngay)
+
+> Ghi chú: enum `import_batches.source` giữ giá trị `OCR` (= "AI đọc ảnh") để **không** đổi schema; nguồn
+> thật ghi ở `import_batch_rows.raw_data.source="GEMINI"`. PDF **chưa hỗ trợ** (chặn, báo chụp ảnh). Gemini
+> free tier có **quota** — lỗi 429 báo thử lại, nhập tay luôn sẵn sàng. Gemini **chỉ gọi server-side**, key
+> không ra client/git, không log ảnh/PII.
+
 ## 4. Next planned prompts
 1. Prompt 06B — Full CRUD Admin (Khu phố/Bí thư/Phân công) + tạo tài khoản Phụ huynh
 2. Prompt 07 — Attendance + leave request thật
@@ -303,10 +321,10 @@
 - ✅ (Đã gỡ) Admin có thể **tạo tài khoản Phụ huynh + liên kết guardian↔student** (08A) → mở khóa cổng Phụ huynh.
 - **Đã sửa bug RLS đệ quy** notifications ↔ notification_recipients (42P17) bằng helper SECURITY DEFINER
   (migration 20260707020000). Rút kinh nghiệm: policy tham chiếu chéo 2 bảng phải dùng security-definer.
-- OCR/import phải qua staging review, không auto-import (đã enforce: confirm chỉ tạo từ dòng đã duyệt).
-- **OCR key phụ thuộc `.env.local`/env Vercel.** Muốn OCR chạy trên production phải thêm
-  `OCR_SPACE_API_KEY` vào env server của Vercel (không `NEXT_PUBLIC_`). Thiếu → chỉ nhập tay.
-- OCR chưa lưu ảnh gốc/audit; độ chính xác parser là best-effort (đã có bước duyệt tay bù lại).
+- Import ảnh (AI) phải qua staging review, không auto-import (đã enforce: confirm chỉ tạo từ dòng đã duyệt).
+- **09B: chuyển sang Gemini Vision.** Production cần `GEMINI_API_KEY` (server-only, không `NEXT_PUBLIC_`)
+  trên Vercel để bật AI; thiếu → nút AI tắt, **nhập tay vẫn chạy**. Gemini free tier có **quota** (429 → thử lại).
+- AI import chưa lưu ảnh gốc/audit ảnh; độ chính xác AI là best-effort (bước duyệt tay bù lại). PDF chưa hỗ trợ.
 - ✅ (Đã gỡ) DOCX export **render server-side + log audit** (08C): bộ ghi ZIP/OOXML zero-dependency;
   mẫu `.docx` lưu Storage **private** (chặn `.docm`/macro). Còn lại: **placeholder-merge** vào mẫu upload
   (hiện export dùng bộ sinh riêng, mẫu chỉ là tệp tham chiếu) — làm khi cần khớp mẫu in chính xác.

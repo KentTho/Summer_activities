@@ -14,8 +14,8 @@
 - [ ] `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (public — OK để lộ client).
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` (server-only — KHÔNG `NEXT_PUBLIC_`). Cần cho: tạo/reset tài khoản,
       Storage mẫu DOCX, đọc mẫu để merge.
-- [ ] `OCR_SPACE_API_KEY` + `OCR_PROVIDER=ocrspace` (server-only). Thiếu → OCR tắt, nhập tay vẫn chạy.
-      Xem `ocr-production-setup.md`.
+- [ ] `GEMINI_API_KEY` (+ tùy chọn `GEMINI_MODEL`, `AI_IMPORT_ENABLED`) — server-only, KHÔNG `NEXT_PUBLIC_`.
+      Thiếu → AI import tắt, nhập tay vẫn chạy. Xem `gemini-ai-import.md`.
 - [ ] KHÔNG đưa service role / OCR key / DB password vào client hay git.
 
 ## 2. Bảo mật (xem `auth-session-hardening.md`, `ai-code-security-gate.md`)

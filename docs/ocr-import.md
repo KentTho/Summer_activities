@@ -1,7 +1,8 @@
-# Import giấy tờ & OCR
+# Import giấy tờ (LỊCH SỬ — OCR.space)
 
-> Cập nhật ở **Prompt 06B** — OCR đã triển khai thật (server-side, staging-first).
-> Trước đó (03B/06A): chỉ kế hoạch + staging nhập tay. Xem `roadmap.md` Phase 9.
+> ⚠️ **ĐÃ THAY THẾ ở Prompt 09B**: OCR.space bị gỡ bỏ hoàn toàn; import ảnh nay dùng
+> **Gemini Vision**. Tài liệu vận hành hiện hành: **`gemini-ai-import.md`**.
+> File này giữ lại làm **lịch sử** (mô tả bản OCR.space cũ ở 06B) — không còn hiệu lực.
 
 ## 1. Mục tiêu
 

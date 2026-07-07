@@ -12,9 +12,10 @@
       — repo này khác bản thường). Hiểu rồi mới đưa vào.
 - [ ] **Không tin "trông có vẻ chạy"**: phải `lint`/`typecheck`/`build` + test hành vi thật.
 
-## Xử lý dữ liệu do AI/OCR sinh ra
-- [ ] Output OCR/AI là **gợi ý** → qua **duyệt tay** trước khi ghi thật (đã enforce ở import staging).
-- [ ] Key AI/OCR **chỉ ở server**; không log nội dung nhạy cảm học sinh/phụ huynh.
+## Xử lý dữ liệu do AI sinh ra (Gemini import — xem `gemini-ai-import.md`)
+- [ ] Output AI là **gợi ý** → qua **duyệt tay** trước khi ghi thật (đã enforce ở import staging).
+- [ ] Key AI (Gemini) **chỉ ở server**; KHÔNG log key/ảnh/base64/nội dung nhạy cảm học sinh/phụ huynh.
+- [ ] Validate output AI bằng **Zod schema nghiêm ngặt**; strip code fence; chuẩn hóa trước khi lưu nháp.
 - [ ] Không để prompt/nội dung người dùng điều khiển hành vi hệ thống (injection) chạm quyền.
 
 ## Xử lý tệp do người dùng tải lên (DOCX mẫu)

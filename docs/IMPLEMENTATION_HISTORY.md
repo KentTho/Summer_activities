@@ -276,3 +276,39 @@ docxExportReady/passwordChangeReady` (không lộ key).
 
 **Chưa làm (đúng phạm vi):** monitoring/logging tập trung; load test; lưu ảnh OCR private; engine DOCX
 nâng cao (vòng lặp/placeholder tách run); logout-all/token-version (chỉ backlog); UI polish lớn.
+
+## Chi tiết Prompt 09B (Bỏ OCR.space + Gemini AI import + monitoring nhẹ)
+
+**Gỡ OCR.space (không dead code):** `git rm src/lib/ocr/{index,ocrspace,parse,types}.ts`. `env.ts` bỏ
+`ocrProvider/ocrSpace*` + `hasOcrConfigured`; thêm `geminiApiKey/geminiModel/geminiApiBaseUrl/
+aiImportMaxFileMb/aiImportEnabled` + `hasGeminiConfigured()`/`isAiImportReady()`. `.env.example` thay khối
+OCR bằng khối Gemini. `security/index.ts`: `checkOcrUploadFile`→`checkAiImportFile` (ảnh JPG/PNG/WebP,
+**chặn PDF**, maxBytes tham số); `ALLOWED_IMPORT_MIME`→`ALLOWED_AI_IMPORT_MIME`; bỏ `MAX_OCR_UPLOAD_BYTES`.
+UI copy "OCR"→"AI đọc ảnh" (batch page, import list, CreateBatchForm, EditableRow). Docs: retire
+`ocr-production-setup.md` (xóa), `ocr-import.md` gắn nhãn lịch sử; cập nhật security/checklist/playbook.
+(Lịch sử 06B trong history/report cũ giữ nguyên — là bản ghi quá khứ.)
+
+**Gemini AI import (`src/lib/ai-import/`):** `gemini.ts` gọi `generativelanguage /v1beta/models/{model}:
+generateContent` bằng `fetch` (header `x-goog-api-key`, `responseMimeType:application/json`, temperature 0,
+timeout 30s/AbortController; xử lý 429=quota, blockReason, strip code fence). `normalize.ts`: SĐT VN
+`+84/84→0` + chỉ chữ số; ngày ISO/`d/m/y`→`YYYY-MM-DD` (validate 1990–2100); `computeNeedsReview` (thiếu
+tên / thiếu cả ngày+SĐT / confidence<0.6). `index.ts`: Zod schema chặt cho JSON, `extractStudentDraftsFromImage`
+→ chuẩn hóa + `needs_review`. **KHÔNG** ghi thẳng `students`.
+
+**Action/UI (`import/actions.ts#aiExtractRows`):** require login, `checkAiImportFile`, `isAiImportReady`
+(thiếu key/tắt → lỗi thân thiện, nhập tay vẫn chạy), gọi Gemini, insert `import_batch_rows`
+(`reviewed=false`, `raw_data.source="GEMINI"`+confidence/needs_review/notes). Audit `AI_IMPORT` (chỉ số
+lượng). `import_batches.source` giữ enum `OCR` (không đổi schema). `AiImportForm` (thay `OcrUploadForm`):
+cảnh báo "AI có thể đọc sai", accept ảnh, hiện warnings. `EditableRow` hiện confidence% + "nên kiểm tra kỹ".
+
+**Health/monitoring:** `/api/health` phase `09b-gemini-ai-import` + `geminiConfigured/aiImportReady` (bỏ
+`ocrConfigured`). `lib/monitoring/server-log.ts`: structured log + redact (khóa nhạy cảm, base64 dài, dãy
+số ≥7). Log `ai_import_ok`/`ai_import_failed` (mime/size/rows — KHÔNG ảnh/PII/key). Preflight `OLD_PHASES`
+thêm `09a-...`; secret-scan bắt `GEMINI_API_KEY` qua pattern `API_KEY`.
+
+**Verify:** preflight/lint/typecheck/build xanh. **Live smoke Gemini thật** (ảnh danh sách 3 HS tạo bằng
+System.Drawing) → HTTP 200, 3 dòng đúng: `12/05/2015→2015-05-12`, SĐT giữ, dòng chỉ có năm → `birth_date=null`
++ note. Dọn sạch ảnh/script test.
+
+**Chưa làm (đúng phạm vi):** PDF cho AI import (đang chặn); lưu ảnh gốc private + audit ảnh; monitoring tập
+trung/alert/uptime; load test; UI polish lớn.

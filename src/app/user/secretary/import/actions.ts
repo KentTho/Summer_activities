@@ -10,14 +10,19 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth/session";
-import { checkOcrUploadFile } from "@/lib/security";
-import { extractStudentsFromImage, hasOcrConfigured } from "@/lib/ocr";
+import { checkAiImportFile } from "@/lib/security";
+import { extractStudentDraftsFromImage, isAiImportReady } from "@/lib/ai-import";
+import { env } from "@/lib/env";
+import { logEvent, logError } from "@/lib/monitoring/server-log";
+import { logAudit } from "@/lib/admin/audit";
 
 export interface ImportActionState {
   error?: string;
   ok?: boolean;
-  /** Số dòng OCR vừa tạo (chỉ dùng cho action OCR). */
+  /** Số dòng AI vừa tạo (chỉ dùng cho action AI import). */
   count?: number;
+  /** Cảnh báo chung từ AI (ảnh mờ…). */
+  warnings?: string[];
 }
 
 const IMPORT_PATH = "/user/secretary/import";
@@ -107,11 +112,11 @@ export async function addRow(
 }
 
 /**
- * OCR: nhận ảnh/PDF giấy tờ, chạy OCR **server-side**, tách thành dòng nháp
- * (reviewed=false) để Bí thư kiểm tra/sửa tay. KHÔNG tạo học sinh ở bước này.
- * API key OCR chỉ ở server (env) — không bao giờ ra client.
+ * AI import: nhận ẢNH giấy tờ, gọi Gemini Vision **server-side**, tách thành dòng
+ * nháp (reviewed=false) để Bí thư kiểm tra/sửa tay. KHÔNG tạo học sinh ở bước này.
+ * Gemini key chỉ ở server (env) — không bao giờ ra client. KHÔNG log ảnh/PII/key.
  */
-export async function ocrExtractRows(
+export async function aiExtractRows(
   _prev: ImportActionState,
   formData: FormData,
 ): Promise<ImportActionState> {
@@ -123,55 +128,69 @@ export async function ocrExtractRows(
 
   const raw = formData.get("file");
   const file = raw instanceof File ? raw : null;
-  const check = checkOcrUploadFile(file);
+  const check = checkAiImportFile(file, env.aiImportMaxFileMb * 1024 * 1024);
   if (!check.ok || !file) return { error: check.error ?? "Tệp không hợp lệ." };
 
-  if (!hasOcrConfigured()) {
+  if (!isAiImportReady()) {
     return {
       error:
-        "OCR chưa cấu hình (thiếu OCR_SPACE_API_KEY, server-only). Bạn vẫn có thể nhập tay bên dưới.",
+        "Tính năng AI đọc ảnh chưa sẵn sàng (thiếu cấu hình). Bạn vẫn có thể nhập tay bên dưới.",
     };
   }
 
   let extracted;
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-    extracted = await extractStudentsFromImage({
+    extracted = await extractStudentDraftsFromImage({
       base64: buffer.toString("base64"),
       mimeType: file.type,
       fileName: file.name,
     });
   } catch (err) {
+    // Log lỗi AN TOÀN (không ảnh/base64/PII) để theo dõi; trả lỗi thân thiện.
+    logError("ai_import_failed", err, { mime: file.type, sizeKb: Math.round(file.size / 1024) });
     return { error: (err as Error).message };
   }
 
   if (extracted.rows.length === 0) {
     return {
-      error: "OCR không tách được dòng nào. Hãy thử ảnh rõ hơn hoặc nhập tay.",
+      error: extracted.warnings[0] ?? "AI không đọc được dòng nào. Hãy thử ảnh rõ hơn hoặc nhập tay.",
+      warnings: extracted.warnings,
     };
   }
 
   const supabase = await createSupabaseServerClient();
   const payload = extracted.rows.map((r) => ({
     batch_id: batchId.data,
-    // Dòng OCR: chưa duyệt (reviewed=false) → phải kiểm tra/sửa tay trước khi confirm.
+    // Dòng AI: chưa duyệt (reviewed=false) → phải kiểm tra/sửa tay trước khi confirm.
     raw_data: {
       full_name: r.full_name,
-      birth_date: r.birth_date,
+      birth_date: r.birth_date ?? "",
       guardian_phone: r.guardian_phone,
-      source: "OCR",
+      source: "GEMINI",
+      confidence: r.confidence,
+      needs_review: r.needs_review,
+      notes: r.notes,
     },
     reviewed: false,
   }));
 
   const { error } = await supabase.from("import_batch_rows").insert(payload);
-  if (error) return { error: "Không thể lưu dòng OCR. " + error.message };
+  if (error) return { error: "Không thể lưu dòng AI. " + error.message };
 
-  // Đánh dấu lô có nguồn OCR (không chặn nếu RLS từ chối — chỉ là nhãn).
+  // Đánh dấu lô có nguồn OCR (nhãn nguồn AI). Không chặn nếu RLS từ chối.
   await supabase.from("import_batches").update({ source: "OCR" }).eq("id", batchId.data);
 
+  // Audit + log an toàn: chỉ số lượng, KHÔNG nội dung học sinh.
+  await logAudit(supabase, profile, {
+    action: "AI_IMPORT",
+    entity: "import_batch_rows",
+    detail: `Gemini đọc ảnh → ${extracted.rows.length} dòng nháp`,
+  });
+  logEvent("ai_import_ok", { rows: extracted.rows.length, mime: file.type });
+
   revalidatePath(`${IMPORT_PATH}/${batchId.data}`);
-  return { ok: true, count: extracted.rows.length };
+  return { ok: true, count: extracted.rows.length, warnings: extracted.warnings };
 }
 
 /**

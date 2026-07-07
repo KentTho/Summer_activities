@@ -2,14 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge, Card } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
-import { hasOcrConfigured } from "@/lib/ocr";
+import { isAiImportReady } from "@/lib/ai-import";
 import {
   getImportBatch,
   listImportRows,
   rowData,
 } from "@/lib/data/imports";
 import { AddRowForm } from "./AddRowForm";
-import { OcrUploadForm } from "./OcrUploadForm";
+import { AiImportForm } from "./AiImportForm";
 import { EditableRow } from "./EditableRow";
 import { confirmBatch } from "../actions";
 
@@ -34,13 +34,13 @@ export default async function ImportBatchDetailPage({ params }: PageProps) {
   ).length;
   const unreviewedPending = pendingRows.length - reviewedPending;
 
-  const ocrReady = hasOcrConfigured();
+  const aiReady = isAiImportReady();
 
   return (
     <>
       <PageHeader
         title={batch.file_name}
-        description="OCR ảnh giấy tờ tạo dòng nháp → kiểm tra/sửa tay → xác nhận mới tạo học sinh. Xác nhận là bước bắt buộc — không auto-import."
+        description="AI đọc ảnh giấy tờ tạo dòng nháp → kiểm tra/sửa tay → xác nhận mới tạo học sinh. Xác nhận là bước bắt buộc — không auto-import."
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-slate-500">
@@ -58,7 +58,7 @@ export default async function ImportBatchDetailPage({ params }: PageProps) {
 
       {!committed ? (
         <>
-          <OcrUploadForm batchId={batchId} configured={ocrReady} />
+          <AiImportForm batchId={batchId} ready={aiReady} />
           <Card title="Thêm dòng nháp (nhập tay)" className="mb-4">
             <AddRowForm batchId={batchId} />
           </Card>
@@ -68,7 +68,7 @@ export default async function ImportBatchDetailPage({ params }: PageProps) {
       <Card className="p-0">
         {rows.length === 0 ? (
           <p className="px-4 py-6 text-center text-sm text-slate-500">
-            Chưa có dòng nào. Dùng OCR hoặc nhập tay phía trên.
+            Chưa có dòng nào. Dùng AI đọc ảnh hoặc nhập tay phía trên.
           </p>
         ) : (
           <ul className="divide-y divide-slate-100">
@@ -115,7 +115,7 @@ export default async function ImportBatchDetailPage({ params }: PageProps) {
 
       {!committed && unreviewedPending > 0 ? (
         <p className="mt-3 text-xs text-amber-700">
-          Còn {unreviewedPending} dòng OCR chưa duyệt. Sửa và bấm “Lưu &amp; duyệt” ở từng
+          Còn {unreviewedPending} dòng AI chưa duyệt. Sửa và bấm “Lưu &amp; duyệt” ở từng
           dòng để đưa vào danh sách tạo học sinh.
         </p>
       ) : null}

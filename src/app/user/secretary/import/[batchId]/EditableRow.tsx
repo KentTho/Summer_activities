@@ -14,6 +14,9 @@ export interface EditableRowData {
   guardian_phone?: string;
   guardian_name?: string;
   school?: string;
+  /** Metadata do AI gắn (nếu dòng đến từ AI đọc ảnh). */
+  confidence?: number;
+  needs_review?: boolean;
 }
 
 /**
@@ -74,6 +77,12 @@ export function EditableRow({
           ) : (
             <Badge tone="amber">AI đọc — cần kiểm tra</Badge>
           )}
+          {!reviewed && typeof data.confidence === "number" ? (
+            <span className={`text-xs ${data.needs_review ? "text-red-600" : "text-slate-400"}`}>
+              độ tin cậy {Math.round(data.confidence * 100)}%
+              {data.needs_review ? " · nên kiểm tra kỹ" : ""}
+            </span>
+          ) : null}
           <Button type="submit" disabled={pending} className="h-9 px-4 text-sm">
             {pending ? "Đang lưu…" : "Lưu & duyệt"}
           </Button>

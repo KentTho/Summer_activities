@@ -1,23 +1,23 @@
-# AI Security Checklist (OCR & AI — chọn lọc)
+# AI Security Checklist (AI import — chọn lọc)
 
-> Thêm ở **Prompt 06B**. Áp dụng cho OCR hiện tại (OCR.space) và các provider AI sau
-> (Google Vision, Gemini). Ngắn gọn, thực thi được.
+> Thêm ở **Prompt 06B**; cập nhật **09B** (bỏ OCR.space, dùng **Gemini Vision**).
+> Áp dụng cho AI import hiện tại (Gemini). Ngắn gọn, thực thi được. Xem `gemini-ai-import.md`.
 
 ## 1. Khóa & bí mật
 
-- [x] API key AI/OCR **chỉ ở server** (env, không tiền tố `NEXT_PUBLIC_`).
+- [x] API key AI (Gemini) **chỉ ở server** (env, không tiền tố `NEXT_PUBLIC_`).
 - [x] Gọi provider **chỉ** từ Server Action / route handler — không từ client.
 - [x] Không hardcode key trong mã; không để key thật trong `.env.example` (file commit).
 - [ ] (Đề xuất) Xoay key định kỳ; tách key theo môi trường (dev/prod).
 
 ## 2. Dữ liệu & quyền riêng tư (dữ liệu trẻ em — nhạy cảm)
 
-- [x] OCR **không auto-ghi** vào bảng thật; chỉ tạo `import_batch_rows` (staging).
+- [x] AI **không auto-ghi** vào bảng thật; chỉ tạo `import_batch_rows` (staging).
 - [x] Ghi học sinh vẫn qua **RLS theo Khu phố** (chặn cuối ở Postgres).
-- [ ] Tối thiểu hóa dữ liệu gửi provider: chỉ ảnh cần OCR; không kèm PII thừa.
+- [ ] Tối thiểu hóa dữ liệu gửi provider: chỉ ảnh cần đọc; không kèm PII thừa.
 - [ ] (Đề xuất) Không lưu ảnh gốc lâu; nếu lưu → bucket private + signed URL + hash + xóa
-      theo hạn. Hiện tại **không lưu ảnh** (OCR tại chỗ, chỉ giữ text đã duyệt).
-- [ ] Rà điều khoản provider (OCR.space free) về lưu trữ/đào tạo trên dữ liệu gửi lên.
+      theo hạn. Hiện tại **không lưu ảnh** (đọc tại chỗ, chỉ giữ dòng nháp đã duyệt).
+- [ ] Rà điều khoản Google Gemini (free tier có quota) về lưu trữ/đào tạo trên dữ liệu gửi lên.
 
 ## 3. Đầu vào không tin cậy (untrusted input)
 

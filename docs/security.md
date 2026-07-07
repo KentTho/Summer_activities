@@ -36,7 +36,7 @@ API đọc dữ liệu nhạy cảm (throttle ở edge/proxy).
 ## Environment variables
 `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 (tên cũ `NEXT_PUBLIC_SUPABASE_ANON_KEY` vẫn đọc được — backward-compat) · `SUPABASE_SERVICE_ROLE_KEY` ·
-`APP_BASE_URL` · `OCR_PROVIDER` / `OCR_SPACE_API_KEY` (server-only) · (sau) `AUDIT_LOG_SECRET`,
+`APP_BASE_URL` · `GEMINI_API_KEY` / `GEMINI_MODEL` (AI import, server-only) · (sau) `AUDIT_LOG_SECRET`,
 `DOCX_TEMPLATE_BUCKET`, `IMPORT_BUCKET`.
 Xem `.env.example`. **Không hardcode secret; không commit `.env.local`.**
 

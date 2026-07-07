@@ -18,15 +18,14 @@ export const env = {
   // Chỉ dùng ở server-side (route handler / server action). Không bao giờ expose ra client.
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
   appBaseUrl: process.env.APP_BASE_URL ?? "http://localhost:3000",
-  // --- OCR (server-only). API key TUYỆT ĐỐI không được expose ra client. ---
-  // Provider mặc định: OCR.space Free OCR API (nhỏ, free, đủ cho MVP).
-  ocrProvider: (process.env.OCR_PROVIDER ?? "ocrspace").toLowerCase(),
-  // Ưu tiên tên mới; chấp nhận tên cũ OCR_PROVIDER_KEY để backward-compat.
-  ocrSpaceApiKey: process.env.OCR_SPACE_API_KEY ?? process.env.OCR_PROVIDER_KEY ?? "",
-  ocrSpaceApiUrl: process.env.OCR_SPACE_API_URL ?? "https://api.ocr.space/parse/image",
-  // Ngôn ngữ + engine của OCR.space (vie = tiếng Việt; engine 1 hỗ trợ diacritics tốt hơn).
-  ocrSpaceLanguage: process.env.OCR_SPACE_LANGUAGE ?? "vie",
-  ocrSpaceEngine: process.env.OCR_SPACE_ENGINE ?? "1",
+  // --- AI import (Gemini Vision, server-only). Key TUYỆT ĐỐI không expose ra client. ---
+  geminiApiKey: process.env.GEMINI_API_KEY ?? "",
+  geminiModel: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
+  geminiApiBaseUrl: (process.env.GEMINI_API_BASE_URL ?? "https://generativelanguage.googleapis.com").replace(/\/+$/, ""),
+  // Giới hạn kích thước ảnh gửi lên AI (MB) — chống DoS/parse tốn tài nguyên.
+  aiImportMaxFileMb: Number(process.env.AI_IMPORT_MAX_FILE_MB ?? "4") || 4,
+  // Cho phép tắt AI import qua env (mặc định bật). "false" ⇒ tắt (nhập tay vẫn chạy).
+  aiImportEnabled: (process.env.AI_IMPORT_ENABLED ?? "true").toLowerCase() !== "false",
 } as const;
 
 /** true khi đã cấu hình đủ Supabase public env để khởi tạo client. */
@@ -43,13 +42,17 @@ export function hasServiceRoleKey(): boolean {
 }
 
 /**
- * true khi OCR provider đã được cấu hình đủ để gọi API thật (server-only).
- * Thiếu key → UI/flow vẫn chạy nhưng KHÔNG gọi API; báo người dùng cấu hình.
+ * true khi đã cấu hình đủ Gemini để gọi API thật (server-only).
+ * Thiếu key → UI/flow import vẫn chạy nhưng KHÔNG gọi AI; nhập tay bình thường.
  * KHÔNG bao giờ gọi hàm này (hoặc đọc key) ở client component.
  */
-export function hasOcrConfigured(): boolean {
-  if (env.ocrProvider === "ocrspace") return Boolean(env.ocrSpaceApiKey);
-  return false;
+export function hasGeminiConfigured(): boolean {
+  return Boolean(env.geminiApiKey);
+}
+
+/** true khi tính năng AI import được bật (env) VÀ đã có key. */
+export function isAiImportReady(): boolean {
+  return env.aiImportEnabled && hasGeminiConfigured();
 }
 
 /** Ném lỗi rõ ràng khi thiếu env ở nơi bắt buộc phải có kết nối Supabase. */

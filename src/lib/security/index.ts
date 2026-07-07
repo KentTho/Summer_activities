@@ -4,12 +4,11 @@
  * signed URL) triển khai từ Phase 6/8 tại infrastructure của module liên quan.
  */
 
-/** Whitelist định dạng file upload cho import giấy tờ cũ. */
-export const ALLOWED_IMPORT_MIME = [
+/** Whitelist định dạng ẢNH cho AI import (Gemini Vision). PDF chưa hỗ trợ → chặn. */
+export const ALLOWED_AI_IMPORT_MIME = [
   "image/jpeg",
   "image/png",
   "image/webp",
-  "application/pdf",
 ] as const;
 
 /** Whitelist định dạng template DOCX (KHÔNG cho .docm / macro). */
@@ -19,29 +18,27 @@ export const ALLOWED_TEMPLATE_MIME = [
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB
 
-/**
- * Giới hạn ảnh/PDF gửi đi OCR. OCR.space Free API giới hạn ~1MB/tệp nên đặt 1MB
- * để hỏng sớm (fail-fast) trước khi gọi API. Cũng chống DoS/parse tốn tài nguyên.
- */
-export const MAX_OCR_UPLOAD_BYTES = 1024 * 1024; // 1MB
-
 export interface FileCheckResult {
   ok: boolean;
   error?: string;
 }
 
 /**
- * Kiểm tra file upload cho OCR: bắt buộc có file, đúng mime whitelist, không rỗng,
- * không vượt giới hạn. Trả lỗi tiếng Việt thân thiện (không ném) để action xử lý.
- * Chống file thực thi/macro qua whitelist mime (ảnh + PDF).
+ * Kiểm tra ảnh upload cho AI import: bắt buộc có file, đúng mime ảnh whitelist,
+ * không rỗng, không vượt `maxBytes`. Trả lỗi tiếng Việt thân thiện (không ném).
+ * Chỉ nhận ẢNH (JPG/PNG/WebP) — PDF hiện chưa hỗ trợ, báo người dùng chụp ảnh.
  */
-export function checkOcrUploadFile(file: File | null): FileCheckResult {
-  if (!file || file.size === 0) return { ok: false, error: "Chưa chọn ảnh/PDF hợp lệ." };
-  if (!(ALLOWED_IMPORT_MIME as readonly string[]).includes(file.type)) {
-    return { ok: false, error: "Chỉ chấp nhận ảnh (JPG/PNG/WebP) hoặc PDF." };
+export function checkAiImportFile(file: File | null, maxBytes: number): FileCheckResult {
+  if (!file || file.size === 0) return { ok: false, error: "Chưa chọn ảnh hợp lệ." };
+  if (file.type === "application/pdf") {
+    return { ok: false, error: "Hiện chưa hỗ trợ PDF. Hãy chụp/ tải ảnh (JPG/PNG/WebP)." };
   }
-  if (file.size > MAX_OCR_UPLOAD_BYTES) {
-    return { ok: false, error: "Tệp quá lớn (tối đa 1MB cho OCR). Hãy giảm dung lượng ảnh." };
+  if (!(ALLOWED_AI_IMPORT_MIME as readonly string[]).includes(file.type)) {
+    return { ok: false, error: "Chỉ chấp nhận ảnh JPG/PNG/WebP." };
+  }
+  if (file.size > maxBytes) {
+    const mb = Math.round(maxBytes / (1024 * 1024));
+    return { ok: false, error: `Ảnh quá lớn (tối đa ${mb}MB). Hãy giảm dung lượng ảnh.` };
   }
   return { ok: true };
 }

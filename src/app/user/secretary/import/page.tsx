@@ -31,7 +31,7 @@ export default async function SecretaryImportPage() {
     <>
       <PageHeader
         title="Nhập giấy tờ (staging)"
-        description="Tạo lô → OCR ảnh giấy tờ hoặc nhập tay → kiểm tra/sửa → xác nhận mới tạo học sinh. Không auto-import."
+        description="Tạo lô → AI đọc ảnh giấy tờ hoặc nhập tay → kiểm tra/sửa → xác nhận mới tạo học sinh. Không auto-import."
       />
 
       {neighborhoods.length === 0 ? (
@@ -63,7 +63,7 @@ export default async function SecretaryImportPage() {
                       {b.file_name}
                     </p>
                     <p className="mt-0.5 text-xs text-slate-500">
-                      {b.source === "OCR" ? "OCR" : "Nhập tay"} ·{" "}
+                      {b.source === "OCR" ? "AI đọc ảnh" : "Nhập tay"} ·{" "}
                       {b.created_at.slice(0, 10)}
                     </p>
                   </div>

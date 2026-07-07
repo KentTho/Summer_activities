@@ -87,7 +87,11 @@ if (mockImports === 0) ok("không còn import @/lib/mock");
 
 // 4) Health phase không phải phase cũ.
 console.log("[4] Health route phase:");
-const OLD_PHASES = ["5-db-schema-rls", "08c-docx-export-admin-hardening"];
+const OLD_PHASES = [
+  "5-db-schema-rls",
+  "08c-docx-export-admin-hardening",
+  "09a-production-hardening",
+];
 const healthPath = "src/app/api/health/route.ts";
 if (existsSync(healthPath)) {
   const content = readFileSync(healthPath, "utf8");

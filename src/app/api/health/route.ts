@@ -1,4 +1,4 @@
-import { hasOcrConfigured, hasSupabaseEnv } from "@/lib/env";
+import { hasGeminiConfigured, hasSupabaseEnv, isAiImportReady } from "@/lib/env";
 
 /**
  * Health check cơ bản — dùng cho CI/smoke test và giám sát.
@@ -7,10 +7,11 @@ import { hasOcrConfigured, hasSupabaseEnv } from "@/lib/env";
 export async function GET() {
   return Response.json({
     status: "ok",
-    phase: "09a-production-hardening",
+    phase: "09b-gemini-ai-import",
     supabaseConfigured: hasSupabaseEnv(),
     databaseTypesReady: true,
-    ocrConfigured: hasOcrConfigured(),
+    geminiConfigured: hasGeminiConfigured(),
+    aiImportReady: isAiImportReady(),
     docxExportReady: true,
     passwordChangeReady: true,
     time: new Date().toISOString(),
