@@ -3,7 +3,7 @@
  *
  * Kiểm tra nhanh các rủi ro thường gặp — KHÔNG in bất kỳ secret nào ra màn hình.
  *   1) Không có tệp nhạy cảm/ignored bị git theo dõi (.env.local, .vercel, .next, supabase/.temp…).
- *   2) Không có GIÁ TRỊ secret (service role/OCR key/DB password) rò rỉ trong tệp tracked.
+ *   2) Không có GIÁ TRỊ secret (service role/AI key/DB password) rò rỉ trong tệp tracked.
  *   3) Không còn import `@/lib/mock` (đã dọn dead code ở 09A).
  *   4) Health route phase KHÔNG phải phase cũ.
  * In nhắc chạy lint/typecheck/build. Thoát mã ≠ 0 nếu có lỗi.
@@ -91,6 +91,7 @@ const OLD_PHASES = [
   "5-db-schema-rls",
   "08c-docx-export-admin-hardening",
   "09a-production-hardening",
+  "09b-gemini-ai-import",
 ];
 const healthPath = "src/app/api/health/route.ts";
 if (existsSync(healthPath)) {

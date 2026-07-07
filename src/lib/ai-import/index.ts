@@ -3,6 +3,8 @@
  * → đánh dấu dòng cần kiểm tra tay. KHÔNG ghi thẳng vào `students`.
  * KHÔNG import từ client component. KHÔNG log ảnh/base64/PII/API key.
  */
+import "server-only";
+
 import { z } from "zod";
 import { callGeminiJson } from "./gemini";
 import { computeNeedsReview, normalizeBirthDate, normalizeVnPhone } from "./normalize";
@@ -18,11 +20,11 @@ const geminiRowSchema = z.object({
   guardian_phone: z.union([z.string(), z.null()]).optional().default(""),
   confidence: z.coerce.number().min(0).max(1).optional().default(0.5),
   notes: z.string().max(500).optional().default(""),
-});
+}).strict();
 const geminiResultSchema = z.object({
   rows: z.array(geminiRowSchema).max(200).optional().default([]),
   warnings: z.array(z.string().max(300)).max(50).optional().default([]),
-});
+}).strict();
 
 /**
  * Trích xuất dòng học sinh nháp từ ảnh bằng Gemini. Ném lỗi thân thiện khi chưa

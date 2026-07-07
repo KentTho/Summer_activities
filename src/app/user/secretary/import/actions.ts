@@ -5,6 +5,7 @@
  * Quy trình: tạo lô nháp → nhập/sửa dòng nháp (họ tên / ngày sinh / SĐT phụ huynh)
  * → XÁC NHẬN thì mới tạo học sinh thật. KHÔNG auto-import khi chưa xác nhận.
  */
+import { randomUUID, createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -15,6 +16,13 @@ import { extractStudentDraftsFromImage, isAiImportReady } from "@/lib/ai-import"
 import { env } from "@/lib/env";
 import { logEvent, logError } from "@/lib/monitoring/server-log";
 import { logAudit } from "@/lib/admin/audit";
+import { consumeAiQuota } from "@/lib/data/ai-import-usage";
+import {
+  AI_IMPORT_BUCKET,
+  ensureAiImportBucket,
+  extForMime,
+  uploadAiImportImage,
+} from "@/lib/storage/ai-import";
 
 export interface ImportActionState {
   error?: string;
@@ -138,17 +146,57 @@ export async function aiExtractRows(
     };
   }
 
+  // (D) Rate-limit theo user/ngày TRƯỚC khi gọi Gemini/upload — bảo vệ quota.
+  const quota = await consumeAiQuota();
+  if (!quota.allowed) {
+    logEvent("ai_import_rate_limited", { limit: quota.limit });
+    return {
+      error: `Đã đạt giới hạn AI hôm nay (${quota.limit} lượt). Vui lòng nhập tay hoặc thử lại ngày mai.`,
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const bytes = new Uint8Array(await file.arrayBuffer());
+
+  // (E) Lưu ảnh gốc vào Storage PRIVATE + metadata (đối chiếu khi AI đọc sai).
+  // Lỗi upload KHÔNG chặn import: vẫn thử Gemini + cho nhập tay.
+  let documentId: string | null = null;
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const path = `${profile.profileId}/${today}/${batchId.data}/${randomUUID()}.${extForMime(file.type)}`;
+    await ensureAiImportBucket(env.aiImportMaxFileMb * 1024 * 1024);
+    await uploadAiImportImage(path, bytes, file.type);
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    const { data: doc } = await supabase
+      .from("uploaded_documents")
+      .insert({
+        bucket: AI_IMPORT_BUCKET,
+        path,
+        mime_type: file.type,
+        size_bytes: bytes.length,
+        sha256,
+        uploaded_by: profile.profileId,
+        import_batch_id: batchId.data,
+      })
+      .select("id")
+      .single();
+    documentId = doc?.id ?? null;
+    logEvent("ai_import_uploaded", { batch: batchId.data, doc: documentId, sizeKb: Math.round(file.size / 1024) });
+  } catch (err) {
+    // Không lộ path (chứa profile id); chỉ ghi mã lô + mime.
+    logError("ai_import_upload_failed", err, { batch: batchId.data, mime: file.type });
+  }
+
+  // (F) Gọi Gemini. Fail sau upload ⇒ ảnh vẫn còn để đối chiếu; user nhập tay được.
   let extracted;
   try {
-    const buffer = Buffer.from(await file.arrayBuffer());
     extracted = await extractStudentDraftsFromImage({
-      base64: buffer.toString("base64"),
+      base64: Buffer.from(bytes).toString("base64"),
       mimeType: file.type,
       fileName: file.name,
     });
   } catch (err) {
-    // Log lỗi AN TOÀN (không ảnh/base64/PII) để theo dõi; trả lỗi thân thiện.
-    logError("ai_import_failed", err, { mime: file.type, sizeKb: Math.round(file.size / 1024) });
+    logError("ai_import_failed", err, { batch: batchId.data, mime: file.type, sizeKb: Math.round(file.size / 1024) });
     return { error: (err as Error).message };
   }
 
@@ -159,7 +207,6 @@ export async function aiExtractRows(
     };
   }
 
-  const supabase = await createSupabaseServerClient();
   const payload = extracted.rows.map((r) => ({
     batch_id: batchId.data,
     // Dòng AI: chưa duyệt (reviewed=false) → phải kiểm tra/sửa tay trước khi confirm.
@@ -178,23 +225,23 @@ export async function aiExtractRows(
   const { error } = await supabase.from("import_batch_rows").insert(payload);
   if (error) return { error: "Không thể lưu dòng AI. " + error.message };
 
-  // Đánh dấu lô có nguồn OCR (nhãn nguồn AI). Không chặn nếu RLS từ chối.
-  await supabase.from("import_batches").update({ source: "OCR" }).eq("id", batchId.data);
+  // Đánh dấu nguồn lô là 'AI' (enum mới ở 09C; 'OCR' cũ giữ cho dữ liệu lịch sử).
+  await supabase.from("import_batches").update({ source: "AI" }).eq("id", batchId.data);
 
-  // Audit + log an toàn: chỉ số lượng, KHÔNG nội dung học sinh.
+  // Audit + log an toàn: chỉ số lượng + mã lô/tài liệu, KHÔNG nội dung học sinh.
   await logAudit(supabase, profile, {
     action: "AI_IMPORT",
     entity: "import_batch_rows",
-    detail: `Gemini đọc ảnh → ${extracted.rows.length} dòng nháp`,
+    detail: `Gemini đọc ảnh → ${extracted.rows.length} dòng nháp (lô ${batchId.data}${documentId ? `, ảnh ${documentId}` : ""})`,
   });
-  logEvent("ai_import_ok", { rows: extracted.rows.length, mime: file.type });
+  logEvent("ai_import_ok", { batch: batchId.data, rows: extracted.rows.length, used: quota.used, mime: file.type });
 
   revalidatePath(`${IMPORT_PATH}/${batchId.data}`);
   return { ok: true, count: extracted.rows.length, warnings: extracted.warnings };
 }
 
 /**
- * Sửa một dòng nháp (kiểm tra/sửa kết quả OCR). Lưu xong đánh dấu reviewed=true
+ * Sửa một dòng nháp (kiểm tra/sửa kết quả AI). Lưu xong đánh dấu reviewed=true
  * (đã người-duyệt). Chỉ sửa dòng chưa tạo học sinh.
  */
 export async function updateRow(
@@ -253,7 +300,7 @@ export async function confirmBatch(formData: FormData): Promise<void> {
     .maybeSingle();
   if (!batch?.neighborhood_id) return;
 
-  // CHỈ tạo học sinh từ dòng đã DUYỆT (reviewed=true). Dòng OCR chưa sửa/duyệt
+  // CHỈ tạo học sinh từ dòng đã DUYỆT (reviewed=true). Dòng AI chưa sửa/duyệt
   // (reviewed=false) bị bỏ qua — enforce "kiểm tra/sửa tay trước khi confirm".
   const { data: rows } = await supabase
     .from("import_batch_rows")
@@ -290,7 +337,7 @@ export async function confirmBatch(formData: FormData): Promise<void> {
   }
 
   // Chỉ đóng lô (COMMITTED) khi KHÔNG còn dòng nào chờ (chưa tạo học sinh) — tránh
-  // bỏ sót các dòng OCR chưa duyệt. Còn dòng chờ thì giữ DRAFT để tiếp tục duyệt.
+  // bỏ sót các dòng AI chưa duyệt. Còn dòng chờ thì giữ DRAFT để tiếp tục duyệt.
   const { count: remaining } = await supabase
     .from("import_batch_rows")
     .select("id", { count: "exact", head: true })

@@ -312,3 +312,40 @@ System.Drawing) → HTTP 200, 3 dòng đúng: `12/05/2015→2015-05-12`, SĐT gi
 
 **Chưa làm (đúng phạm vi):** PDF cho AI import (đang chặn); lưu ảnh gốc private + audit ảnh; monitoring tập
 trung/alert/uptime; load test; UI polish lớn.
+
+## Chi tiết Prompt 09C (AI import hardening: enum AI + rate-limit + private image storage)
+
+**Migration (additive, đã áp remote + gen types):**
+- `20260708010000_add_ai_import_source`: `alter type import_source add value if not exists 'AI'` (giữ `OCR`
+  cho dữ liệu lịch sử; chỉ thêm value, không dùng trong cùng migration → an toàn transaction).
+- `20260708010100_ai_import_usage_and_doc_batch`: `uploaded_documents.import_batch_id` (nullable FK); bảng
+  `ai_import_usage(profile_id, used_on, count, unique(profile_id,used_on))` + RLS **select** (Admin/chính chủ,
+  KHÔNG policy ghi cho user); RPC `consume_ai_import_quota(p_limit)` (SECURITY DEFINER, tăng **atomic** qua
+  `update … where count < p_limit returning`) + `my_ai_import_usage_today()`. `gen types` xác nhận enum
+  `"OCR"|"MANUAL"|"AI"`, bảng usage, cột batch, 2 RPC.
+
+**Rate-limit + storage (server-only):**
+- `env.aiImportDailyLimit` (`AI_IMPORT_DAILY_LIMIT=50`). `lib/data/ai-import-usage.ts`: `consumeAiQuota()`
+  (RPC, RLS) + `getAiUsageToday()`. `lib/storage/ai-import.ts`: bucket PRIVATE `ai-import-uploads`
+  (`ensureAiImportBucket`, `uploadAiImportImage`, `extForMime`) qua service role.
+
+**Flow `aiExtractRows` (Part F):** require login → validate file → `isAiImportReady` → **consumeAiQuota**
+(vượt → `ai_import_rate_limited`, không Gemini/không upload, báo nhập tay) → **upload ảnh private** +
+`uploaded_documents`(sha256/size/import_batch_id) [lỗi upload không chặn] → **Gemini** (fail sau upload ⇒
+ảnh vẫn còn) → insert dòng nháp `reviewed=false` (`raw_data.source="GEMINI"`) → `import_batches.source='AI'`
+→ audit `AI_IMPORT` (mã lô/ảnh, **không PII**) + `ai_import_ok`.
+
+**UI:** batch page lấy `getAiUsageToday` + `listBatchImages`; `AiImportForm` hiện "lượt còn lại hôm nay"
+(disable khi hết) + copy "Ảnh được lưu riêng tư…"; mục "Ảnh gốc đã lưu (riêng tư)" liệt kê size/ngày
+(KHÔNG path/URL công khai).
+
+**Health/monitoring:** phase `09c-ai-import-hardening` + `aiImportRateLimitReady/aiImportStorageReady`.
+`server-log` events `ai_import_rate_limited/uploaded/upload_failed/failed/ok` — chỉ mã lô/tài liệu (uuid) +
+mime/size/rows; **không** log path (chứa profile id)/ảnh/base64/PII/key. Preflight `OLD_PHASES` thêm `09b`.
+
+**Verify:** preflight/lint/typecheck/build xanh. **Smoke ký tên Admin thật** (publishable key): RPC
+`consume_ai_import_quota(limit=2)` → allow, allow, **block**; `my_ai_import_usage_today`=2; RLS đọc lượt
+của mình OK; bucket `ai-import-uploads` tạo **private** + upload/remove OK → **dọn sạch** (xóa usage row).
+
+**Chưa làm (đúng phạm vi):** route tải/xem lại ảnh gốc trên UI + audit tải + retention; PDF cho AI import;
+monitoring tập trung/alert/uptime; load test; UI polish lớn.

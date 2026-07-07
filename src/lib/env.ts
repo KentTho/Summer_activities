@@ -6,6 +6,7 @@
  * cấu hình Supabase. Từ Phase 2 trở đi, dùng assertSupabaseEnv() ở nơi bắt buộc
  * phải có kết nối thật.
  */
+import "server-only";
 
 export const env = {
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
@@ -26,6 +27,8 @@ export const env = {
   aiImportMaxFileMb: Number(process.env.AI_IMPORT_MAX_FILE_MB ?? "4") || 4,
   // Cho phép tắt AI import qua env (mặc định bật). "false" ⇒ tắt (nhập tay vẫn chạy).
   aiImportEnabled: (process.env.AI_IMPORT_ENABLED ?? "true").toLowerCase() !== "false",
+  // Giới hạn số lượt gọi AI/người dùng/ngày để bảo vệ quota Gemini.
+  aiImportDailyLimit: Math.max(1, Number(process.env.AI_IMPORT_DAILY_LIMIT ?? "50") || 50),
 } as const;
 
 /** true khi đã cấu hình đủ Supabase public env để khởi tạo client. */

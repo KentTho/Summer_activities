@@ -24,7 +24,7 @@ Supabase Postgres, **RLS bật ở mọi bảng nghiệp vụ/dữ liệu cá nh
 | `leave_requests` | Xin phép nghỉ trước buổi |
 | `notifications` / `notification_recipients` | Thông báo & trạng thái đọc |
 | `uploaded_documents` | Metadata file upload/scan/template |
-| `import_batches` / `import_batch_rows` | Import staging (OCR/nhập tay) |
+| `import_batches` / `import_batch_rows` | Import staging (AI Gemini/nhập tay; enum DB cũ vẫn có `OCR`) |
 | `export_templates` | Template DOCX an toàn |
 | `audit_logs` | Log thao tác nhạy cảm |
 | `system_settings` | Cấu hình theme an toàn (whitelist field) |

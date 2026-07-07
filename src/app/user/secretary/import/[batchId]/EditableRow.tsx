@@ -20,9 +20,9 @@ export interface EditableRowData {
 }
 
 /**
- * Một dòng nháp có thể SỬA (kiểm tra/sửa kết quả OCR trước khi tạo học sinh).
+ * Một dòng nháp có thể SỬA (kiểm tra/sửa kết quả AI trước khi tạo học sinh).
  * "Lưu & duyệt" đánh dấu reviewed=true; chỉ dòng đã duyệt mới được confirm tạo HS.
- * Dòng chưa duyệt (OCR) hiện nhãn "AI đọc — cần kiểm tra".
+ * Dòng chưa duyệt (AI) hiện nhãn "AI đọc — cần kiểm tra".
  */
 export function EditableRow({
   rowId,

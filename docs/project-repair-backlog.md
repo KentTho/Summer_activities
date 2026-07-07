@@ -2,6 +2,14 @@
 
 > Tạo ở **Prompt 09A**. Theo dõi việc cần sửa/nâng cấp, tách rõ: đã xử lý · còn lại · không làm ngay.
 
+## Đã xử lý ở 09C
+- [x] Enum `import_source='AI'` (additive) — lô AI đánh `source='AI'`; `OCR` giữ cho lịch sử.
+- [x] **Rate-limit** AI theo user/ngày (`ai_import_usage` + RPC atomic `consume_ai_import_quota`), env `AI_IMPORT_DAILY_LIMIT`.
+- [x] **Lưu ảnh gốc private** (`ai-import-uploads`) + `uploaded_documents.import_batch_id`; đối chiếu khi AI đọc sai.
+- [x] Monitoring: `ai_import_rate_limited/uploaded/failed/upload_failed/ok` (redact PII/path/key).
+- [x] Health phase `09c-ai-import-hardening` + cờ `aiImportRateLimitReady/aiImportStorageReady`.
+- [x] Docs `storage-policy.md`; cập nhật gemini-ai-import/test-plan.
+
 ## Đã xử lý ở 09B
 - [x] **Bỏ OCR.space hoàn toàn** (code/env/UI copy/docs); fallback duy nhất là nhập tay.
 - [x] **Gemini Vision AI import**: ảnh → JSON schema chặt (Zod) → dòng nháp `needs_review` → duyệt tay → confirm.
@@ -18,14 +26,15 @@
 - [x] Docs OCR production (`ocr-production-setup.md`).
 
 ## Còn lại trước khi "UI polish"
-1. **Monitoring nâng cao**: (09B đã có logger nhẹ redact PII) — còn lại: alert khi `/api/health` fail;
+1. **Monitoring nâng cao**: (09B/09C có logger nhẹ redact PII) — còn lại: alert khi `/api/health` fail;
    gom log tập trung; uptime check.
 2. **Load test sau MVP**: mô phỏng ghi điểm danh dồn cuối buổi; xem index/độ trễ.
-3. **AI import image → private storage + audit**: hiện không lưu ảnh gốc.
+3. **Xem lại ảnh gốc AI trên UI**: (09C đã lưu private + liệt kê metadata) — còn lại: route xác thực để
+   tải/xem ảnh + audit tải; retention xóa ảnh cũ.
 4. **PDF cho AI import**: hiện chặn PDF; thêm khi xác nhận Gemini path ổn với PDF.
-4. **Advanced DOCX template engine**: vòng lặp/điều kiện/bảng động, placeholder bị tách run.
-5. **Dọn `DemoNotice` component** nếu vẫn không dùng (hiện chỉ export, không render ở app).
-6. **Đồng bộ Postgres local `major_version`** (15 local vs 17 remote) — chỉ ảnh hưởng dev.
+5. **Advanced DOCX template engine**: vòng lặp/điều kiện/bảng động, placeholder bị tách run.
+6. **Dọn `DemoNotice` component** nếu vẫn không dùng (hiện chỉ export, không render ở app).
+7. **Đồng bộ Postgres local `major_version`** (15 local vs 17 remote) — chỉ ảnh hưởng dev.
 
 ## Không nên làm ngay (tránh lan man)
 - Logout-all / token-version thật (chỉ backlog trong `auth-session-hardening.md` — chưa cần).

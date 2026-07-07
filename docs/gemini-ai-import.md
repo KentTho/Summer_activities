@@ -22,9 +22,25 @@
 | `GEMINI_API_BASE_URL` | `https://generativelanguage.googleapis.com` | Endpoint công khai (không phải secret). |
 | `AI_IMPORT_MAX_FILE_MB` | `4` | Giới hạn kích thước ảnh. |
 | `AI_IMPORT_ENABLED` | `true` | Đặt `false` để tắt AI (nhập tay vẫn chạy). |
+| `AI_IMPORT_DAILY_LIMIT` | `50` | **09C**: số lượt AI/người dùng/ngày (bảo vệ quota). |
 
 **Quota:** Gemini free tier CÓ hạn mức (RPM/ngày), **không đảm bảo vô hạn**. Lỗi 429 → báo người dùng
 thử lại sau; nhập tay vẫn hoạt động.
+
+## 3b. Rate-limit theo người dùng (09C)
+- Mỗi người dùng có hạn **`AI_IMPORT_DAILY_LIMIT`** lượt/ngày. Đếm ở bảng `ai_import_usage`
+  (`unique(profile_id, used_on)`); tăng lượt **atomic** qua RPC `consume_ai_import_quota(p_limit)`
+  (SECURITY DEFINER, chỉ tác động lượt của chính người gọi). UI hiện "lượt còn lại hôm nay".
+- Vượt hạn → **KHÔNG** gọi Gemini, **KHÔNG** upload ảnh; báo "Đã đạt giới hạn AI hôm nay… nhập tay hoặc
+  thử lại ngày mai". **Nhập tay vẫn chạy.**
+- RLS: user chỉ đọc lượt của mình; Admin đọc tất cả. Không policy ghi cho user (chỉ RPC ghi).
+
+## 3c. Lưu ảnh gốc riêng tư (09C)
+- Ảnh gốc lưu ở bucket **PRIVATE** `ai-import-uploads` (không public URL), path
+  `<profileId>/<date>/<batchId>/<random>.<ext>`. Metadata vào `uploaded_documents` (bucket/path/mime/
+  size/sha256/uploaded_by/**import_batch_id**) qua RLS. Dùng để **đối chiếu khi AI đọc sai**.
+- Thứ tự: rate-limit → **upload ảnh** → `uploaded_documents` → Gemini. Gemini fail sau upload → ảnh vẫn
+  còn để đối chiếu; user nhập tay được. Storage thao tác bằng service role **sau** khi xác thực user/role.
 
 ## 4. Cấu hình trên Vercel (thủ công — không tự thêm khi user chưa cấp)
 1. Vercel → Project → Settings → Environment Variables.
@@ -47,5 +63,9 @@ thử lại sau; nhập tay vẫn hoạt động.
   `src/app/user/secretary/import/actions.ts#aiExtractRows`; log an toàn qua `lib/monitoring/server-log.ts`.
 
 ## 7. Ghi chú kỹ thuật
-- Enum `import_batches.source` giữ giá trị `OCR` (nghĩa là "AI đọc ảnh") để **không** đổi schema
-  (migration non-additive). Nguồn thật ghi trong `import_batch_rows.raw_data.source = "GEMINI"`.
+- **09C**: enum `import_source` đã thêm giá trị **`AI`** (migration additive) → lô AI đánh `source='AI'`.
+  Giá trị `OCR` cũ **giữ lại** cho dữ liệu lịch sử (không đổi/xóa). Dòng vẫn ghi
+  `import_batch_rows.raw_data.source = "GEMINI"`.
+- Mã nguồn 09C: `supabase/migrations/20260708010000_*`, `..._20260708010100_*`;
+  `src/lib/storage/ai-import.ts`, `src/lib/data/ai-import-usage.ts`; RPC `consume_ai_import_quota` /
+  `my_ai_import_usage_today`.

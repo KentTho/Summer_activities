@@ -11,14 +11,19 @@ import { aiExtractRows, type ImportActionState } from "../actions";
 export function AiImportForm({
   batchId,
   ready,
+  remaining,
+  limit,
 }: {
   batchId: string;
   ready: boolean;
+  remaining: number;
+  limit: number;
 }) {
   const [state, formAction, pending] = useActionState<ImportActionState, FormData>(
     aiExtractRows,
     {},
   );
+  const outOfQuota = remaining <= 0;
 
   return (
     <Card title="AI đọc ảnh (Gemini)" className="mb-4">
@@ -29,8 +34,17 @@ export function AiImportForm({
             nhập tay bên dưới.
           </p>
         ) : null}
+        {ready ? (
+          <p className={`text-xs ${outOfQuota ? "text-red-600" : "text-slate-500"}`}>
+            Lượt AI hôm nay: còn <span className="font-medium">{remaining}</span>/{limit}.
+            {outOfQuota
+              ? " Đã đạt giới hạn — hãy nhập tay bên dưới hoặc thử lại ngày mai."
+              : ""}
+          </p>
+        ) : null}
         <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
           ⚠️ AI có thể đọc sai. Vui lòng kiểm tra kỹ từng dòng trước khi xác nhận tạo học sinh.
+          Ảnh được lưu riêng tư để đối chiếu khi cần.
         </p>
         <input type="hidden" name="batch_id" value={batchId} />
         <input
@@ -46,7 +60,7 @@ export function AiImportForm({
           trước khi tạo học sinh.
         </p>
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" disabled={pending || !ready}>
+          <Button type="submit" disabled={pending || !ready || outOfQuota}>
             {pending ? "AI đang đọc…" : "Tải ảnh & để AI đọc"}
           </Button>
           {state.error ? (

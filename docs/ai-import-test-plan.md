@@ -19,6 +19,15 @@
 - [ ] **Ảnh > giới hạn MB**: bị chặn với thông báo giảm dung lượng.
 - [ ] **Quota/timeout (429/abort)**: thông báo thân thiện; nhập tay vẫn dùng được; **không** crash trang.
 
+## Rate-limit + private storage (09C)
+- [ ] **Vượt hạn ngày** (`AI_IMPORT_DAILY_LIMIT`): nút AI disabled + báo "Đã đạt giới hạn AI hôm nay…";
+      **không** gọi Gemini, **không** upload ảnh; nhập tay vẫn chạy. UI hiện "lượt còn lại".
+- [ ] **Trong hạn**: mỗi lần gọi tăng 1 lượt (atomic); UI cập nhật lượt còn lại.
+- [ ] **Ảnh gốc lưu private**: sau khi AI đọc, mục "Ảnh gốc đã lưu (riêng tư)" hiện tệp; `uploaded_documents`
+      có dòng với `import_batch_id`, `bucket=ai-import-uploads`, `sha256`. **Không** public URL.
+- [ ] **Gemini fail sau upload**: ảnh vẫn được lưu (đối chiếu), user nhập tay được.
+- [ ] **RLS**: user chỉ thấy ảnh/lượt của mình; Admin thấy tất cả.
+
 ## Sau trích xuất (giữ nguyên staging)
 - [ ] Sửa dòng → "Lưu & duyệt" (`reviewed=true`).
 - [ ] "Xác nhận & tạo N học sinh" chỉ tạo từ dòng **đã duyệt, có Họ tên**; gán Khu phố theo lô.

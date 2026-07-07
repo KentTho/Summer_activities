@@ -9,7 +9,8 @@ Docs nền được rút ra từ spec gốc (`spec/diem-danh-sinh-hoat-he-spec.h
 | [data-model.md](./data-model.md) | Bảng chính & quan hệ (Supabase Postgres) |
 | [security.md](./security.md) | RBAC, RLS, upload, audit, env |
 | [auth-strategy.md](./auth-strategy.md) | Tách cổng Admin/User, redirect theo vai trò, chiến lược tài khoản |
-| [ocr-import.md](./ocr-import.md) | Import giấy tờ qua staging + OCR (kế hoạch) |
+| [gemini-ai-import.md](./gemini-ai-import.md) | Import ảnh giấy tờ bằng Gemini Vision qua staging + duyệt tay |
+| [ocr-import.md](./ocr-import.md) | Lịch sử OCR.space đã thay thế ở Prompt 09B |
 | [docx-export.md](./docx-export.md) | Xuất báo cáo DOCX theo template (kế hoạch) |
 | [admin-management-pages.md](./admin-management-pages.md) | Site map & thiết kế trang quản trị Admin |
 | [roadmap.md](./roadmap.md) | Lộ trình theo phase & vị trí Phase 1 |

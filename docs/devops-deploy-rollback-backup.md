@@ -8,7 +8,7 @@
   Framework preset `nextjs` khai báo ở `vercel.json` (Prompt 04A — fix 404).
 - **Database + Auth + Storage:** Supabase (project `ymtogeacpnlmthjlryrd`).
 - **Secrets:** biến môi trường ở Vercel (public) + `.env.local` khi chạy local. Key
-  server-only (service role, OCR) **không** để tiền tố `NEXT_PUBLIC_`.
+  server-only (service role, Gemini) **không** để tiền tố `NEXT_PUBLIC_`.
 
 ## 2. Pipeline deploy
 

@@ -2,10 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
-    // Upload ảnh giấy tờ cho OCR đi qua Server Action (multipart). Mặc định 1MB
-    // quá nhỏ — nới lên 2MB (ảnh OCR giới hạn 1MB + overhead multipart boundaries).
+    // Upload ảnh giấy tờ cho AI import đi qua Server Action (multipart).
+    // App mặc định cho ảnh <= 4MB, nên limit cần lớn hơn để chứa multipart overhead.
     serverActions: {
-      bodySizeLimit: "2mb",
+      bodySizeLimit: "6mb",
     },
   },
   /**

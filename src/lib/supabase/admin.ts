@@ -4,10 +4,11 @@
  * ⚠️ CHỈ được import ở server-side (route handler / server action / script Node).
  * TUYỆT ĐỐI không import vào Client Component — service role key sẽ lộ ra client.
  *
- * `server-only` chưa cài trong dự án nên dùng guard runtime: ném lỗi nếu bị nạp
- * trong môi trường trình duyệt. Ngoài ra file này KHÔNG được import từ bất kỳ
- * component "use client" nào.
+ * `server-only` chặn import nhầm ở build-time; guard runtime bên dưới là lớp phụ.
+ * File này KHÔNG được import từ bất kỳ component "use client" nào.
  */
+import "server-only";
+
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
 import type { Database } from "@/lib/database.types";

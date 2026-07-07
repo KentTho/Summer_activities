@@ -51,7 +51,7 @@ Chi tiết ở `devops-deploy-rollback-backup.md`. Guardrail cốt lõi bổ sun
 
 ## 4. AI / "vibe coding" / System design / Git / DB / API
 
-- **AI/OCR:** xem `ai-security-checklist.md`. Output AI là *gợi ý*, qua **duyệt tay** trước khi
+- **AI import:** xem `ai-security-checklist.md`. Output AI là *gợi ý*, qua **duyệt tay** trước khi
   ghi thật; key AI chỉ ở server.
 - **Chống "vibe coding" (code theo cảm tính):** không copy code không hiểu; đọc guide phiên bản
   (Next.js trong `node_modules/next/dist/docs` — repo này khác bản thường); mỗi thay đổi phải

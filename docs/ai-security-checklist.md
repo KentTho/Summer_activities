@@ -21,26 +21,25 @@
 
 ## 3. Đầu vào không tin cậy (untrusted input)
 
-- [x] Validate file: whitelist mime (ảnh/PDF), chặn thực thi/macro, giới hạn 1MB.
-- [x] Giới hạn kích thước body Server Action (2MB) chống payload lớn/DoS.
-- [x] Coi **text OCR là dữ liệu, không phải lệnh** — parser chỉ trích xuất, không eval.
+- [x] Validate file: whitelist mime ảnh (JPG/PNG/WebP), chặn PDF, giới hạn `AI_IMPORT_MAX_FILE_MB` (mặc định 4MB).
+- [x] Giới hạn kích thước body Server Action (6MB) chống payload lớn/DoS và khớp ảnh 4MB + multipart overhead.
+- [x] Coi **output AI là dữ liệu, không phải lệnh** — chỉ parse JSON theo schema, không eval.
 - [x] Zod validate lại mọi dòng trước khi ghi (ngày sinh `YYYY-MM-DD`, độ dài, whitelist field).
-- [ ] (Nếu dùng LLM chuẩn hóa) chống **prompt injection**: tách rõ system/user, không để
-      text OCR điều khiển hành vi; chỉ nhận JSON theo schema cố định.
+- [x] Chống **prompt injection** ở mức MVP: prompt yêu cầu JSON cố định; app chỉ nhận JSON schema đã validate bằng Zod.
 
 ## 4. Con người trong vòng lặp (human-in-the-loop)
 
-- [x] Kết quả OCR gắn cờ **chưa duyệt** (`reviewed=false`) + nhãn "AI đọc — cần kiểm tra".
+- [x] Kết quả AI gắn cờ **chưa duyệt** (`reviewed=false`) + nhãn "AI đọc — cần kiểm tra".
 - [x] Bí thư phải **sửa & duyệt** từng dòng; confirm **bỏ qua** dòng chưa duyệt.
 - [x] Không có đường tắt tạo học sinh trực tiếp từ ảnh.
 
 ## 5. Độ tin cậy & lỗi
 
 - [x] Xử lý lỗi provider (HTTP/■ lỗi nội dung) → thông báo tiếng Việt, không lộ chi tiết nhạy cảm.
-- [x] Thiếu cấu hình → vô hiệu OCR, vẫn cho nhập tay (không chặn nghiệp vụ).
-- [ ] (Đề xuất) Rate-limit theo user cho endpoint OCR; log số lần gọi để theo dõi chi phí.
+- [x] Thiếu cấu hình/quota provider → vô hiệu hoặc báo lỗi AI, vẫn cho nhập tay (không chặn nghiệp vụ).
+- [ ] (Đề xuất) Rate-limit theo user cho endpoint AI import; log số lần gọi để theo dõi quota/chi phí.
 
 ## 6. Nhật ký
 
-- [x] Không log nội dung ảnh/PII/text OCR ra console; chỉ log tên provider + lỗi tối thiểu.
-- [ ] (Đề xuất) Ghi audit khi import commit: ai/khi nào/số dòng/nguồn (OCR|tay).
+- [x] Không log nội dung ảnh/base64/PII/API key ra console; chỉ log số lượng/mime/size/lỗi đã redact.
+- [ ] (Đề xuất) Ghi audit khi import commit: ai/khi nào/số dòng/nguồn (AI|tay).

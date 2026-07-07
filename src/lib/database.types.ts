@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -61,6 +61,41 @@ export type Database = {
           {
             foreignKeyName: "activity_sessions_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_import_usage: {
+        Row: {
+          count: number
+          created_at: string
+          id: string
+          profile_id: string
+          updated_at: string
+          used_on: string
+        }
+        Insert: {
+          count?: number
+          created_at?: string
+          id?: string
+          profile_id: string
+          updated_at?: string
+          used_on?: string
+        }
+        Update: {
+          count?: number
+          created_at?: string
+          id?: string
+          profile_id?: string
+          updated_at?: string
+          used_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_import_usage_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -825,6 +860,7 @@ export type Database = {
           bucket: string
           created_at: string
           id: string
+          import_batch_id: string | null
           mime_type: string | null
           path: string
           sha256: string | null
@@ -835,6 +871,7 @@ export type Database = {
           bucket: string
           created_at?: string
           id?: string
+          import_batch_id?: string | null
           mime_type?: string | null
           path: string
           sha256?: string | null
@@ -845,6 +882,7 @@ export type Database = {
           bucket?: string
           created_at?: string
           id?: string
+          import_batch_id?: string | null
           mime_type?: string | null
           path?: string
           sha256?: string | null
@@ -852,6 +890,13 @@ export type Database = {
           uploaded_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "uploaded_documents_import_batch_id_fkey"
+            columns: ["import_batch_id"]
+            isOneToOne: false
+            referencedRelation: "import_batches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "uploaded_documents_uploaded_by_fkey"
             columns: ["uploaded_by"]
@@ -872,6 +917,14 @@ export type Database = {
       }
       can_access_session: { Args: { target_session: string }; Returns: boolean }
       can_access_student: { Args: { target_student: string }; Returns: boolean }
+      consume_ai_import_quota: {
+        Args: { p_limit: number }
+        Returns: {
+          allowed: boolean
+          limit_value: number
+          used: number
+        }[]
+      }
       current_profile_id: { Args: never; Returns: string }
       current_profile_role: {
         Args: never
@@ -892,10 +945,11 @@ export type Database = {
         Returns: boolean
       }
       is_secretary: { Args: never; Returns: boolean }
+      my_ai_import_usage_today: { Args: never; Returns: number }
     }
     Enums: {
       attendance_status: "PRESENT" | "EXCUSED" | "UNEXCUSED"
-      import_source: "OCR" | "MANUAL"
+      import_source: "OCR" | "MANUAL" | "AI"
       import_status: "DRAFT" | "REVIEWING" | "COMMITTED" | "REJECTED"
       leave_status: "SUBMITTED" | "ACKNOWLEDGED" | "REJECTED"
       notification_scope: "NEIGHBORHOOD" | "SESSION" | "SYSTEM"
@@ -1029,7 +1083,7 @@ export const Constants = {
   public: {
     Enums: {
       attendance_status: ["PRESENT", "EXCUSED", "UNEXCUSED"],
-      import_source: ["OCR", "MANUAL"],
+      import_source: ["OCR", "MANUAL", "AI"],
       import_status: ["DRAFT", "REVIEWING", "COMMITTED", "REJECTED"],
       leave_status: ["SUBMITTED", "ACKNOWLEDGED", "REJECTED"],
       notification_scope: ["NEIGHBORHOOD", "SESSION", "SYSTEM"],

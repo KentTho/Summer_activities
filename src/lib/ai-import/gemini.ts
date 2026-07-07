@@ -3,6 +3,8 @@
  * API key chỉ đọc từ env, KHÔNG bao giờ ra client, KHÔNG log key/ảnh/base64.
  * Trả về JSON thô đã parse (chưa chuẩn hóa) để `index.ts` validate bằng Zod.
  */
+import "server-only";
+
 import { env } from "@/lib/env";
 import type { AiImportInput } from "./types";
 

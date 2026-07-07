@@ -16,7 +16,7 @@
       Storage mẫu DOCX, đọc mẫu để merge.
 - [ ] `GEMINI_API_KEY` (+ tùy chọn `GEMINI_MODEL`, `AI_IMPORT_ENABLED`) — server-only, KHÔNG `NEXT_PUBLIC_`.
       Thiếu → AI import tắt, nhập tay vẫn chạy. Xem `gemini-ai-import.md`.
-- [ ] KHÔNG đưa service role / OCR key / DB password vào client hay git.
+- [ ] KHÔNG đưa service role / Gemini key / DB password vào client hay git.
 
 ## 2. Bảo mật (xem `auth-session-hardening.md`, `ai-code-security-gate.md`)
 - [ ] RLS bật deny-by-default trên mọi bảng; không `using(true)` ở bảng dữ liệu cá nhân.
@@ -25,7 +25,7 @@
 - [ ] Validate input bằng Zod ở server; whitelist field; không log PII/secret.
 
 ## 3. Sức khỏe & giám sát
-- [ ] `/api/health` trả phase hiện tại + cờ `supabaseConfigured/ocrConfigured/docxExportReady/passwordChangeReady`.
+- [ ] `/api/health` trả phase hiện tại + cờ `supabaseConfigured/geminiConfigured/aiImportReady/docxExportReady/passwordChangeReady`.
 - [ ] Sau deploy: `curl /api/health` + `curl -I /`, `/admin/login`, `/user/login` = 200/redirect hợp lệ.
 - [ ] Log lỗi server (không PII). Monitoring nâng cao → backlog (`project-repair-backlog.md`).
 

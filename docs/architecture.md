@@ -41,7 +41,7 @@ diem-danh-sinh-hoat-he-app/
 | Presentation | `app/`, `components/` | Page, layout, form, server action entrypoint, view-model |
 | Application | `modules/*/application` | Use case (tạo session, điểm danh, duyệt import, xuất báo cáo) |
 | Domain | `modules/*/domain` | Entity, value object, enum trạng thái, business rule thuần |
-| Infrastructure | `modules/*/infrastructure`, `lib/supabase` | Repository Supabase, mapper, storage, docx, OCR adapter |
+| Infrastructure | `modules/*/infrastructure`, `lib/supabase` | Repository Supabase, mapper, storage, DOCX, AI import adapter |
 
 ## Nguyên tắc giữ đơn giản
 - Không tách package riêng mỗi layer ở MVP.

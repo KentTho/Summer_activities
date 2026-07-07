@@ -1,7 +1,7 @@
 # AI Code Security Gate (chống "vibe coding")
 
 > Prompt 09A. Rút gọn nhóm **AI Security / Vibe Coding** thành checklist review cho dự án.
-> Bổ trợ `ai-security-checklist.md` (OCR/AI), `engineering-guardrails.md §4`.
+> Bổ trợ `ai-security-checklist.md` (AI import/Gemini), `engineering-guardrails.md §4`.
 
 ## Cổng review trước khi merge code (kể cả code do AI gợi ý)
 - [ ] **Không hardcode secret** (key/token/password) trong code hay git. Đọc từ `process.env` (`lib/env.ts`).

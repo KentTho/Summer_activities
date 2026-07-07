@@ -303,6 +303,23 @@
 > free tier có **quota** — lỗi 429 báo thử lại, nhập tay luôn sẵn sàng. Gemini **chỉ gọi server-side**, key
 > không ra client/git, không log ảnh/PII.
 
+### Prompt 09C — AI import hardening: enum AI + rate-limit + private image storage
+- [x] Migration additive: `import_source` thêm `AI` (giữ `OCR` lịch sử); `uploaded_documents.import_batch_id`
+- [x] Migration additive: bảng `ai_import_usage` (unique profile/ngày) + RLS đọc (chính chủ/Admin) + RPC atomic `consume_ai_import_quota` + `my_ai_import_usage_today`; `db push` + `gen types` OK
+- [x] Gemini draft rows đánh `import_batches.source='AI'` (raw_data.source vẫn "GEMINI")
+- [x] **Rate-limit** theo user/ngày (`AI_IMPORT_DAILY_LIMIT=50`): vượt → không gọi Gemini/không upload, báo thân thiện, nhập tay vẫn chạy
+- [x] **Lưu ảnh gốc** bucket PRIVATE `ai-import-uploads` (path `profileId/date/batchId/uuid.ext`) + `uploaded_documents` (sha256/size/import_batch_id) qua RLS; service role chỉ cho Storage sau xác thực
+- [x] Flow: rate-limit → upload ảnh → uploaded_documents → Gemini → dòng nháp reviewed=false → audit `AI_IMPORT` (mã lô/ảnh, không PII). Gemini fail sau upload ⇒ ảnh vẫn còn để đối chiếu
+- [x] UI: hiện lượt AI còn lại hôm nay, mục "Ảnh gốc đã lưu (riêng tư)" (không link công khai), copy giới hạn
+- [x] Health phase `09c-ai-import-hardening` + cờ `aiImportRateLimitReady/aiImportStorageReady`; monitoring `ai_import_rate_limited/uploaded/failed/ok` (redact PII/path/key)
+- [x] Docs `storage-policy.md` + cập nhật gemini-ai-import/test-plan/backlog
+- [x] preflight/lint/typecheck/build pass; **smoke ký tên Admin thật**: rate-limit (allow×2→block), RLS đọc lượt, bucket private upload/remove → dọn sạch
+- [x] Report 09C (Gợi ý tiếp theo + Điểm cần tu sửa + Không nên làm ngay)
+
+> Ghi chú: rate-limit ghi **atomic** ở DB (RPC WHERE count < limit), không service role cho usage. Ảnh gốc
+> **private**, không public URL; xem lại ảnh trên UI (route tải) để backlog. Vẫn **không auto-import**, PDF
+> vẫn chặn. Gemini free tier có quota.
+
 ## 4. Next planned prompts
 1. Prompt 06B — Full CRUD Admin (Khu phố/Bí thư/Phân công) + tạo tài khoản Phụ huynh
 2. Prompt 07 — Attendance + leave request thật

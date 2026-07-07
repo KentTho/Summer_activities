@@ -8,7 +8,7 @@
 | Phase 3 | CRUD Khu phố, Bí thư, học sinh, phụ huynh | ⬜ |
 | Phase 4 | Attendance session, leave request, thống kê cơ bản | ⬜ |
 | Phase 5 | Thông báo in-app theo phạm vi | ⬜ |
-| Phase 6 | Import giấy tờ, staging, OCR tùy chọn | ⬜ |
+| Phase 6 | Import giấy tờ, staging, AI import tùy chọn | ⬜ |
 | Phase 7 | DOCX export + quản lý template an toàn | ⬜ |
 | Phase 8 | CI/CD, test cơ bản, security hardening | ⬜ (CI khung đã có) |
 
@@ -28,7 +28,7 @@
 - Docs mới: `auth-strategy.md`, `ocr-import.md`, `docx-export.md`.
 
 ## Ranh giới Phase 1/03B (CHƯA làm — có chủ đích)
-OCR · DOCX export thật · notification thật · CRUD thật · migration/RLS · auth thật.
+AI import · DOCX export thật · notification thật · CRUD thật · migration/RLS · auth thật.
 Tất cả để lại TODO tại module/lib tương ứng.
 
 ## Bước tiếp theo (Phase 2)

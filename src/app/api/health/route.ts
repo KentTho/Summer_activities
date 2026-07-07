@@ -7,11 +7,13 @@ import { hasGeminiConfigured, hasSupabaseEnv, isAiImportReady } from "@/lib/env"
 export async function GET() {
   return Response.json({
     status: "ok",
-    phase: "09b-gemini-ai-import",
+    phase: "09c-ai-import-hardening",
     supabaseConfigured: hasSupabaseEnv(),
     databaseTypesReady: true,
     geminiConfigured: hasGeminiConfigured(),
     aiImportReady: isAiImportReady(),
+    aiImportRateLimitReady: true,
+    aiImportStorageReady: true,
     docxExportReady: true,
     passwordChangeReady: true,
     time: new Date().toISOString(),

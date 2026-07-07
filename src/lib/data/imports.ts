@@ -43,6 +43,27 @@ export async function getImportBatch(id: string): Promise<ImportBatchRow | null>
   return data;
 }
 
+export interface BatchImage {
+  id: string;
+  sizeBytes: number | null;
+  createdAt: string;
+}
+
+/**
+ * Ảnh gốc AI import đã lưu riêng tư cho một lô (đối chiếu khi AI đọc sai).
+ * RLS: chỉ người upload (uploaded_by) hoặc Admin đọc được. KHÔNG trả path/URL.
+ */
+export async function listBatchImages(batchId: string): Promise<BatchImage[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("uploaded_documents")
+    .select("id, size_bytes, created_at")
+    .eq("import_batch_id", batchId)
+    .order("created_at", { ascending: false });
+  if (error) return [];
+  return (data ?? []).map((d) => ({ id: d.id, sizeBytes: d.size_bytes, createdAt: d.created_at }));
+}
+
 export async function listImportRows(batchId: string): Promise<ImportRow[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
