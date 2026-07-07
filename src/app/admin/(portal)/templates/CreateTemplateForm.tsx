@@ -24,27 +24,33 @@ export function CreateTemplateForm() {
           <label className="mb-1 block text-xs font-medium text-slate-600">
             Tên mẫu <span className="text-red-500">*</span>
           </label>
-          <input name="name" required placeholder="VD: Danh sách điểm danh theo buổi" className={field} />
+          <input name="name" required placeholder="VD: Mẫu danh sách điểm danh" className={field} />
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-slate-600">
-            Tên tệp .docx (tùy chọn)
+            Tệp mẫu .docx <span className="text-red-500">*</span>
           </label>
-          <input name="file_name" placeholder="mau-diem-danh.docx" className={field} />
+          <input
+            name="file"
+            type="file"
+            required
+            accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-xs file:font-medium file:text-slate-700"
+          />
         </div>
         <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
           <Button type="submit" disabled={pending}>
-            {pending ? "Đang lưu…" : "Thêm mẫu"}
+            {pending ? "Đang tải lên…" : "Tải lên mẫu"}
           </Button>
           <span className="text-xs text-slate-400">
-            Chỉ nhận tệp .docx (chặn .docm chứa macro). Tải lên tệp mẫu và xuất DOCX đang được hoàn thiện.
+            Chỉ nhận tệp .docx (chặn .docm/macro), tối đa 10MB. Tệp lưu ở kho riêng tư.
           </span>
           {state.error ? (
             <span role="alert" className="text-sm text-red-600">
               {state.error}
             </span>
           ) : state.ok ? (
-            <span className="text-sm text-green-600">Đã thêm mẫu.</span>
+            <span className="text-sm text-green-600">Đã tải lên mẫu.</span>
           ) : null}
         </div>
       </form>

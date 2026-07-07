@@ -1,41 +1,64 @@
-import { Badge, Button, Card, StatCard } from "@/components/ui";
+import { Badge, Card, StatCard } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
-import { ADMIN_STATS } from "@/lib/mock";
+import { getAdminOverview, listNeighborhoodsDetailed } from "@/lib/data/admin";
 
-const SYSTEM_REPORTS = [
-  { title: "Tổng hợp điểm danh toàn hệ thống", desc: "Tỉ lệ có mặt / nghỉ theo Khu phố trong kỳ." },
-  { title: "Hoạt động của Bí thư", desc: "Số buổi, số lần điểm danh, đơn nghỉ đã xử lý theo Bí thư." },
-  { title: "Thống kê Khu phố", desc: "Số học sinh, số buổi, độ phủ Bí thư theo từng Khu phố." },
-];
+export const dynamic = "force-dynamic";
 
-export default function AdminReportsPage() {
+export default async function AdminReportsPage() {
+  const [overview, neighborhoods] = await Promise.all([
+    getAdminOverview(),
+    listNeighborhoodsDetailed(),
+  ]);
+
   return (
     <>
       <PageHeader
         title="Báo cáo tổng hợp hệ thống"
-        description="Báo cáo cấp quản trị toàn hệ thống. Xuất DOCX render server-side bật ở phase DOCX."
+        description="Số liệu toàn hệ thống theo thời gian thực. Xuất DOCX render trên máy chủ."
       />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-3">
-        <StatCard label="Khu phố" value={ADMIN_STATS.neighborhoods} />
-        <StatCard label="Bí thư" value={ADMIN_STATS.secretaries} />
-        <StatCard label="Học sinh" value={ADMIN_STATS.students} />
+        <StatCard label="Khu phố" value={overview.neighborhoods} />
+        <StatCard label="Cán bộ phụ trách" value={overview.secretaries} />
+        <StatCard label="Học sinh" value={overview.students} />
+      </div>
+      <div className="mb-4 grid gap-4 sm:grid-cols-3">
+        <StatCard label="Buổi sinh hoạt" value={overview.sessions} />
+        <StatCard label="Phụ huynh" value={overview.parents} />
+        <StatCard label="Đơn nghỉ chờ xử lý" value={overview.pendingLeave} />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {SYSTEM_REPORTS.map((r) => (
-          <Card key={r.title}>
-            <div className="flex items-start justify-between gap-2">
-              <p className="font-medium text-slate-900">{r.title}</p>
-              <Badge tone="slate">DOCX</Badge>
-            </div>
-            <p className="mt-1 text-sm text-slate-500">{r.desc}</p>
-            <Button disabled variant="secondary" className="mt-3 h-9 px-3 text-xs">
-              Xuất DOCX (chưa kết nối)
-            </Button>
-          </Card>
-        ))}
-      </div>
+      <Card title="Xuất báo cáo tổng hợp" className="mb-4">
+        <p className="mb-3 text-sm text-slate-500">
+          Tệp DOCX gồm số liệu tổng hợp và thống kê theo từng Khu phố.
+        </p>
+        <a
+          href="/admin/reports/system"
+          className="inline-flex h-9 items-center rounded-lg bg-indigo-600 px-3 text-xs font-medium text-white hover:bg-indigo-700"
+        >
+          Xuất DOCX tổng hợp
+        </a>
+      </Card>
+
+      <p className="mb-2 text-sm font-medium text-slate-700">Thống kê theo Khu phố</p>
+      <Card className="p-0">
+        <ul className="divide-y divide-slate-100">
+          {neighborhoods.map((n) => (
+            <li key={n.id} className="flex items-center justify-between gap-3 px-4 py-3">
+              <div className="min-w-0">
+                <p className="truncate font-medium text-slate-900">{n.name}</p>
+                <p className="mt-0.5 truncate text-xs text-slate-500">
+                  {n.studentCount} học sinh · {n.staffCount} cán bộ · {n.sessionCount} buổi
+                  {n.primaryName ? ` · Chính: ${n.primaryName}` : ""}
+                </p>
+              </div>
+              <Badge tone={n.active ? "green" : "slate"}>
+                {n.active ? "Đang hoạt động" : "Ngừng"}
+              </Badge>
+            </li>
+          ))}
+        </ul>
+      </Card>
     </>
   );
 }

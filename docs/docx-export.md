@@ -1,7 +1,13 @@
-# Xuất báo cáo DOCX (kế hoạch)
+# Xuất báo cáo DOCX
 
-> Cập nhật ở Prompt 03B. Tương ứng Phase 7 trong `roadmap.md`.
-> **Trạng thái:** kế hoạch — **KHÔNG** có export DOCX thật ở phase hiện tại.
+> Cập nhật ở Prompt 03B; **hiện thực ở Prompt 08C**. Tương ứng Phase 10.
+> **Trạng thái:** ĐÃ CÓ export DOCX thật (MVP) — render server-side bằng bộ ghi ZIP/OOXML
+> zero-dependency (`src/lib/docx/`). Mẫu `.docx` upload vào Storage **private** (`report-templates`).
+>
+> **Đã làm (08C):** xuất DS học sinh, điểm danh theo buổi (Bí thư/Chi Đoàn), tổng hợp hệ thống (Admin)
+> — RLS scope + audit `EXPORT_DOCX`; upload/tải mẫu `.docx` (chặn `.docm`/macro: đuôi+mime+magic bytes+
+> quét `vbaProject`). **Chưa làm:** đổ dữ liệu vào **placeholder** của mẫu upload (mục 2 dưới) — hiện
+> export dùng bộ sinh riêng, mẫu upload là tệp tham chiếu.
 
 ## 1. Mục tiêu
 

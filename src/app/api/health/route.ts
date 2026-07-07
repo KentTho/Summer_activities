@@ -7,7 +7,7 @@ import { hasSupabaseEnv } from "@/lib/env";
 export async function GET() {
   return Response.json({
     status: "ok",
-    phase: "5-db-schema-rls",
+    phase: "08c-docx-export-admin-hardening",
     supabaseConfigured: hasSupabaseEnv(),
     time: new Date().toISOString(),
   });

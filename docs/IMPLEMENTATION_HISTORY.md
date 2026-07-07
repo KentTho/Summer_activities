@@ -179,3 +179,52 @@ gán PRIMARY → đọc lại → đổi COORDINATING → đọc lại → dọn
 
 **Chưa làm (đúng phạm vi):** render DOCX thật + upload binary mẫu; `/admin/students`,`/admin/reports`,
 `/admin/settings` giữ mức đọc/tối giản; nâng cấp UI lớn.
+
+## Chi tiết Prompt 08C (Audit ID + DOCX thật + Hardening Admin)
+
+**Audit ID (không cần migration):** Rà soát toàn bộ migration đã áp remote (10 file, `migration list`
+khớp local↔remote). **Mọi bảng nghiệp vụ** có `id uuid primary key default gen_random_uuid()` — ID **đã
+tự sinh**. Ngoại lệ có chủ đích: `system_settings.id boolean` (singleton, CHECK `id = true`). Bảng liên
+kết (`secretary_neighborhoods`, `student_guardians`, `session_neighborhoods`, `session_permissions`,
+`attendance_records`, `notification_recipients`) đều có `id` tự sinh **cộng** unique composite — đúng,
+KHÔNG sửa. → Kết luận: không cần thay đổi DB; trả lời câu hỏi user "id để tự động được không?" = **đã tự động**.
+
+**DOCX writer ZERO-dependency (`src/lib/docx/`):**
+- `zip.ts`: bộ ghi ZIP STORE (không nén) + CRC-32 tự cài (đầu ra tất định). `document.ts`: sinh OOXML
+  WordprocessingML tối giản (3 phần: `[Content_Types].xml`, `_rels/.rels`, `word/document.xml`; bảng
+  có `tblBorders` inline nên không cần `styles.xml`). Escape XML + strip ký tự điều khiển + UTF-8 giữ
+  tiếng Việt. **Render server-side** (Buffer). Tự test: mở lại bằng `System.IO.Compression` OK, đọc
+  `word/document.xml` thấy tiếng Việt + escape đúng.
+
+**Upload mẫu DOCX thật (private storage):**
+- `src/lib/storage/templates.ts`: bucket **private** `report-templates` (`ensureTemplateBucket` idempotent),
+  `uploadTemplateBinary`/`downloadTemplateBinary` bằng **service role** (chỉ sau `requireAdmin()`).
+- `templates/actions.ts#createTemplate`: nhận `File`, `checkTemplateUploadFile` (đuôi `.docx`, chặn `.docm`,
+  mime whitelist, **magic bytes ZIP**, **quét chuỗi macro** `vbaProject`/`macroEnabled`, ≤10MB) → upload
+  binary → ghi `uploaded_documents` (sha256/size) + `export_templates.document_id` **qua RLS**. Tải lại:
+  route `admin/templates/[templateId]/download` (xác thực ADMIN, service role đọc binary, attachment).
+- Storage flow tự test thật (bucket create private → upload → download → remove) OK.
+
+**DOCX export thật cho Bí thư/Chi Đoàn + Admin (qua RLS):**
+- `src/lib/data/reports.ts`: `getStudentReport` (HS trong phạm vi + tên Khu phố), `getAttendanceReport`
+  (roster + tổng hợp trạng thái). `src/lib/reports/blocks.ts`: dựng `DocBlock[]`. Route handlers **tự
+  xác thực vai trò** (không qua layout): `user/secretary/reports/students`, `.../attendance?session=<id>`,
+  `admin/reports/system`. Ghi audit `EXPORT_DOCX` (không log PII học sinh). Trang `secretary/reports`
+  nay có nút xuất thật + liệt kê buổi để xuất điểm danh.
+
+**Hardening Admin:**
+- `/admin/students`: đọc thật toàn hệ thống (RLS is_admin) + tìm tên + lọc Khu phố/trạng thái (`listAllStudents`).
+- `/admin/reports`: số liệu thật (`getAdminOverview` + `listNeighborhoodsDetailed`) + nút xuất DOCX tổng hợp.
+- `/admin/settings`: lưu thật `system_settings` (single row, upsert) qua action `saveSettings` — **whitelist**
+  `system_name`/`primary_color`(hex)/`public_footer_text`, ghi audit. Không nhận CSS/JS/HTML.
+- `/api/health.phase` → `08c-docx-export-admin-hardening` (bỏ hardcode cũ `5-db-schema-rls`).
+
+**Rà soát dự án:** không còn trang import `@/lib/mock`; không còn `DemoNotice` trong app; các nút "chưa
+kết nối/sắp có" đã thay bằng hành động thật. Lib `src/lib/mock/*` nay không ai import (để dọn ở prompt sau).
+
+**Verify:** smoke test **đăng nhập Admin thật** (publishable key, KHÔNG service role): đọc học sinh (RLS),
+upsert `system_settings` (giữ nguyên giá trị), insert `uploaded_documents`+`export_templates` → **dọn sạch**.
+Tất cả OK. DOCX writer + storage flow test riêng OK. Lint/typecheck/build pass.
+
+**Chưa làm (đúng phạm vi):** template chưa có placeholder-merge (mẫu upload là tệp tham chiếu; export dùng
+bộ sinh riêng); chưa lưu ảnh gốc OCR; chưa dọn `src/lib/mock/*`; nâng cấp UI lớn để prompt sau.

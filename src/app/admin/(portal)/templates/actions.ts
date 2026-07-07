@@ -1,60 +1,93 @@
 "use server";
 
 /**
- * Server Actions quản lý mẫu báo cáo DOCX (nền tảng — chưa render DOCX thật).
- * requireAdmin() BẮT BUỘC. Chỉ chấp nhận tên tệp `.docx` (KHÔNG `.docm`/macro).
- * Render DOCX server-side + upload binary vào bucket private để Prompt 08B.
+ * Server Actions quản lý mẫu báo cáo DOCX — upload BINARY thật vào Storage private.
+ * requireAdmin() BẮT BUỘC trước mọi thao tác (điều kiện dùng service role cho Storage).
+ * Chỉ nhận `.docx` (chặn `.docm`/macro) — kiểm tra đuôi + mime + magic bytes + quét macro.
+ * Metadata ghi qua RLS (uploaded_documents/export_templates). KHÔNG log dữ liệu nhạy cảm.
  */
+import { randomUUID, createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { logAudit } from "@/lib/admin/audit";
+import { checkTemplateUploadFile } from "@/lib/security";
+import { DOCX_MIME } from "@/lib/docx/document";
+import {
+  TEMPLATE_BUCKET,
+  ensureTemplateBucket,
+  uploadTemplateBinary,
+} from "@/lib/storage/templates";
 
 export interface TemplateActionState {
   error?: string;
   ok?: boolean;
 }
 
-const createSchema = z
-  .object({
-    name: z.string().trim().min(2, "Tên mẫu quá ngắn.").max(150),
-    file_name: z.string().trim().max(200).optional().default(""),
-  })
-  .refine(
-    (v) => {
-      if (!v.file_name) return true;
-      const lower = v.file_name.toLowerCase();
-      return lower.endsWith(".docx") && !lower.endsWith(".docm");
-    },
-    { message: "Tên tệp phải là .docx (không nhận .docm/macro).", path: ["file_name"] },
-  );
+const nameSchema = z.string().trim().min(2, "Tên mẫu quá ngắn.").max(150);
 
 export async function createTemplate(
   _prev: TemplateActionState,
   formData: FormData,
 ): Promise<TemplateActionState> {
   const admin = await requireAdmin();
-  const parsed = createSchema.safeParse({
-    name: formData.get("name"),
-    file_name: formData.get("file_name") ?? "",
-  });
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Dữ liệu không hợp lệ." };
+
+  const parsedName = nameSchema.safeParse(formData.get("name"));
+  if (!parsedName.success) {
+    return { error: parsedName.error.issues[0]?.message ?? "Tên mẫu không hợp lệ." };
   }
 
-  // Ghi tham chiếu tên tệp .docx vào name (chưa có cột riêng / chưa lưu binary).
-  const name = parsed.data.file_name
-    ? `${parsed.data.name} (${parsed.data.file_name})`
-    : parsed.data.name;
+  const raw = formData.get("file");
+  const file = raw instanceof File ? raw : null;
+  const bytes = file ? new Uint8Array(await file.arrayBuffer()) : null;
+  const check = checkTemplateUploadFile(file, bytes);
+  if (!check.ok || !file || !bytes) {
+    return { error: check.error ?? "Tệp mẫu không hợp lệ." };
+  }
 
+  // Tải binary lên Storage private (service role — sau requireAdmin).
+  const path = `${randomUUID()}.docx`;
+  try {
+    await ensureTemplateBucket();
+    await uploadTemplateBinary(path, bytes, DOCX_MIME);
+  } catch (err) {
+    return { error: "Không tải được tệp lên kho lưu trữ. " + (err as Error).message };
+  }
+
+  const sha256 = createHash("sha256").update(bytes).digest("hex");
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from("export_templates")
-    .insert({ name, active: true, created_by: admin.profileId });
-  if (error) return { error: "Không tạo được mẫu. " + error.message };
 
-  await logAudit(supabase, admin, { action: "CREATE_TEMPLATE", entity: "export_templates", detail: name });
+  // Metadata tệp (qua RLS — doc_insert cho is_admin()).
+  const { data: doc, error: docErr } = await supabase
+    .from("uploaded_documents")
+    .insert({
+      bucket: TEMPLATE_BUCKET,
+      path,
+      mime_type: DOCX_MIME,
+      size_bytes: bytes.length,
+      sha256,
+      uploaded_by: admin.profileId,
+    })
+    .select("id")
+    .single();
+  if (docErr || !doc) {
+    return { error: "Không lưu được thông tin tệp. " + (docErr?.message ?? "") };
+  }
+
+  const { error: tplErr } = await supabase.from("export_templates").insert({
+    name: parsedName.data,
+    document_id: doc.id,
+    active: true,
+    created_by: admin.profileId,
+  });
+  if (tplErr) return { error: "Không tạo được mẫu. " + tplErr.message };
+
+  await logAudit(supabase, admin, {
+    action: "CREATE_TEMPLATE",
+    entity: "export_templates",
+    detail: `${parsedName.data} (${(bytes.length / 1024).toFixed(0)}KB)`,
+  });
   revalidatePath("/admin/templates");
   return { ok: true };
 }

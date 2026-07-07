@@ -19,7 +19,7 @@
 | Phase 7 — CRUD thật | ✅ Done | 06A: CRUD học sinh (Bí thư); 08A: Admin CRUD tài khoản; **08B: CRUD Khu phố + phân công phụ trách có vai trò (chính/phối hợp)** |
 | Phase 8 — Attendance workflow thật | ✅ Done | **07: tạo buổi, điểm danh (4 trạng thái), sửa/chốt buổi, xin nghỉ, dashboard thật** — qua RLS |
 | Phase 9 — Import/OCR staging thật | 🟡 In progress | 06A: staging + confirm; **06B: OCR thật server-side (OCR.space) + duyệt tay**; lưu ảnh/audit để sau |
-| Phase 10 — DOCX export thật | 🟡 In progress | **08A: nền tảng mẫu (Admin duyệt bật/tắt, .docx-only, Bí thư xem)**; upload binary + render DOCX ở 08B |
+| Phase 10 — DOCX export thật | ✅ Done (MVP) | **08C: upload binary mẫu vào Storage private + render DOCX thật server-side** (DS học sinh, điểm danh buổi, tổng hợp hệ thống) qua bộ ghi ZIP/OOXML zero-dependency |
 | Phase 11 — Notification thật | 🟡 In progress | **08A: Bí thư/Chi Đoàn gửi thông báo phụ huynh theo buổi (RLS thật); Phụ huynh nhận thật** |
 | Phase 12 — Vercel deploy + hardening | 🟡 In progress | Deploy production live, đã sửa 404 (04A); hardening sau |
 
@@ -250,6 +250,23 @@
 > enforce ở DB (partial unique index). Chưa làm: render DOCX thật + upload binary mẫu (prompt sau);
 > `/admin/students`,`/admin/reports`,`/admin/settings` giữ mức đọc/tối giản.
 
+### Prompt 08C — Audit ID + DOCX export thật + Hardening Admin + Health/sweep
+- [x] Audit ID toàn DB: mọi bảng nghiệp vụ `id uuid default gen_random_uuid()` (đã tự sinh);
+      `system_settings.id boolean` singleton có chủ đích; bảng liên kết có id + unique composite → **không sửa**
+- [x] Bộ ghi DOCX **zero-dependency** (`src/lib/docx/`): ZIP STORE + CRC-32 + OOXML tối giản (render server-side)
+- [x] Upload mẫu `.docx` thật → **Storage bucket private** `report-templates`; chặn `.docm`/macro (đuôi + mime + magic bytes + quét `vbaProject`); metadata vào `uploaded_documents` + `export_templates` (qua RLS)
+- [x] Tải lại mẫu (Admin): route `admin/templates/[templateId]/download` (service role đọc binary sau xác thực ADMIN)
+- [x] Export DOCX thật: **DS học sinh**, **điểm danh theo buổi** (Bí thư/Chi Đoàn), **tổng hợp hệ thống** (Admin) — RLS + audit `EXPORT_DOCX`
+- [x] `/admin/students` đọc thật + tìm/lọc; `/admin/reports` số liệu thật + xuất DOCX; `/admin/settings` lưu thật (whitelist + audit)
+- [x] `/api/health.phase` → `08c-docx-export-admin-hardening` (bỏ hardcode `5-db-schema-rls`)
+- [x] Rà soát: hết trang mock/`DemoNotice`; nút "chưa kết nối/sắp có" thay bằng hành động thật
+- [x] Lint/typecheck/build pass; **smoke test RLS ký tên Admin thật** (đọc HS/upsert settings/insert template → dọn sạch)
+- [x] Report 08C (có mục **Gợi ý bước tiếp theo** bắt buộc) + cập nhật history/progress
+
+> Ghi chú: mẫu upload là **tệp tham chiếu** (chưa có placeholder-merge); export dùng bộ sinh riêng —
+> MVP chạy thật, không giả. Storage binary qua service role **chỉ sau `requireAdmin()`**; mọi metadata/read
+> nghiệp vụ vẫn qua RLS. `src/lib/mock/*` nay không ai import (để dọn ở prompt sau).
+
 ## 4. Next planned prompts
 1. Prompt 06B — Full CRUD Admin (Khu phố/Bí thư/Phân công) + tạo tài khoản Phụ huynh
 2. Prompt 07 — Attendance + leave request thật
@@ -271,4 +288,8 @@
 - **OCR key phụ thuộc `.env.local`/env Vercel.** Muốn OCR chạy trên production phải thêm
   `OCR_SPACE_API_KEY` vào env server của Vercel (không `NEXT_PUBLIC_`). Thiếu → chỉ nhập tay.
 - OCR chưa lưu ảnh gốc/audit; độ chính xác parser là best-effort (đã có bước duyệt tay bù lại).
-- DOCX export phải render server-side và log audit khi làm thật.
+- ✅ (Đã gỡ) DOCX export **render server-side + log audit** (08C): bộ ghi ZIP/OOXML zero-dependency;
+  mẫu `.docx` lưu Storage **private** (chặn `.docm`/macro). Còn lại: **placeholder-merge** vào mẫu upload
+  (hiện export dùng bộ sinh riêng, mẫu chỉ là tệp tham chiếu) — làm khi cần khớp mẫu in chính xác.
+- Storage bucket `report-templates` là **private**: tải mẫu/tệp báo cáo chỉ qua route server (attachment),
+  **không** public URL. Service role chỉ chạm binary sau `requireAdmin()`.

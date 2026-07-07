@@ -46,6 +46,41 @@ export function checkOcrUploadFile(file: File | null): FileCheckResult {
   return { ok: true };
 }
 
+/**
+ * Kiểm tra tệp mẫu báo cáo DOCX trước khi lưu trữ:
+ *  - Bắt buộc có tệp, không rỗng, ≤ MAX_UPLOAD_BYTES.
+ *  - Đuôi `.docx` (KHÔNG `.docm`) + mime whitelist WordprocessingML.
+ *  - Magic bytes ZIP (PK\x03\x04) — chặn tệp giả đuôi.
+ *  - Quét chuỗi macro (`vbaProject`, content-type macroEnabled) trong nội dung
+ *    ZIP để chặn tệp chứa macro dù đổi đuôi thành .docx.
+ * Trả lỗi tiếng Việt (không ném) để action xử lý mượt.
+ */
+export function checkTemplateUploadFile(file: File | null, bytes: Uint8Array | null): FileCheckResult {
+  if (!file || file.size === 0 || !bytes || bytes.length === 0) {
+    return { ok: false, error: "Chưa chọn tệp .docx hợp lệ." };
+  }
+  const lower = file.name.toLowerCase();
+  if (lower.endsWith(".docm") || !lower.endsWith(".docx")) {
+    return { ok: false, error: "Chỉ nhận tệp .docx (không nhận .docm/macro)." };
+  }
+  if (file.type && !(ALLOWED_TEMPLATE_MIME as readonly string[]).includes(file.type)) {
+    return { ok: false, error: "Định dạng tệp không đúng chuẩn .docx (WordprocessingML)." };
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return { ok: false, error: "Tệp quá lớn (tối đa 10MB)." };
+  }
+  // Magic bytes ZIP: 50 4B 03 04 (docx là gói ZIP).
+  if (!(bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04)) {
+    return { ok: false, error: "Tệp không phải gói .docx hợp lệ (thiếu chữ ký ZIP)." };
+  }
+  // Quét macro: tên tệp trong ZIP nằm dạng văn bản thuần trong local file header.
+  const ascii = Buffer.from(bytes).toString("latin1");
+  if (ascii.includes("vbaProject") || ascii.includes("macroEnabled")) {
+    return { ok: false, error: "Tệp chứa macro — không được phép. Hãy dùng .docx không macro." };
+  }
+  return { ok: true };
+}
+
 /** Field whitelist cho theme settings an toàn (không CSS/JS/HTML tùy ý). */
 export const SYSTEM_SETTINGS_WHITELIST = [
   "system_name",

@@ -245,6 +245,82 @@ export async function listStudentsBrief(): Promise<Pick<Tables<"students">, "id"
   return data ?? [];
 }
 
+export interface AdminStudentRow {
+  id: string;
+  fullName: string;
+  neighborhoodName: string;
+  school: string | null;
+  guardianPhone: string | null;
+  active: boolean;
+}
+
+export interface AdminStudentsResult {
+  rows: AdminStudentRow[];
+  total: number;
+}
+
+/**
+ * Danh sách học sinh toàn hệ thống cho Admin (RLS: is_admin() thấy tất cả).
+ * Chỉ đọc — CRUD học sinh thuộc cổng Bí thư. Hỗ trợ tìm tên + lọc Khu phố/trạng thái.
+ */
+export async function listAllStudents(filters: {
+  q?: string;
+  neighborhoodId?: string;
+  status?: "active" | "inactive" | "all";
+} = {}): Promise<AdminStudentsResult> {
+  const supabase = await createSupabaseServerClient();
+  let query = supabase
+    .from("students")
+    .select("id, full_name, neighborhood_id, school, guardian_phone, active", { count: "exact" })
+    .is("deleted_at", null);
+
+  if (filters.status === "active") query = query.eq("active", true);
+  else if (filters.status === "inactive") query = query.eq("active", false);
+  if (filters.neighborhoodId) query = query.eq("neighborhood_id", filters.neighborhoodId);
+  const term = filters.q?.trim();
+  if (term) query = query.ilike("full_name", `%${term}%`);
+
+  const { data, error, count } = await query.order("full_name").limit(500);
+  if (error) throw error;
+
+  const neighborhoods = await listNeighborhoods();
+  const nameById = new Map(neighborhoods.map((n) => [n.id, n.name]));
+
+  return {
+    rows: (data ?? []).map((s) => ({
+      id: s.id,
+      fullName: s.full_name,
+      neighborhoodName: nameById.get(s.neighborhood_id) ?? "—",
+      school: s.school,
+      guardianPhone: s.guardian_phone,
+      active: s.active,
+    })),
+    total: count ?? (data?.length ?? 0),
+  };
+}
+
+export interface SystemSettingsView {
+  systemName: string;
+  primaryColor: string;
+  publicFooterText: string;
+  updatedAt: string | null;
+}
+
+/** Đọc cấu hình hệ thống (single row). Trả mặc định nếu chưa có bản ghi. */
+export async function getSystemSettings(): Promise<SystemSettingsView> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("system_settings")
+    .select("system_name, primary_color, public_footer_text, updated_at")
+    .maybeSingle();
+  return {
+    systemName: data?.system_name ?? "Điểm danh sinh hoạt hè",
+    primaryColor: data?.primary_color ?? "",
+    publicFooterText: data?.public_footer_text ?? "",
+    updatedAt: data?.updated_at ?? null,
+  };
+}
+
 export interface AuditView {
   id: string;
   action: string;

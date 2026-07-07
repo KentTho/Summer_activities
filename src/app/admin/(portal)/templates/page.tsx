@@ -6,6 +6,11 @@ import { toggleTemplate } from "./actions";
 
 export const dynamic = "force-dynamic";
 
+function formatSize(bytes: number | null): string {
+  if (!bytes) return "";
+  return `${(bytes / 1024).toFixed(0)}KB`;
+}
+
 export default async function AdminTemplatesPage() {
   const templates = await listTemplates();
 
@@ -13,7 +18,7 @@ export default async function AdminTemplatesPage() {
     <>
       <PageHeader
         title="Mẫu báo cáo DOCX"
-        description="Admin quản lý & duyệt mẫu (bật/tắt). Bí thư/Chi Đoàn chỉ thấy mẫu đang bật. Chỉ nhận .docx, chặn .docm/macro."
+        description="Admin tải lên & duyệt mẫu (bật/tắt). Bí thư/Chi Đoàn chỉ thấy mẫu đang bật. Chỉ nhận .docx, chặn .docm/macro. Tệp lưu kho riêng tư."
       />
 
       <CreateTemplateForm />
@@ -22,7 +27,7 @@ export default async function AdminTemplatesPage() {
       <Card className="p-0">
         {templates.length === 0 ? (
           <p className="px-4 py-6 text-center text-sm text-slate-500">
-            Chưa có mẫu nào. Thêm mẫu phía trên.
+            Chưa có mẫu nào. Tải lên mẫu phía trên.
           </p>
         ) : (
           <ul className="divide-y divide-slate-100">
@@ -32,10 +37,19 @@ export default async function AdminTemplatesPage() {
                   <p className="truncate font-medium text-slate-900">{t.name}</p>
                   <p className="mt-0.5 truncate text-xs text-slate-500">
                     cập nhật {t.updated_at.slice(0, 10)}
+                    {t.hasFile ? ` · ${formatSize(t.sizeBytes)}` : " · chưa có tệp"}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge tone={t.active ? "green" : "slate"}>{t.active ? "Đang bật" : "Đã tắt"}</Badge>
+                  {t.hasFile ? (
+                    <a
+                      href={`/admin/templates/${t.id}/download`}
+                      className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-200"
+                    >
+                      Tải tệp
+                    </a>
+                  ) : null}
                   <form action={toggleTemplate}>
                     <input type="hidden" name="template_id" value={t.id} />
                     <input type="hidden" name="active" value={(!t.active).toString()} />
@@ -54,8 +68,7 @@ export default async function AdminTemplatesPage() {
       </Card>
 
       <p className="mt-4 text-xs text-slate-400">
-        Quản lý danh mục mẫu và duyệt bật/tắt. Tính năng tải lên tệp mẫu và xuất DOCX
-        server-side đang được hoàn thiện.
+        Tệp mẫu lưu trong kho lưu trữ riêng tư (không có URL công khai). Chỉ Admin tải lại được.
       </p>
     </>
   );

@@ -1,19 +1,65 @@
 import { Badge, Card } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
 import { listActiveTemplates } from "@/lib/data/templates";
+import { listSessions } from "@/lib/data/sessions";
 
 export const dynamic = "force-dynamic";
 
+const linkBtn =
+  "inline-flex h-9 items-center rounded-lg bg-indigo-600 px-3 text-xs font-medium text-white hover:bg-indigo-700";
+const linkBtnGhost =
+  "inline-flex h-9 items-center rounded-lg bg-slate-100 px-3 text-xs font-medium text-slate-700 hover:bg-slate-200";
+
 export default async function SecretaryReportsPage() {
-  const templates = await listActiveTemplates();
+  const [templates, sessions] = await Promise.all([listActiveTemplates(), listSessions(30)]);
 
   return (
     <>
       <PageHeader
         title="Báo cáo"
-        description="Danh mục mẫu báo cáo do Quản trị viên duyệt. Tính năng xuất và tải file DOCX đang được hoàn thiện."
+        description="Xuất báo cáo DOCX cho học sinh và điểm danh trong phạm vi phụ trách. Tệp được tạo trên máy chủ."
       />
 
+      <Card title="Xuất nhanh" className="mb-4">
+        <p className="mb-3 text-sm text-slate-500">
+          Tệp DOCX tạo theo dữ liệu thật trong phạm vi Khu phố bạn phụ trách.
+        </p>
+        <a href="/user/secretary/reports/students" className={linkBtn}>
+          Xuất danh sách học sinh (DOCX)
+        </a>
+      </Card>
+
+      <p className="mb-2 text-sm font-medium text-slate-700">Báo cáo điểm danh theo buổi</p>
+      <Card className="mb-4 p-0">
+        {sessions.length === 0 ? (
+          <p className="px-4 py-6 text-center text-sm text-slate-500">
+            Chưa có buổi sinh hoạt nào. Tạo buổi ở mục Buổi sinh hoạt.
+          </p>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {sessions.map(({ session, neighborhoods, counts }) => (
+              <li key={session.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-slate-900">{session.title}</p>
+                  <p className="mt-0.5 truncate text-xs text-slate-500">
+                    {session.session_date}
+                    {neighborhoods.length > 0 ? ` · ${neighborhoods.map((n) => n.name).join(", ")}` : ""}
+                    {` · đã điểm danh ${counts.marked}`}
+                  </p>
+                </div>
+                <a
+                  href={`/user/secretary/reports/attendance?session=${session.id}`}
+                  className={linkBtnGhost}
+                >
+                  Xuất điểm danh (DOCX)
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <p className="mb-2 text-sm font-medium text-slate-700">Mẫu báo cáo do Quản trị duyệt</p>
       {templates.length === 0 ? (
         <Card>
           <p className="text-sm text-slate-500">
@@ -29,14 +75,8 @@ export default async function SecretaryReportsPage() {
                 <Badge tone="slate">DOCX</Badge>
               </div>
               <p className="mt-1 text-sm text-slate-500">
-                Mẫu đang được bật. Tính năng xuất file DOCX đang được hoàn thiện.
+                Mẫu tham chiếu do Quản trị viên tải lên. Dùng kèm dữ liệu xuất ở trên.
               </p>
-              <button
-                disabled
-                className="mt-3 h-9 rounded-lg bg-slate-100 px-3 text-xs font-medium text-slate-500"
-              >
-                Xuất DOCX (sắp có)
-              </button>
             </Card>
           ))}
         </div>
