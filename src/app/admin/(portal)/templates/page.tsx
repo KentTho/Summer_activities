@@ -54,8 +54,8 @@ export default async function AdminTemplatesPage() {
       </Card>
 
       <p className="mt-4 text-xs text-slate-400">
-        Nền tảng mẫu: quản lý danh mục + duyệt bật/tắt. Upload binary vào bucket private
-        (mime + đuôi + kích thước + hash) và render DOCX server-side ở Prompt 08B.
+        Quản lý danh mục mẫu và duyệt bật/tắt. Tính năng tải lên tệp mẫu và xuất DOCX
+        server-side đang được hoàn thiện.
       </p>
     </>
   );

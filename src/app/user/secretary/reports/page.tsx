@@ -11,7 +11,7 @@ export default async function SecretaryReportsPage() {
     <>
       <PageHeader
         title="Báo cáo"
-        description="Chọn mẫu báo cáo do Admin duyệt. Render & tải DOCX thật bật ở Prompt 08B."
+        description="Danh mục mẫu báo cáo do Quản trị viên duyệt. Tính năng xuất và tải file DOCX đang được hoàn thiện."
       />
 
       {templates.length === 0 ? (
@@ -29,13 +29,13 @@ export default async function SecretaryReportsPage() {
                 <Badge tone="slate">DOCX</Badge>
               </div>
               <p className="mt-1 text-sm text-slate-500">
-                Mẫu đang bật. Xuất DOCX thật (render server-side) sẽ có ở Prompt 08B.
+                Mẫu đang được bật. Tính năng xuất file DOCX đang được hoàn thiện.
               </p>
               <button
                 disabled
                 className="mt-3 h-9 rounded-lg bg-slate-100 px-3 text-xs font-medium text-slate-500"
               >
-                Xuất DOCX (Prompt 08B)
+                Xuất DOCX (sắp có)
               </button>
             </Card>
           ))}

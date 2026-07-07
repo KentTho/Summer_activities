@@ -21,7 +21,7 @@ export default async function AdminDashboard() {
           value={o.neighborhoods}
           hint={`${o.activeNeighborhoods} đang hoạt động`}
         />
-        <StatCard label="Bí thư / Chi Đoàn" value={o.secretaries} hint="Vai trò SECRETARY" />
+        <StatCard label="Bí thư / Chi Đoàn" value={o.secretaries} hint="Cán bộ phụ trách" />
         <StatCard label="Phụ huynh" value={o.parents} hint="Tài khoản đã tạo" />
         <StatCard label="Học sinh" value={o.students} hint="Chưa xóa mềm" />
         <StatCard label="Buổi sinh hoạt" value={o.sessions} hint="Tổng đã tạo" />
@@ -45,6 +45,11 @@ export default async function AdminDashboard() {
             <li>
               <Link href="/admin/neighborhoods" className="text-indigo-600 hover:underline">
                 Khu phố →
+              </Link>
+            </li>
+            <li>
+              <Link href="/admin/assignments" className="text-indigo-600 hover:underline">
+                Phân công phụ trách →
               </Link>
             </li>
           </ul>

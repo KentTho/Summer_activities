@@ -152,3 +152,30 @@ khóa/mở, reset password, audit, tạo+liên kết phụ huynh, gửi thông b
 
 **Chưa làm (đúng phạm vi):** upload binary DOCX + render thật (08B); một vài trang admin phụ (students/reports/
 settings/neighborhoods/assignments) chưa CRUD đầy đủ; nâng cấp UI lớn.
+
+## Chi tiết Prompt 08B (Tối ưu Admin + Vai trò phụ trách + Rà soát câu chữ)
+
+**Migration (additive, đã áp remote + gen types thật):**
+- `20260707030000_assignment_roles`: `secretary_neighborhoods.assignment_role` (`PRIMARY`/`COORDINATING`,
+  mặc định `COORDINATING`, CHECK) + **partial unique index** `uq_snb_one_primary_per_neighborhood`
+  (tối đa 1 Phụ trách chính/Khu phố). Không thêm/nới policy RLS (cột nằm trong `sn_*` sẵn có).
+  Lần này `gen types --linked` chạy được (có token) → `database.types.ts` sinh lại thật.
+
+**Đã làm (qua RLS, KHÔNG service role):**
+- **Khu phố** (`lib/data/admin.ts#listNeighborhoodsDetailed`): danh sách kèm số học sinh/cán bộ/buổi +
+  tên Phụ trách chính (tổng hợp in-memory, tránh N+1). Actions `neighborhoods/actions.ts`:
+  `createNeighborhood`/`updateNeighborhood`/`setNeighborhoodActive` (ngừng hoạt động thay hard-delete).
+- **Vai trò phân công** (`secretaries/actions.ts`): `assignNeighborhood(assignment_role)`,
+  `setAssignmentRole`, `unassignNeighborhood`; `demoteExistingPrimary` hạ Phụ trách chính cũ trước khi
+  nâng người mới (giữ ràng buộc 1 chính, tránh vi phạm unique index).
+- **UI:** `/admin/assignments` viết lại theo góc nhìn Khu phố (chính + phối hợp + phân công/đổi vai
+  trò/gỡ); `/admin/secretaries` hiển thị nhãn vai trò + form gán có chọn vai trò (chỉ Khu phố đang
+  hoạt động); `/admin/secretaries` & `/admin/parents` thêm **tìm kiếm** (tên/SĐT `ilike` qua RLS).
+- **Câu chữ:** bỏ số prompt nội bộ khỏi UI (templates, secretary/reports); thống nhất trạng thái/nhãn
+  ("Đang hoạt động"/"Đã khóa"/"Ngừng hoạt động", "Phân công phụ trách"); giảm jargon.
+
+**Verify:** smoke test **đăng nhập Admin thật** (publishable key, không service role): tạo Khu phố →
+gán PRIMARY → đọc lại → đổi COORDINATING → đọc lại → dọn sạch. Tất cả OK. Lint/typecheck/build pass.
+
+**Chưa làm (đúng phạm vi):** render DOCX thật + upload binary mẫu; `/admin/students`,`/admin/reports`,
+`/admin/settings` giữ mức đọc/tối giản; nâng cấp UI lớn.

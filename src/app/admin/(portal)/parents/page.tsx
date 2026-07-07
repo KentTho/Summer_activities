@@ -8,23 +8,45 @@ import { linkStudent, unlinkStudent } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminParentsPage() {
-  const [parents, students] = await Promise.all([listParents(), listStudentsBrief()]);
+interface PageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+function one(v: string | string[] | undefined): string {
+  return Array.isArray(v) ? (v[0] ?? "") : (v ?? "");
+}
+
+export default async function AdminParentsPage({ searchParams }: PageProps) {
+  const q = one((await searchParams).q);
+  const [parents, students] = await Promise.all([listParents(q), listStudentsBrief()]);
 
   return (
     <>
       <PageHeader
         title="Phụ huynh / Học sinh"
-        description="Tạo tài khoản phụ huynh, liên kết với học sinh, reset mật khẩu tạm, khóa/mở. Liên kết mở khóa cổng Phụ huynh."
+        description="Tạo tài khoản phụ huynh, liên kết với học sinh, đặt lại mật khẩu tạm, khóa hoặc mở khóa. Liên kết học sinh sẽ mở khóa cổng Phụ huynh."
       />
 
       <CreateParentForm />
 
-      <p className="mb-2 text-sm text-slate-500">{parents.length} tài khoản</p>
+      <form method="get" className="mb-3">
+        <input
+          name="q"
+          defaultValue={q}
+          placeholder="Tìm theo họ tên hoặc số điện thoại…"
+          className="h-10 w-full max-w-sm rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        />
+      </form>
+
+      <p className="mb-2 text-sm text-slate-500">
+        {parents.length} tài khoản{q ? ` khớp “${q}”` : ""}
+      </p>
       <div className="grid gap-3">
         {parents.length === 0 ? (
           <Card>
-            <p className="text-sm text-slate-500">Chưa có tài khoản phụ huynh nào.</p>
+            <p className="text-sm text-slate-500">
+              {q ? "Không có tài khoản nào khớp tìm kiếm." : "Chưa có tài khoản phụ huynh nào."}
+            </p>
           </Card>
         ) : (
           parents.map(({ profile, students: linked }) => {
@@ -36,8 +58,9 @@ export default async function AdminParentsPage() {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-medium text-slate-900">{profile.full_name}</p>
+                      <Badge tone="indigo">Phụ huynh</Badge>
                       <Badge tone={profile.active ? "green" : "slate"}>
-                        {profile.active ? "Hoạt động" : "Đã khóa"}
+                        {profile.active ? "Đang hoạt động" : "Đã khóa"}
                       </Badge>
                     </div>
                     <p className="mt-0.5 truncate text-xs text-slate-500">

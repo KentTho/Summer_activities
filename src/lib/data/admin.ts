@@ -57,38 +57,131 @@ export async function listNeighborhoods(): Promise<Tables<"neighborhoods">[]> {
   return data ?? [];
 }
 
-export async function listSecretaries(): Promise<Tables<"profiles">[]> {
+/** Vai trò phụ trách Khu phố (khớp secretary_neighborhoods.assignment_role). */
+export type AssignmentRole = "PRIMARY" | "COORDINATING";
+
+export const ASSIGNMENT_ROLE_LABEL: Record<AssignmentRole, string> = {
+  PRIMARY: "Phụ trách chính",
+  COORDINATING: "Phụ trách chung",
+};
+
+export interface NeighborhoodDetail {
+  id: string;
+  code: string;
+  name: string;
+  active: boolean;
+  studentCount: number;
+  staffCount: number;
+  sessionCount: number;
+  /** Tên Phụ trách chính (nếu có) — để hiển thị nhanh trong danh sách. */
+  primaryName: string | null;
+  /** Có dữ liệu gắn (học sinh/buổi/phân công) ⇒ không cho xóa cứng. */
+  hasData: boolean;
+}
+
+/**
+ * Danh sách Khu phố kèm số liệu: học sinh, staff phụ trách, buổi sinh hoạt,
+ * và tên Phụ trách chính. Tổng hợp trong bộ nhớ để tránh N+1.
+ */
+export async function listNeighborhoodsDetailed(): Promise<NeighborhoodDetail[]> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("role", "SECRETARY")
-    .order("full_name");
+  const [neighborhoods, { data: assigns }, secretaries, { data: students }, { data: snb }, { data: sessions }] =
+    await Promise.all([
+      listNeighborhoods(),
+      supabase.from("secretary_neighborhoods").select("secretary_id, neighborhood_id, assignment_role"),
+      listSecretaries(),
+      supabase.from("students").select("neighborhood_id").is("deleted_at", null),
+      supabase.from("session_neighborhoods").select("session_id, neighborhood_id"),
+      supabase.from("activity_sessions").select("id").is("deleted_at", null),
+    ]);
+
+  const secNameById = new Map(secretaries.map((s) => [s.id, s.full_name]));
+  const liveSessionIds = new Set((sessions ?? []).map((s) => s.id));
+
+  const studentCount = new Map<string, number>();
+  for (const s of students ?? []) {
+    if (!s.neighborhood_id) continue;
+    studentCount.set(s.neighborhood_id, (studentCount.get(s.neighborhood_id) ?? 0) + 1);
+  }
+  const sessionCount = new Map<string, number>();
+  for (const row of snb ?? []) {
+    if (!liveSessionIds.has(row.session_id)) continue;
+    sessionCount.set(row.neighborhood_id, (sessionCount.get(row.neighborhood_id) ?? 0) + 1);
+  }
+  const staffCount = new Map<string, number>();
+  const primaryName = new Map<string, string>();
+  for (const a of assigns ?? []) {
+    staffCount.set(a.neighborhood_id, (staffCount.get(a.neighborhood_id) ?? 0) + 1);
+    if (a.assignment_role === "PRIMARY") {
+      primaryName.set(a.neighborhood_id, secNameById.get(a.secretary_id) ?? "—");
+    }
+  }
+
+  return neighborhoods.map((n) => {
+    const students = studentCount.get(n.id) ?? 0;
+    const staff = staffCount.get(n.id) ?? 0;
+    const ses = sessionCount.get(n.id) ?? 0;
+    return {
+      id: n.id,
+      code: n.code,
+      name: n.name,
+      active: n.active,
+      studentCount: students,
+      staffCount: staff,
+      sessionCount: ses,
+      primaryName: primaryName.get(n.id) ?? null,
+      hasData: students > 0 || staff > 0 || ses > 0,
+    };
+  });
+}
+
+export async function listSecretaries(q?: string): Promise<Tables<"profiles">[]> {
+  const supabase = await createSupabaseServerClient();
+  let query = supabase.from("profiles").select("*").eq("role", "SECRETARY");
+  const term = q?.trim();
+  if (term) query = query.or(`full_name.ilike.%${term}%,phone.ilike.%${term}%`);
+  const { data, error } = await query.order("full_name");
   if (error) throw error;
   return data ?? [];
 }
 
-export interface StaffView {
-  profile: Tables<"profiles">;
-  neighborhoods: Pick<Tables<"neighborhoods">, "id" | "code" | "name">[];
+export interface StaffNeighborhood {
+  id: string;
+  code: string;
+  name: string;
+  assignmentRole: AssignmentRole;
 }
 
-/** Danh sách tài khoản Bí thư/Chi Đoàn + Khu phố được gán. */
-export async function listStaff(): Promise<StaffView[]> {
+export interface StaffView {
+  profile: Tables<"profiles">;
+  neighborhoods: StaffNeighborhood[];
+}
+
+/** Danh sách tài khoản Bí thư/Chi Đoàn + Khu phố phụ trách (kèm vai trò). */
+export async function listStaff(q?: string): Promise<StaffView[]> {
   const supabase = await createSupabaseServerClient();
   const [staff, { data: assigns }, neighborhoods] = await Promise.all([
-    listSecretaries(),
-    supabase.from("secretary_neighborhoods").select("secretary_id, neighborhood_id"),
+    listSecretaries(q),
+    supabase.from("secretary_neighborhoods").select("secretary_id, neighborhood_id, assignment_role"),
     listNeighborhoods(),
   ]);
   const nbById = new Map(neighborhoods.map((n) => [n.id, n]));
-  const bySecretary = new Map<string, Pick<Tables<"neighborhoods">, "id" | "code" | "name">[]>();
+  const bySecretary = new Map<string, StaffNeighborhood[]>();
   for (const a of assigns ?? []) {
     const nb = nbById.get(a.neighborhood_id);
     if (!nb) continue;
     const arr = bySecretary.get(a.secretary_id) ?? [];
-    arr.push({ id: nb.id, code: nb.code, name: nb.name });
+    arr.push({
+      id: nb.id,
+      code: nb.code,
+      name: nb.name,
+      assignmentRole: a.assignment_role === "PRIMARY" ? "PRIMARY" : "COORDINATING",
+    });
     bySecretary.set(a.secretary_id, arr);
+  }
+  // Phụ trách chính lên đầu để dễ nhìn.
+  for (const arr of bySecretary.values()) {
+    arr.sort((x, y) => (x.assignmentRole === y.assignmentRole ? 0 : x.assignmentRole === "PRIMARY" ? -1 : 1));
   }
   return staff.map((profile) => ({ profile, neighborhoods: bySecretary.get(profile.id) ?? [] }));
 }
@@ -99,13 +192,12 @@ export interface ParentView {
 }
 
 /** Danh sách tài khoản Phụ huynh/Học sinh + học sinh đã liên kết. */
-export async function listParents(): Promise<ParentView[]> {
+export async function listParents(q?: string): Promise<ParentView[]> {
   const supabase = await createSupabaseServerClient();
-  const { data: parents, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("role", "PARENT")
-    .order("full_name");
+  let query = supabase.from("profiles").select("*").eq("role", "PARENT");
+  const term = q?.trim();
+  if (term) query = query.or(`full_name.ilike.%${term}%,phone.ilike.%${term}%`);
+  const { data: parents, error } = await query.order("full_name");
   if (error) throw error;
   if (!parents || parents.length === 0) return [];
 
@@ -190,29 +282,61 @@ export async function listAudit(limit = 100): Promise<AuditView[]> {
   }));
 }
 
-export interface AssignmentView {
-  id: string;
-  secretaryName: string;
-  neighborhoodName: string;
-  neighborhoodCode: string;
+export interface AssignmentStaff {
+  secretaryId: string;
+  name: string;
+  staffTitle: string | null;
+  active: boolean;
 }
 
-export async function listAssignments(): Promise<AssignmentView[]> {
+export interface NeighborhoodAssignments {
+  neighborhoodId: string;
+  code: string;
+  name: string;
+  active: boolean;
+  primary: AssignmentStaff | null;
+  coordinators: AssignmentStaff[];
+}
+
+/**
+ * Phân công theo góc nhìn Khu phố: mỗi Khu phố có tối đa 1 Phụ trách chính và
+ * nhiều Phụ trách chung. Dùng cho trang `/admin/assignments`.
+ */
+export async function listNeighborhoodAssignments(): Promise<NeighborhoodAssignments[]> {
   const supabase = await createSupabaseServerClient();
   const [{ data: assigns }, secretaries, neighborhoods] = await Promise.all([
-    supabase.from("secretary_neighborhoods").select("*"),
+    supabase.from("secretary_neighborhoods").select("secretary_id, neighborhood_id, assignment_role"),
     listSecretaries(),
     listNeighborhoods(),
   ]);
-  const secById = new Map(secretaries.map((s) => [s.id, s.full_name]));
-  const nbById = new Map(neighborhoods.map((n) => [n.id, n]));
-  return (assigns ?? []).map((a) => {
-    const nb = nbById.get(a.neighborhood_id);
-    return {
-      id: a.id,
-      secretaryName: secById.get(a.secretary_id) ?? "—",
-      neighborhoodName: nb?.name ?? "—",
-      neighborhoodCode: nb?.code ?? "—",
+  const secById = new Map(secretaries.map((s) => [s.id, s]));
+
+  const primaryByNb = new Map<string, AssignmentStaff>();
+  const coordByNb = new Map<string, AssignmentStaff[]>();
+  for (const a of assigns ?? []) {
+    const sec = secById.get(a.secretary_id);
+    if (!sec) continue;
+    const staff: AssignmentStaff = {
+      secretaryId: sec.id,
+      name: sec.full_name,
+      staffTitle: sec.staff_title,
+      active: sec.active,
     };
-  });
+    if (a.assignment_role === "PRIMARY") {
+      primaryByNb.set(a.neighborhood_id, staff);
+    } else {
+      const arr = coordByNb.get(a.neighborhood_id) ?? [];
+      arr.push(staff);
+      coordByNb.set(a.neighborhood_id, arr);
+    }
+  }
+
+  return neighborhoods.map((n) => ({
+    neighborhoodId: n.id,
+    code: n.code,
+    name: n.name,
+    active: n.active,
+    primary: primaryByNb.get(n.id) ?? null,
+    coordinators: (coordByNb.get(n.id) ?? []).sort((a, b) => a.name.localeCompare(b.name, "vi")),
+  }));
 }

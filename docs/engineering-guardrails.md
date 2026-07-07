@@ -3,6 +3,10 @@
 > Thêm ở **Prompt 07**. Đây là **nguyên tắc/guardrail** rút gọn từ các ghi chú thực tế,
 > KHÔNG phải tính năng phải build. Giữ ngắn, thực thi được. Bổ trợ cho:
 > `security.md` (session/JWT/AI), `devops-deploy-rollback-backup.md`, `ai-security-checklist.md`.
+>
+> **Audit 08A/08B:** đã rà lại — 4 nhóm dưới đây vẫn ngắn gọn, đúng, đủ; giữ nguyên, không thêm mục
+> thừa. 08B tiếp tục tuân thủ (migration additive + partial unique index, test bằng client Admin thật,
+> không service role cho read/write, ràng buộc nghiệp vụ enforce ở DB thay vì chỉ ở app).
 
 ## 1. Session / JWT / Auth / Zero Trust
 

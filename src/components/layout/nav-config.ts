@@ -15,7 +15,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: "Bí thư / Chi Đoàn", href: "/admin/secretaries" },
     { label: "Phụ huynh / HS", href: "/admin/parents" },
     { label: "Khu phố", href: "/admin/neighborhoods" },
-    { label: "Gán phụ trách", href: "/admin/assignments" },
+    { label: "Phân công phụ trách", href: "/admin/assignments" },
     { label: "Học sinh", href: "/admin/students" },
     { label: "Buổi sinh hoạt", href: "/admin/sessions" },
     { label: "Mẫu báo cáo", href: "/admin/templates" },

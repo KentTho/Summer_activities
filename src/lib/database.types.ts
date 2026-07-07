@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -570,18 +570,21 @@ export type Database = {
       }
       secretary_neighborhoods: {
         Row: {
+          assignment_role: string
           created_at: string
           id: string
           neighborhood_id: string
           secretary_id: string
         }
         Insert: {
+          assignment_role?: string
           created_at?: string
           id?: string
           neighborhood_id: string
           secretary_id: string
         }
         Update: {
+          assignment_role?: string
           created_at?: string
           id?: string
           neighborhood_id?: string
@@ -878,6 +881,14 @@ export type Database = {
       is_guardian_of: { Args: { target_student: string }; Returns: boolean }
       is_guardian_of_session: {
         Args: { target_session: string }
+        Returns: boolean
+      }
+      is_notification_creator: {
+        Args: { target_notification: string }
+        Returns: boolean
+      }
+      is_notification_recipient: {
+        Args: { target_notification: string }
         Returns: boolean
       }
       is_secretary: { Args: never; Returns: boolean }

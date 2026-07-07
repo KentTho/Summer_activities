@@ -83,26 +83,83 @@ export async function createStaff(
   return { ok: true, tempPassword };
 }
 
+const assignmentRoleSchema = z.enum(["PRIMARY", "COORDINATING"]);
+
+function revalidateAssignments(): void {
+  revalidatePath("/admin/secretaries");
+  revalidatePath("/admin/assignments");
+  revalidatePath("/admin/neighborhoods");
+}
+
+/**
+ * Hạ Phụ trách chính hiện tại của một Khu phố xuống Phụ trách chung (nếu có,
+ * và không phải chính người đang được nâng). Giữ ràng buộc "tối đa 1 chính".
+ */
+async function demoteExistingPrimary(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  neighborhoodId: string,
+  exceptSecretaryId?: string,
+): Promise<void> {
+  let query = supabase
+    .from("secretary_neighborhoods")
+    .update({ assignment_role: "COORDINATING" })
+    .eq("neighborhood_id", neighborhoodId)
+    .eq("assignment_role", "PRIMARY");
+  if (exceptSecretaryId) query = query.neq("secretary_id", exceptSecretaryId);
+  await query;
+}
+
 export async function assignNeighborhood(formData: FormData): Promise<void> {
   const admin = await requireAdmin();
   const secretaryId = z.string().uuid().safeParse(formData.get("secretary_id"));
   const neighborhoodId = z.string().uuid().safeParse(formData.get("neighborhood_id"));
-  if (!secretaryId.success || !neighborhoodId.success) return;
+  const role = assignmentRoleSchema.safeParse(formData.get("assignment_role") ?? "COORDINATING");
+  if (!secretaryId.success || !neighborhoodId.success || !role.success) return;
 
   const supabase = await createSupabaseServerClient();
-  await supabase
-    .from("secretary_neighborhoods")
-    .upsert(
-      { secretary_id: secretaryId.data, neighborhood_id: neighborhoodId.data },
-      { onConflict: "secretary_id,neighborhood_id" },
-    );
+  // Chỉ 1 Phụ trách chính/Khu phố: hạ người cũ trước khi nâng người mới.
+  if (role.data === "PRIMARY") {
+    await demoteExistingPrimary(supabase, neighborhoodId.data, secretaryId.data);
+  }
+  await supabase.from("secretary_neighborhoods").upsert(
+    {
+      secretary_id: secretaryId.data,
+      neighborhood_id: neighborhoodId.data,
+      assignment_role: role.data,
+    },
+    { onConflict: "secretary_id,neighborhood_id" },
+  );
   await logAudit(supabase, admin, {
     action: "ASSIGN_NEIGHBORHOOD",
     entity: "secretary_neighborhoods",
-    detail: `${secretaryId.data} ↔ ${neighborhoodId.data}`,
+    detail: `${role.data} · ${secretaryId.data} ↔ ${neighborhoodId.data}`,
   });
-  revalidatePath("/admin/secretaries");
-  revalidatePath("/admin/assignments");
+  revalidateAssignments();
+}
+
+/** Đổi vai trò phụ trách (chính ↔ chung) của một phân công đã tồn tại. */
+export async function setAssignmentRole(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  const secretaryId = z.string().uuid().safeParse(formData.get("secretary_id"));
+  const neighborhoodId = z.string().uuid().safeParse(formData.get("neighborhood_id"));
+  const role = assignmentRoleSchema.safeParse(formData.get("assignment_role"));
+  if (!secretaryId.success || !neighborhoodId.success || !role.success) return;
+
+  const supabase = await createSupabaseServerClient();
+  if (role.data === "PRIMARY") {
+    await demoteExistingPrimary(supabase, neighborhoodId.data, secretaryId.data);
+  }
+  await supabase
+    .from("secretary_neighborhoods")
+    .update({ assignment_role: role.data })
+    .eq("secretary_id", secretaryId.data)
+    .eq("neighborhood_id", neighborhoodId.data);
+  await logAudit(supabase, admin, {
+    action: "SET_ASSIGNMENT_ROLE",
+    entity: "secretary_neighborhoods",
+    detail: `${role.data} · ${secretaryId.data} ↔ ${neighborhoodId.data}`,
+  });
+  revalidateAssignments();
 }
 
 export async function unassignNeighborhood(formData: FormData): Promise<void> {
@@ -122,6 +179,5 @@ export async function unassignNeighborhood(formData: FormData): Promise<void> {
     entity: "secretary_neighborhoods",
     detail: `${secretaryId.data} ✕ ${neighborhoodId.data}`,
   });
-  revalidatePath("/admin/secretaries");
-  revalidatePath("/admin/assignments");
+  revalidateAssignments();
 }

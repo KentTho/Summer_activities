@@ -16,7 +16,7 @@
 | Phase 4 — Admin management UI pages | ✅ Done (UI shell + mock) | Prompt 03D — chưa nối DB thật |
 | Phase 5 — Supabase schema + RLS | ✅ Done | Migrations áp remote (04D), RLS bật, types thật sinh + nối vào code |
 | Phase 6 — Auth thật + RBAC guard | ✅ Done | Prompt 05 — Supabase Auth, guard 2 lớp, redirect vai trò, logout |
-| Phase 7 — CRUD thật | ✅ Done | 06A: CRUD học sinh (Bí thư); **08A: Admin CRUD tài khoản Bí thư/Chi Đoàn + Phụ huynh + gán/khóa/reset + liên kết** |
+| Phase 7 — CRUD thật | ✅ Done | 06A: CRUD học sinh (Bí thư); 08A: Admin CRUD tài khoản; **08B: CRUD Khu phố + phân công phụ trách có vai trò (chính/phối hợp)** |
 | Phase 8 — Attendance workflow thật | ✅ Done | **07: tạo buổi, điểm danh (4 trạng thái), sửa/chốt buổi, xin nghỉ, dashboard thật** — qua RLS |
 | Phase 9 — Import/OCR staging thật | 🟡 In progress | 06A: staging + confirm; **06B: OCR thật server-side (OCR.space) + duyệt tay**; lưu ảnh/audit để sau |
 | Phase 10 — DOCX export thật | 🟡 In progress | **08A: nền tảng mẫu (Admin duyệt bật/tắt, .docx-only, Bí thư xem)**; upload binary + render DOCX ở 08B |
@@ -232,6 +232,24 @@
 > Ghi chú: service role **chỉ** dùng tạo/reset auth user trong action đã `requireAdmin()`; mọi
 > read/write còn lại qua RLS. DOCX render thật + upload binary để **Prompt 08B**.
 
+### Prompt 08B — Tối ưu Admin + Vai trò phụ trách + Rà soát câu chữ
+- [x] Migration additive `20260707030000_assignment_roles`: `secretary_neighborhoods.assignment_role`
+      (`PRIMARY`/`COORDINATING`) + **partial unique index** (tối đa 1 Phụ trách chính/Khu phố)
+- [x] `gen types --linked` thật (có token) → `database.types.ts` sinh lại, có `assignment_role`
+- [x] Khu phố: danh sách thật kèm **số học sinh · cán bộ phụ trách · buổi sinh hoạt · Phụ trách chính · trạng thái**
+- [x] Khu phố: thêm/sửa/ngừng-kích hoạt (`createNeighborhood`/`updateNeighborhood`/`setNeighborhoodActive`) — **không hard-delete**
+- [x] Phân công: vai trò **Phụ trách chính** (≤1/Khu phố) & **Phụ trách chung/phối hợp** (nhiều); 1 cán bộ nhiều Khu phố
+- [x] `assignNeighborhood(role)` + `setAssignmentRole` + `demoteExistingPrimary` (giữ ràng buộc 1 chính)
+- [x] `/admin/assignments` viết lại theo góc nhìn Khu phố (chính + phối hợp + phân công/đổi vai trò/gỡ)
+- [x] `/admin/secretaries` & `/admin/parents`: nhãn rõ + **tìm kiếm** (tên/SĐT qua RLS)
+- [x] Rà soát câu chữ: bỏ số prompt nội bộ khỏi UI, thống nhất trạng thái/nhãn, giảm jargon
+- [x] Lint/typecheck/build pass; **smoke test RLS ký tên Admin thật** (tạo→gán vai trò→đổi→dọn sạch)
+- [x] Report 08B + cập nhật history/progress
+
+> Ghi chú: mọi read/write 08B qua **RLS** (không service role). Ràng buộc "1 Phụ trách chính/Khu phố"
+> enforce ở DB (partial unique index). Chưa làm: render DOCX thật + upload binary mẫu (prompt sau);
+> `/admin/students`,`/admin/reports`,`/admin/settings` giữ mức đọc/tối giản.
+
 ## 4. Next planned prompts
 1. Prompt 06B — Full CRUD Admin (Khu phố/Bí thư/Phân công) + tạo tài khoản Phụ huynh
 2. Prompt 07 — Attendance + leave request thật
@@ -243,8 +261,9 @@
 - ✅ (Đã gỡ) Bootstrap đã chạy: 2 tài khoản Admin/Bí thư đăng nhập được; service role key có sẵn.
   **Nên bắt đổi mật khẩu** sau đăng nhập đầu (đã đặt cờ `must_change_password`).
 - ✅ (Đã gỡ) Notifications (Bí thư + Phụ huynh) và reports Bí thư nay là **DB thật** (08A).
-  Toàn bộ trang nghiệp vụ chính đã dùng DB thật; còn `/admin/students`,`/admin/reports`,`/admin/settings`,
-  `/admin/neighborhoods`,`/admin/assignments` một số vẫn đọc mock/tối giản (không thuộc scope 08A cốt lõi).
+  Toàn bộ trang nghiệp vụ chính đã dùng DB thật. **08B: `/admin/neighborhoods` (CRUD + số liệu) và
+  `/admin/assignments` (vai trò phụ trách) nay là DB thật đầy đủ.** Còn `/admin/students`,`/admin/reports`,
+  `/admin/settings` vẫn đọc/tối giản (không thuộc scope 08B cốt lõi).
 - ✅ (Đã gỡ) Admin có thể **tạo tài khoản Phụ huynh + liên kết guardian↔student** (08A) → mở khóa cổng Phụ huynh.
 - **Đã sửa bug RLS đệ quy** notifications ↔ notification_recipients (42P17) bằng helper SECURITY DEFINER
   (migration 20260707020000). Rút kinh nghiệm: policy tham chiếu chéo 2 bảng phải dùng security-definer.

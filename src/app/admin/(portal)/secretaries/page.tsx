@@ -1,6 +1,6 @@
 import { Badge, Card } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
-import { listStaff, listNeighborhoods } from "@/lib/data/admin";
+import { listStaff, listNeighborhoods, ASSIGNMENT_ROLE_LABEL } from "@/lib/data/admin";
 import { CreateStaffForm } from "./CreateStaffForm";
 import { ResetPasswordButton } from "../ResetPasswordButton";
 import { setAccountActive } from "../account-actions";
@@ -8,28 +8,51 @@ import { assignNeighborhood, unassignNeighborhood } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminSecretariesPage() {
-  const [staff, neighborhoods] = await Promise.all([listStaff(), listNeighborhoods()]);
+interface PageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+function one(v: string | string[] | undefined): string {
+  return Array.isArray(v) ? (v[0] ?? "") : (v ?? "");
+}
+
+export default async function AdminSecretariesPage({ searchParams }: PageProps) {
+  const q = one((await searchParams).q);
+  const [staff, neighborhoods] = await Promise.all([listStaff(q), listNeighborhoods()]);
+  const activeNeighborhoods = neighborhoods.filter((n) => n.active);
 
   return (
     <>
       <PageHeader
         title="Bí thư / Chi Đoàn"
-        description="Tạo tài khoản, gán Khu phố, reset mật khẩu tạm, khóa/mở. Hai chức danh dùng chung quyền SECRETARY."
+        description="Tạo tài khoản, phân công Khu phố (chính / phối hợp), đặt lại mật khẩu tạm, khóa hoặc mở khóa. Hai chức danh dùng chung quyền của cán bộ (SECRETARY)."
       />
 
       <CreateStaffForm />
 
-      <p className="mb-2 text-sm text-slate-500">{staff.length} tài khoản</p>
+      <form method="get" className="mb-3">
+        <input
+          name="q"
+          defaultValue={q}
+          placeholder="Tìm theo họ tên hoặc số điện thoại…"
+          className="h-10 w-full max-w-sm rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        />
+      </form>
+
+      <p className="mb-2 text-sm text-slate-500">
+        {staff.length} tài khoản{q ? ` khớp “${q}”` : ""}
+      </p>
       <div className="grid gap-3">
         {staff.length === 0 ? (
           <Card>
-            <p className="text-sm text-slate-500">Chưa có tài khoản nào.</p>
+            <p className="text-sm text-slate-500">
+              {q ? "Không có tài khoản nào khớp tìm kiếm." : "Chưa có tài khoản nào."}
+            </p>
           </Card>
         ) : (
           staff.map(({ profile, neighborhoods: assigned }) => {
             const assignedIds = new Set(assigned.map((n) => n.id));
-            const available = neighborhoods.filter((n) => !assignedIds.has(n.id));
+            const available = activeNeighborhoods.filter((n) => !assignedIds.has(n.id));
             return (
               <Card key={profile.id}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -38,7 +61,7 @@ export default async function AdminSecretariesPage() {
                       <p className="font-medium text-slate-900">{profile.full_name}</p>
                       <Badge tone="indigo">{profile.staff_title ?? "Bí thư"}</Badge>
                       <Badge tone={profile.active ? "green" : "slate"}>
-                        {profile.active ? "Hoạt động" : "Đã khóa"}
+                        {profile.active ? "Đang hoạt động" : "Đã khóa"}
                       </Badge>
                     </div>
                     <p className="mt-0.5 truncate text-xs text-slate-500">
@@ -70,7 +93,7 @@ export default async function AdminSecretariesPage() {
                   <p className="mb-1.5 text-xs font-medium text-slate-600">Khu phố phụ trách</p>
                   <div className="flex flex-wrap items-center gap-2">
                     {assigned.length === 0 ? (
-                      <span className="text-xs text-slate-400">Chưa gán Khu phố nào.</span>
+                      <span className="text-xs text-slate-400">Chưa phân công Khu phố nào.</span>
                     ) : (
                       assigned.map((n) => (
                         <form key={n.id} action={unassignNeighborhood} className="inline-flex">
@@ -78,17 +101,24 @@ export default async function AdminSecretariesPage() {
                           <input type="hidden" name="neighborhood_id" value={n.id} />
                           <button
                             type="submit"
-                            title="Bỏ gán"
-                            className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700 hover:bg-rose-50 hover:text-rose-700"
+                            title="Bỏ phân công"
+                            className={
+                              "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs hover:bg-rose-50 hover:text-rose-700 " +
+                              (n.assignmentRole === "PRIMARY"
+                                ? "bg-indigo-100 text-indigo-700"
+                                : "bg-slate-100 text-slate-700")
+                            }
                           >
-                            {n.name} ✕
+                            {n.name}
+                            <span className="opacity-70">· {ASSIGNMENT_ROLE_LABEL[n.assignmentRole]}</span>
+                            <span aria-hidden>✕</span>
                           </button>
                         </form>
                       ))
                     )}
                   </div>
                   {available.length > 0 ? (
-                    <form action={assignNeighborhood} className="mt-2 flex items-center gap-2">
+                    <form action={assignNeighborhood} className="mt-2 flex flex-wrap items-center gap-2">
                       <input type="hidden" name="secretary_id" value={profile.id} />
                       <select
                         name="neighborhood_id"
@@ -101,11 +131,19 @@ export default async function AdminSecretariesPage() {
                           </option>
                         ))}
                       </select>
+                      <select
+                        name="assignment_role"
+                        defaultValue="COORDINATING"
+                        className="h-8 rounded-lg border border-slate-200 px-2 text-xs"
+                      >
+                        <option value="COORDINATING">Phụ trách chung</option>
+                        <option value="PRIMARY">Phụ trách chính</option>
+                      </select>
                       <button
                         type="submit"
                         className="rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-indigo-700"
                       >
-                        + Gán
+                        + Phân công
                       </button>
                     </form>
                   ) : null}
