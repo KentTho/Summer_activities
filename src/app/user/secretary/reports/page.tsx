@@ -75,12 +75,20 @@ export default async function SecretaryReportsPage() {
                 <Badge tone="slate">DOCX</Badge>
               </div>
               <p className="mt-1 text-sm text-slate-500">
-                Mẫu tham chiếu do Quản trị viên tải lên. Dùng kèm dữ liệu xuất ở trên.
+                Đổ danh sách học sinh vào mẫu này (nếu mẫu có placeholder). Không có placeholder sẽ tự dùng mẫu chuẩn.
               </p>
+              <a href={`/user/secretary/reports/students?template=${t.id}`} className={`${linkBtnGhost} mt-3`}>
+                Xuất DS học sinh theo mẫu
+              </a>
             </Card>
           ))}
         </div>
       )}
+      <p className="mt-3 text-xs text-slate-400">
+        Placeholder hỗ trợ trong mẫu: <code>{"{{report_title}}"}</code>, <code>{"{{generated_at}}"}</code>,{" "}
+        <code>{"{{neighborhood_name}}"}</code>, <code>{"{{students_text}}"}</code>,{" "}
+        <code>{"{{attendance_text}}"}</code>…
+      </p>
     </>
   );
 }

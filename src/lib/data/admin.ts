@@ -257,18 +257,35 @@ export interface AdminStudentRow {
 export interface AdminStudentsResult {
   rows: AdminStudentRow[];
   total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
+
+/** Kích thước trang cho phép (chống query quá nặng). */
+export const ADMIN_STUDENTS_PAGE_SIZES = [20, 50, 100] as const;
+const DEFAULT_PAGE_SIZE = 50;
 
 /**
  * Danh sách học sinh toàn hệ thống cho Admin (RLS: is_admin() thấy tất cả).
- * Chỉ đọc — CRUD học sinh thuộc cổng Bí thư. Hỗ trợ tìm tên + lọc Khu phố/trạng thái.
+ * Chỉ đọc — CRUD học sinh thuộc cổng Bí thư. Hỗ trợ tìm tên + lọc Khu phố/trạng thái
+ * + **phân trang** (range) để không tải toàn bộ khi dữ liệu lớn.
  */
 export async function listAllStudents(filters: {
   q?: string;
   neighborhoodId?: string;
   status?: "active" | "inactive" | "all";
+  page?: number;
+  pageSize?: number;
 } = {}): Promise<AdminStudentsResult> {
   const supabase = await createSupabaseServerClient();
+
+  // Clamp an toàn: pageSize thuộc whitelist, page ≥ 1.
+  const pageSize = (ADMIN_STUDENTS_PAGE_SIZES as readonly number[]).includes(filters.pageSize ?? 0)
+    ? (filters.pageSize as number)
+    : DEFAULT_PAGE_SIZE;
+  const page = Math.max(1, Math.floor(filters.page ?? 1));
+
   let query = supabase
     .from("students")
     .select("id, full_name, neighborhood_id, school, guardian_phone, active", { count: "exact" })
@@ -280,11 +297,13 @@ export async function listAllStudents(filters: {
   const term = filters.q?.trim();
   if (term) query = query.ilike("full_name", `%${term}%`);
 
-  const { data, error, count } = await query.order("full_name").limit(500);
+  const from = (page - 1) * pageSize;
+  const { data, error, count } = await query.order("full_name").range(from, from + pageSize - 1);
   if (error) throw error;
 
   const neighborhoods = await listNeighborhoods();
   const nameById = new Map(neighborhoods.map((n) => [n.id, n.name]));
+  const total = count ?? (data?.length ?? 0);
 
   return {
     rows: (data ?? []).map((s) => ({
@@ -295,7 +314,10 @@ export async function listAllStudents(filters: {
       guardianPhone: s.guardian_phone,
       active: s.active,
     })),
-    total: count ?? (data?.length ?? 0),
+    total,
+    page,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
   };
 }
 

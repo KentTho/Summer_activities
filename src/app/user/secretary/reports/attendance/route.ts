@@ -10,7 +10,8 @@ import { logAudit } from "@/lib/admin/audit";
 import { getAttendanceReport } from "@/lib/data/reports";
 import { renderDocx } from "@/lib/docx/document";
 import { docxResponse } from "@/lib/reports/response";
-import { attendanceReportBlocks, formatGeneratedAt } from "@/lib/reports/blocks";
+import { attendanceMergeValues, attendanceReportBlocks, formatGeneratedAt } from "@/lib/reports/blocks";
+import { tryTemplateMerge } from "@/lib/reports/template-merge";
 
 export const dynamic = "force-dynamic";
 
@@ -32,14 +33,19 @@ export async function GET(request: Request) {
   }
 
   const scopeLabel = profile.role === "ADMIN" ? "Toàn hệ thống" : "Khu phố phụ trách";
-  const blocks = attendanceReportBlocks(report, scopeLabel, formatGeneratedAt(new Date()));
-  const buffer = renderDocx(blocks);
+  const generatedAt = formatGeneratedAt(new Date());
+
+  const templateId = z.string().uuid().safeParse(url.searchParams.get("template"));
+  const merged = templateId.success
+    ? await tryTemplateMerge(templateId.data, attendanceMergeValues(report, scopeLabel, generatedAt))
+    : null;
+  const buffer = merged ?? renderDocx(attendanceReportBlocks(report, scopeLabel, generatedAt));
 
   const supabase = await createSupabaseServerClient();
   await logAudit(supabase, profile, {
     action: "EXPORT_DOCX",
     entity: "attendance",
-    detail: `Điểm danh buổi ${sessionId.data} (${report.summary.total} HS)`,
+    detail: `Điểm danh buổi ${sessionId.data} (${report.summary.total} HS)${merged ? " · theo mẫu" : ""}`,
   });
 
   return docxResponse(buffer, `diem-danh-${report.sessionDate}`);

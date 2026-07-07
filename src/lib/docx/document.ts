@@ -27,13 +27,16 @@ function stripControl(value: string): string {
 }
 
 /** Escape ký tự đặc biệt XML sau khi đã loại ký tự điều khiển. */
-function xml(value: string): string {
+export function escapeXmlText(value: string): string {
   return stripControl(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+/** Alias nội bộ (giữ tên ngắn cho các builder bên dưới). */
+const xml = escapeXmlText;
 
 function runXml(text: string, opts: { bold?: boolean; italic?: boolean; size?: number } = {}): string {
   const rpr: string[] = [];

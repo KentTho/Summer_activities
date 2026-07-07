@@ -267,6 +267,24 @@
 > MVP chạy thật, không giả. Storage binary qua service role **chỉ sau `requireAdmin()`**; mọi metadata/read
 > nghiệp vụ vẫn qua RLS. `src/lib/mock/*` nay không ai import (để dọn ở prompt sau).
 
+### Prompt 09A — Production hardening + Operational playbook + DOCX placeholder merge
+- [x] Audit 4 nhóm kiến thức (DevOps/Auth/SDLC/AI-Security) → tích hợp chọn lọc vào docs vận hành
+- [x] Production Readiness Playbook + 4 checklist (`safe-deployment`, `auth-session-hardening`, `sdlc-debugging-test-plan`, `ai-code-security-gate`)
+- [x] Preflight script `npm run preflight` (secret/ignored/mock/health — không in secret)
+- [x] **Ép đổi mật khẩu lần đầu**: cờ `must_change_password` (auth metadata) → layout cổng redirect `/change-password`; đổi xong xóa cờ (`auth.updateUser`, không service role)
+- [x] **DOCX placeholder-merge MVP**: đọc mẫu `.docx` upload (unzip zlib), thay `{{...}}`, re-zip; **fallback** DOCX tự sinh khi mẫu không có placeholder/hỏng
+- [x] Dọn dead code `src/lib/mock/*` (đã xác nhận không còn import); typecheck xanh
+- [x] Phân trang `/admin/students` (page/pageSize whitelist, giữ search/filter)
+- [x] Docs OCR production (`ocr-production-setup.md`); không hardcode key
+- [x] `/api/health.phase` → `09a-production-hardening` + cờ `databaseTypesReady/ocrConfigured/docxExportReady/passwordChangeReady`
+- [x] `project-repair-backlog.md` (đã xử lý · còn lại · không làm ngay)
+- [x] Lint/typecheck/build + preflight pass; **smoke đổi mật khẩu** (user throwaway: đổi + xóa cờ → dọn sạch); **self-test merge** trên docx DEFLATE thật
+- [x] Report 09A (có **Gợi ý bước tiếp theo** + **Điểm cần tu sửa thêm** + **Không nên làm ngay**)
+
+> Ghi chú: **Admin (`admin@...`) hiện có `must_change_password=true`** → sẽ bị ép đổi mật khẩu khi vào cổng
+> lần tới (đúng thiết kế). Placeholder-merge là **MVP**: placeholder phải gọn trong 1 run, không hỗ trợ
+> vòng lặp — mẫu không hợp lệ thì fallback DOCX tự sinh. Không build logout-all/token-version (chỉ backlog).
+
 ## 4. Next planned prompts
 1. Prompt 06B — Full CRUD Admin (Khu phố/Bí thư/Phân công) + tạo tài khoản Phụ huynh
 2. Prompt 07 — Attendance + leave request thật
@@ -276,7 +294,8 @@
 
 ## 5. Rủi ro đang mở
 - ✅ (Đã gỡ) Bootstrap đã chạy: 2 tài khoản Admin/Bí thư đăng nhập được; service role key có sẵn.
-  **Nên bắt đổi mật khẩu** sau đăng nhập đầu (đã đặt cờ `must_change_password`).
+  **09A: đã làm UI ép đổi mật khẩu lần đầu** — tài khoản có `must_change_password=true` bị chặn ở
+  `/change-password` cho tới khi đổi. Admin hiện còn cờ true → sẽ đổi khi vào cổng lần tới.
 - ✅ (Đã gỡ) Notifications (Bí thư + Phụ huynh) và reports Bí thư nay là **DB thật** (08A).
   Toàn bộ trang nghiệp vụ chính đã dùng DB thật. **08B: `/admin/neighborhoods` (CRUD + số liệu) và
   `/admin/assignments` (vai trò phụ trách) nay là DB thật đầy đủ.** Còn `/admin/students`,`/admin/reports`,

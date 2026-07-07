@@ -18,6 +18,7 @@ export default async function ParentLayout({
   const profile = await getCurrentProfile();
   if (!profile) redirect("/user/login");
   if (profile.role !== ROLES.PARENT) redirect(homeForRole(profile.role));
+  if (profile.mustChangePassword) redirect("/change-password");
 
   return (
     <DashboardShell role={ROLES.PARENT} fullName={profile.fullName}>

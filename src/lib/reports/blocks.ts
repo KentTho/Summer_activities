@@ -3,6 +3,7 @@
  * Hàm thuần (không chạm DB) — tách khỏi tầng dữ liệu để dễ test/tái dùng.
  */
 import type { DocBlock } from "@/lib/docx/document";
+import type { MergeValues } from "@/lib/docx/merge";
 import type { AttendanceReport, StudentReport } from "@/lib/data/reports";
 import type { AdminOverview } from "@/lib/data/admin";
 
@@ -127,6 +128,51 @@ export function systemReportBlocks(
       ]),
     },
   ];
+}
+
+/** Giá trị merge cho mẫu `.docx` upload — báo cáo danh sách học sinh. */
+export function studentMergeValues(
+  report: StudentReport,
+  scopeLabel: string,
+  generatedAt: string,
+): MergeValues {
+  const studentsText = report.rows
+    .map((r, i) => {
+      const parts = [r.fullName, r.neighborhoodName, r.school, r.guardianPhone].filter(Boolean);
+      return `${i + 1}. ${parts.join(" — ")}`;
+    })
+    .join("\n");
+  return {
+    report_title: "DANH SÁCH HỌC SINH",
+    generated_at: generatedAt,
+    neighborhood_name: report.neighborhoodNames.join(", ") || scopeLabel,
+    staff_name: "",
+    students_text: studentsText || "(chưa có học sinh)",
+    attendance_text: "",
+  };
+}
+
+/** Giá trị merge cho mẫu `.docx` upload — báo cáo điểm danh theo buổi. */
+export function attendanceMergeValues(
+  report: AttendanceReport,
+  scopeLabel: string,
+  generatedAt: string,
+): MergeValues {
+  const attendanceText = report.rows
+    .map((r, i) => {
+      const parts = [r.fullName, r.statusLabel, r.note].filter(Boolean);
+      return `${i + 1}. ${parts.join(" — ")}`;
+    })
+    .join("\n");
+  return {
+    report_title: "BÁO CÁO ĐIỂM DANH BUỔI SINH HOẠT",
+    generated_at: generatedAt,
+    neighborhood_name: report.neighborhoodNames.join(", ") || scopeLabel,
+    session_title: report.title,
+    session_date: report.sessionDate,
+    attendance_text: attendanceText || "(chưa có học sinh)",
+    students_text: "",
+  };
 }
 
 /** Định dạng thời điểm xuất báo cáo theo giờ Việt Nam (ổn định, không phụ thuộc locale máy). */

@@ -16,6 +16,8 @@ export interface CurrentProfile {
   role: Role;
   fullName: string;
   active: boolean;
+  /** Cờ ép đổi mật khẩu lần đầu (đọc từ auth user_metadata, KHÔNG phải cột DB). */
+  mustChangePassword: boolean;
 }
 
 /** Đọc hàng profiles theo auth user id với client đã cho (tái dùng cho login action). */
@@ -39,6 +41,8 @@ export async function loadProfileForAuthUser(
     role: data.role,
     fullName: data.full_name,
     active: data.active,
+    // Mặc định false; getCurrentProfile ghi đè bằng cờ thật từ user_metadata.
+    mustChangePassword: false,
   };
 }
 
@@ -54,5 +58,12 @@ export async function getCurrentProfile(): Promise<CurrentProfile | null> {
 
   if (!user) return null;
 
-  return loadProfileForAuthUser(supabase, user.id);
+  const profile = await loadProfileForAuthUser(supabase, user.id);
+  if (!profile) return null;
+
+  // Cờ ép đổi mật khẩu nằm ở auth user_metadata (đặt khi tạo/reset tài khoản).
+  return {
+    ...profile,
+    mustChangePassword: user.user_metadata?.must_change_password === true,
+  };
 }

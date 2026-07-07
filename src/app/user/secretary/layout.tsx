@@ -18,6 +18,7 @@ export default async function SecretaryLayout({
   const profile = await getCurrentProfile();
   if (!profile) redirect("/user/login");
   if (profile.role !== ROLES.SECRETARY) redirect(homeForRole(profile.role));
+  if (profile.mustChangePassword) redirect("/change-password");
 
   return (
     <DashboardShell role={ROLES.SECRETARY} fullName={profile.fullName}>

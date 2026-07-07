@@ -1,6 +1,6 @@
 import { Badge, Card, StatCard } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
-import { listAllStudents, listNeighborhoodsDetailed } from "@/lib/data/admin";
+import { ADMIN_STUDENTS_PAGE_SIZES, listAllStudents, listNeighborhoodsDetailed } from "@/lib/data/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -15,16 +15,32 @@ function one(v: string | string[] | undefined): string {
 const field =
   "h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
 
+function pageHref(base: Record<string, string>, page: number): string {
+  const params = new URLSearchParams({ ...base, page: String(page) });
+  return `?${params.toString()}`;
+}
+
 export default async function AdminStudentsOverviewPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const q = one(sp.q);
   const nb = one(sp.nb);
   const status = (one(sp.status) || "active") as "active" | "inactive" | "all";
+  const pageSize = Number(one(sp.pageSize)) || 50;
+  const page = Number(one(sp.page)) || 1;
 
   const [neighborhoods, result] = await Promise.all([
     listNeighborhoodsDetailed(),
-    listAllStudents({ q, neighborhoodId: nb || undefined, status }),
+    listAllStudents({ q, neighborhoodId: nb || undefined, status, page, pageSize }),
   ]);
+
+  const baseParams: Record<string, string> = {
+    q,
+    nb,
+    status,
+    pageSize: String(result.pageSize),
+  };
+  const from = result.total === 0 ? 0 : (result.page - 1) * result.pageSize + 1;
+  const to = Math.min(result.page * result.pageSize, result.total);
 
   const withStudents = neighborhoods.filter((n) => n.studentCount > 0).length;
   const totalStudents = neighborhoods.reduce((sum, n) => sum + n.studentCount, 0);
@@ -57,14 +73,25 @@ export default async function AdminStudentsOverviewPage({ searchParams }: PagePr
           <option value="inactive">Đã ngừng</option>
           <option value="all">Tất cả</option>
         </select>
+        <select name="pageSize" defaultValue={String(result.pageSize)} className={field}>
+          {ADMIN_STUDENTS_PAGE_SIZES.map((n) => (
+            <option key={n} value={n}>
+              {n}/trang
+            </option>
+          ))}
+        </select>
+        {/* Đổi bộ lọc thì quay về trang 1. */}
+        <input type="hidden" name="page" value="1" />
         <button type="submit" className="h-10 rounded-lg bg-indigo-600 px-4 text-sm font-medium text-white hover:bg-indigo-700">
           Lọc
         </button>
       </form>
 
       <p className="mb-2 text-sm text-slate-500">
-        {result.rows.length} học sinh{q ? ` khớp “${q}”` : ""}
-        {result.rows.length >= 500 ? " (hiển thị tối đa 500)" : ""}
+        {result.total === 0
+          ? "Không có học sinh nào khớp"
+          : `Đang xem ${from}–${to} / ${result.total} học sinh`}
+        {q ? ` khớp “${q}”` : ""}
       </p>
       <Card className="p-0">
         {result.rows.length === 0 ? (
@@ -87,6 +114,28 @@ export default async function AdminStudentsOverviewPage({ searchParams }: PagePr
           </ul>
         )}
       </Card>
+
+      {result.totalPages > 1 ? (
+        <div className="mt-3 flex items-center justify-between gap-2">
+          {result.page > 1 ? (
+            <a href={pageHref(baseParams, result.page - 1)} className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200">
+              ← Trước
+            </a>
+          ) : (
+            <span className="rounded-lg bg-slate-50 px-3 py-1.5 text-sm text-slate-300">← Trước</span>
+          )}
+          <span className="text-xs text-slate-500">
+            Trang {result.page}/{result.totalPages}
+          </span>
+          {result.page < result.totalPages ? (
+            <a href={pageHref(baseParams, result.page + 1)} className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200">
+              Sau →
+            </a>
+          ) : (
+            <span className="rounded-lg bg-slate-50 px-3 py-1.5 text-sm text-slate-300">Sau →</span>
+          )}
+        </div>
+      ) : null}
 
       <p className="mt-4 text-xs text-slate-400">
         Admin chỉ xem tổng quan (RLS cho phép is_admin đọc toàn hệ thống). Nghiệp vụ CRUD học sinh

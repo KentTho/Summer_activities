@@ -47,3 +47,22 @@ export async function downloadTemplateBinary(path: string): Promise<Buffer | nul
   if (error || !data) return null;
   return Buffer.from(await data.arrayBuffer());
 }
+
+/**
+ * Đọc binary mẫu theo `document_id` (server-side).
+ *
+ * Dùng service role để RESOLVE đường dẫn (uploaded_documents) + đọc tệp private —
+ * CHỈ sau khi nơi gọi đã xác nhận qua RLS rằng người dùng được phép dùng mẫu này
+ * (mẫu đang `active`, `export_templates` RLS cho Bí thư đọc). Tệp mẫu là biểu mẫu
+ * trống (không chứa dữ liệu học sinh) và chỉ dùng để render server-side.
+ */
+export async function downloadTemplateByDocumentId(documentId: string): Promise<Buffer | null> {
+  const admin = createSupabaseAdminClient();
+  const { data: doc } = await admin
+    .from("uploaded_documents")
+    .select("path")
+    .eq("id", documentId)
+    .maybeSingle();
+  if (!doc?.path) return null;
+  return downloadTemplateBinary(doc.path);
+}

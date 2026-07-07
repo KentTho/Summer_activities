@@ -18,6 +18,7 @@ export default async function AdminPortalLayout({
   const profile = await getCurrentProfile();
   if (!profile) redirect("/admin/login");
   if (profile.role !== ROLES.ADMIN) redirect(homeForRole(profile.role));
+  if (profile.mustChangePassword) redirect("/change-password");
 
   return (
     <DashboardShell role={ROLES.ADMIN} fullName={profile.fullName}>

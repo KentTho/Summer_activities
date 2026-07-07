@@ -228,3 +228,51 @@ Tất cả OK. DOCX writer + storage flow test riêng OK. Lint/typecheck/build p
 
 **Chưa làm (đúng phạm vi):** template chưa có placeholder-merge (mẫu upload là tệp tham chiếu; export dùng
 bộ sinh riêng); chưa lưu ảnh gốc OCR; chưa dọn `src/lib/mock/*`; nâng cấp UI lớn để prompt sau.
+
+## Chi tiết Prompt 09A (Production hardening + Playbook + DOCX placeholder merge)
+
+**Playbook vận hành (docs, không phải feature):** `production-readiness-playbook.md` +
+`safe-deployment-checklist.md` (DevOps) + `auth-session-hardening.md` (Auth/JWT) +
+`sdlc-debugging-test-plan.md` (SDLC/Test) + `ai-code-security-gate.md` (AI-security). Viết dạng
+**checklist áp dụng cho dự án**, không dài dòng. `ocr-production-setup.md` + `project-repair-backlog.md`.
+
+**Preflight (`scripts/preflight-check.mjs`, `npm run preflight`):** kiểm (1) không commit
+`.env.local/.vercel/.next/supabase/.temp`, (2) **không rò rỉ giá trị secret** (đọc `.env.local` ngoài
+git, so khớp trong tệp tracked — KHÔNG in secret; chỉ nhận diện khóa thật `SERVICE_ROLE_KEY/API_KEY/
+_SECRET/PASSWORD/_TOKEN`, bỏ qua `_URL`/`NEXT_PUBLIC_`), (3) không còn import `@/lib/mock`, (4) health
+phase không phải phase cũ. Kiểm 5 secret thật → 0 rò rỉ.
+
+**Ép đổi mật khẩu lần đầu (không service role):** cờ ở auth `user_metadata.must_change_password`
+(đặt khi tạo/reset tài khoản — đã có). `session.ts#getCurrentProfile` thêm `mustChangePassword` (đọc
+metadata). Ba layout cổng (admin portal, secretary, parent) redirect `/change-password` khi cờ true.
+Trang `/change-password` (ngoài layout cổng → tránh loop) + action `auth.updateUser({password, data:{
+must_change_password:false}})` (người dùng đổi mật khẩu của chính mình, KHÔNG service role) → xóa cờ →
+về `homeForRole`. Reset của Admin vẫn bật cờ (đã có). **Smoke:** user throwaway đổi mật khẩu + xóa cờ +
+đăng nhập mật khẩu mới OK → xóa user. Kiểm read-only: `admin@...` còn `true` (sẽ bị ép đổi khi vào cổng),
+`0932077136@...` = false.
+
+**DOCX placeholder-merge MVP (`src/lib/docx/`):** `unzip.ts` (đọc ZIP: STORE + DEFLATE qua `node:zlib
+inflateRawSync`; chuẩn hóa tên entry `\`→`/`). `merge.ts#mergeTemplate`: đọc `word/document.xml`, thay
+`{{key}}` (8 khóa: report_title/generated_at/neighborhood_name/staff_name/session_title/session_date/
+students_text/attendance_text) bằng giá trị **escape XML**; nhiều dòng → `<w:br/>` trong cùng run; re-zip
+bằng `zipStore`. **Fallback**: không có placeholder/mẫu hỏng → trả null → route dùng `renderDocx` (08C).
+`reports/template-merge.ts` xác thực quyền qua RLS (`export_templates` active) rồi đọc binary bằng service
+role (`downloadTemplateByDocumentId`) — tệp mẫu là biểu mẫu trống, render server-side. Route
+`reports/students` + `reports/attendance` nhận `?template=<id>`; trang `secretary/reports` có nút xuất theo
+mẫu + liệt kê placeholder hỗ trợ. **Self-test:** merge trên docx **DEFLATE thật** (tạo bằng
+System.IO.Compression) → placeholder thay hết, escape `&amp;/&lt;`, `<w:br/>`, tiếng Việt OK; mẫu không
+placeholder → null (fallback). **Giới hạn:** placeholder phải gọn trong 1 run; không vòng lặp/điều kiện.
+
+**Dọn mock:** `git rm src/lib/mock/{admin,data,index,status,types}.ts` (xác nhận 0 import). Typecheck xanh.
+
+**Phân trang `/admin/students`:** `listAllStudents` thêm `page/pageSize` (whitelist `[20,50,100]`, clamp)
+dùng `.range()` + count exact → `total/page/totalPages`; UI có chọn pageSize (reset page=1), "Đang xem X–Y
+/ total", nút Trước/Sau giữ q/nb/status. Vẫn **chỉ đọc** (không CRUD Admin).
+
+**Health:** phase `09a-production-hardening` + cờ `supabaseConfigured/databaseTypesReady/ocrConfigured/
+docxExportReady/passwordChangeReady` (không lộ key).
+
+**Verify:** `preflight` + `lint` + `typecheck` + `build` xanh; smoke đổi mật khẩu + self-test merge OK.
+
+**Chưa làm (đúng phạm vi):** monitoring/logging tập trung; load test; lưu ảnh OCR private; engine DOCX
+nâng cao (vòng lặp/placeholder tách run); logout-all/token-version (chỉ backlog); UI polish lớn.
