@@ -320,6 +320,24 @@
 > **private**, không public URL; xem lại ảnh trên UI (route tải) để backlog. Vẫn **không auto-import**, PDF
 > vẫn chặn. Gemini free tier có quota.
 
+### Prompt 10A — Rà soát cấu trúc dự án + Chuẩn hóa Folder Architecture Docs (REVIEW + DOCS)
+- [x] Read project tree
+- [x] Audit current structure
+- [x] Evaluate market readiness
+- [x] Create folder architecture standard
+- [x] Create refactor backlog
+- [x] Update progress/history
+- [x] Create report
+- [x] No code changed
+
+> Ghi chú: task **chỉ review + tài liệu**, KHÔNG sửa code nghiệp vụ (không đụng `src/`, `supabase/`,
+> config, secret, remote, deploy). Phát hiện chính: business logic + data-access thật nằm ở `src/lib/`
+> (đặc biệt `src/lib/data/*`), còn `src/modules/*` phần lớn là **skeleton rỗng** (`export {}`) — lệch
+> với `architecture.md`; `README.md` còn ghi sai trạng thái "Phase 1 — Scaffold" (thực tế tới 09C).
+> Kết luận: **đủ nền triển khai thực tế quy mô pilot/nhỏ**, không cần refactor lớn ngay; ưu tiên sửa
+> docs (Phase 1 backlog) rồi chốt kiến trúc `src/modules/`. Tài liệu: `project-structure-audit.md`,
+> `folder-architecture-standard.md`, `project-structure-refactor-backlog.md`, report 10A.
+
 ## 4. Next planned prompts
 1. Prompt 06B — Full CRUD Admin (Khu phố/Bí thư/Phân công) + tạo tài khoản Phụ huynh
 2. Prompt 07 — Attendance + leave request thật

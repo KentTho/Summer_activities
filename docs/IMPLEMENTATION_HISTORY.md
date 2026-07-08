@@ -18,6 +18,7 @@
 | 06B | **Bootstrap chạy thật + OCR import (server-side) + security/devops notes** | Xác nhận 2 tài khoản đăng nhập OK; OCR.space server-side → dòng nháp chưa duyệt → sửa/duyệt tay → confirm mới tạo HS; validate file + key server-only; move key khỏi `.env.example`; docs session/JWT + devops rollback/backup + AI security | `PROMPT-06B-...report.md` |
 | 07 | **Attendance workflow + Leave requests thật + guardrails** | 3 migration additive (closed_at, snb_insert creator, guardian session visibility); tạo buổi/điểm danh 4 trạng thái/chốt buổi; phụ huynh xin nghỉ + Bí thư duyệt→EXCUSED; dashboard Bí thư/Phụ huynh + admin sessions thật; smoke test RLS ký tên thật; `engineering-guardrails.md` | `PROMPT-07-...report.md` |
 | 08A | **Admin Control Center + tài khoản staff/phụ huynh + session defaults + notifications** | 2 migration additive (staff_title, canceled_at) + 1 corrective (fix đệ quy RLS notifications); Admin tạo/reset/khóa tài khoản (service role chỉ cho auth user sau requireAdmin) + gán Khu phố + liên kết phụ huynh↔HS; audit log thật; hủy/dời buổi + gửi thông báo phụ huynh; roster search; templates foundation; tách cổng public; smoke test Admin+Bí thư+Phụ huynh | `PROMPT-08A-...report.md` |
+| 10A | **Rà soát cấu trúc dự án + chuẩn hóa folder architecture docs** (REVIEW + DOCS, không sửa code) | Audit cây `src/**`/`supabase/**`/`docs/**`; đánh giá market-ready (10 tiêu chí → đủ nền pilot/nhỏ); phát hiện `src/modules/*` là skeleton rỗng (logic thật ở `src/lib/`), README/architecture stale; tạo 3 docs chuẩn + backlog refactor 5 phase | `PROMPT-10A-...report.md` |
 
 ## Chi tiết Prompt 05 (Auth thật)
 
@@ -349,3 +350,29 @@ của mình OK; bucket `ai-import-uploads` tạo **private** + upload/remove OK 
 
 **Chưa làm (đúng phạm vi):** route tải/xem lại ảnh gốc trên UI + audit tải + retention; PDF cho AI import;
 monitoring tập trung/alert/uptime; load test; UI polish lớn.
+
+## Chi tiết Prompt 10A (Rà soát cấu trúc dự án + Folder Architecture Docs)
+
+**Loại:** REVIEW + DOCUMENTATION — **không sửa code nghiệp vụ** (không đụng `src/`, `supabase/migrations`,
+config, secret, remote, deploy). Chỉ tạo/cập nhật tài liệu trong `docs/`.
+
+**Đã làm:**
+- Rà soát toàn bộ cây `src/**`, `supabase/**`, `docs/**`, `.github/**`, `scripts/**`, config gốc.
+- Đánh giá market-ready theo **10 tiêu chí** → **đủ nền triển khai thực tế quy mô pilot/nhỏ**, không cần
+  refactor lớn ngay.
+- Tạo 3 tài liệu: `project-structure-audit.md` (đánh giá + bảng rủi ro), `folder-architecture-standard.md`
+  (chuẩn tổ chức + checklist thêm feature), `project-structure-refactor-backlog.md` (5 phase cải thiện).
+
+**Phát hiện chính (ghi nhận, KHÔNG sửa):**
+- **CAO:** `src/modules/*` phần lớn là skeleton `export {}` (tầng `application/`+`infrastructure/` rỗng);
+  business logic + data-access thật nằm ở `src/lib/*` (đặc biệt `src/lib/data/*`) → lệch với
+  `architecture.md`. Chỉ vài file `domain/*` (enum trạng thái/role) được import thật.
+- **CAO:** `README.md` ghi sai trạng thái ("Phase 1 — Scaffold"; thực tế tới 09C).
+- **TRUNG BÌNH:** sơ đồ route trong `architecture.md` lệch cây thật; CI chưa có test tự động; chưa gom
+  `src/types`/`src/config`.
+
+**Khuyến nghị (làm ở prompt sau, không trong 10A):** Phase 1 sửa docs (rẻ/an toàn) → Phase 4 test CI →
+Phase 2 chốt kiến trúc `src/modules/` (có test bao phủ).
+
+**Điểm mạnh xác nhận:** RLS/Auth production-grade, service role server-only, data-access tách lớp, vệ sinh
+secret + preflight, deploy/rollback + migration additive, tài liệu vận hành đầy đủ.
