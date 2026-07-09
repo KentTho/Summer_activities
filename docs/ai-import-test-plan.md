@@ -54,7 +54,15 @@
 - [x] **Khớp hồ sơ**: yêu cầu của tài khoản tồn tại có `matched_profile_id` (service role kiểm).
 - [x] **2 tài khoản Bí thư** tạo mới: SECRETARY/active/Bí thư, **0 phân công** (chưa gán Khu phố).
 - [ ] **Admin cấp mật khẩu tạm** (session thật): RESOLVED + `must_change_password=true` + audit — cần đăng nhập Admin.
-- [ ] **Xem ảnh theo vai trò** (session thật): cần seed dữ liệu ảnh AI trong DB — hiện chưa có → NOT VERIFIED.
+- [x] **Xem ảnh theo vai trò** (09F, session thật, fixtures `SMOKE_09F_`): SECRETARY đúng scope thấy lô (200);
+      sai scope không thấy (404); PARENT chặn bởi role (403); ADMIN thấy (200); chưa login không thấy; ảnh ràng
+      buộc đúng lô+bucket (chống IDOR); đọc được nhị phân private. **8/8 pass**, cleanup sạch.
+
+## Admin login + recovery (09F)
+- [x] **Chẩn đoán**: `recover:admin` (diagnose) — Admin gốc khỏe (role ADMIN/active/`must_change_password=false`).
+- [x] **Login logic** (session thật, disposable admin): sai mật khẩu → lỗi; đúng + `must_change_password=true`
+      → `/change-password`; đổi xong `must_change_password=false` → `/admin`. **6/6 pass**, cleanup.
+- [x] **Recovery**: đặt lại mật khẩu Admin qua env (không hardcode/không in); role ADMIN/active đảm bảo.
 
 ## Bảo mật/log
 - [ ] Log server: chỉ số lượng/mime/size — **không** ảnh/base64/SĐT/họ tên/key.

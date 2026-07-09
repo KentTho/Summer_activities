@@ -30,7 +30,7 @@ chạm DB — sai định dạng ⇒ 404 nhanh, không lộ path/bucket. Access 
 giữ nguyên như 09D.
 
 ## 6. Hai tài khoản Bí thư
-- `0944577905`, `0368103532` — tạo qua `scripts/provision-secretaries.mjs` (env `NEW_SECRETARY_ACCOUNTS_JSON`,
+- 2 tài khoản Bí thư mới — tạo qua `scripts/provision-secretaries.mjs` (env `NEW_SECRETARY_ACCOUNTS_JSON`,
   **không** hardcode mật khẩu). role SECRETARY · active · staff_title "Bí thư" · `must_change_password=true` ·
   **chưa phân công Khu phố**. Smoke service-role xác nhận: 2 hồ sơ tồn tại, 0 phân công.
 - Mật khẩu tạm: **ngẫu nhiên mạnh, không in/không commit**. Admin đặt lại mật khẩu tạm (hiển thị 1 lần)
@@ -48,7 +48,7 @@ giữ nguyên như 09D.
 ## 8. Admin reset / badge / notification
 - `/admin/password-requests`: liệt kê PENDING trước; "Cấp mật khẩu tạm" (reuse `resetAuthPassword`,
   `must_change_password=true`, mật khẩu tạm hiện 1 lần) → RESOLVED; "Từ chối" → REJECTED.
-- Audit `RESOLVE_PASSWORD_RESET_REQUEST` / `REJECT_PASSWORD_RESET_REQUEST` (actor Admin, không PII/mật khẩu).
+- Audit `RESOLVE_PASSWORD_RESET_REQUEST` / `REJECT_PASSWORD_RESET_REQUEST` (actor Admin, chỉ id request/profile; không PII/mật khẩu).
 - **Alert nổi bật**: banner đếm PENDING ở `/admin` + mục nav "Yêu cầu mật khẩu".
 
 ## 9. Local images Gemini extraction

@@ -7,7 +7,7 @@
  *   HEALTH_URL=https://<domain>/api/health node scripts/check-production-health.mjs
  */
 const DEFAULT_URL = "https://summer-activities-theta.vercel.app/api/health";
-const EXPECT_PHASE = "09e-password-requests-real-smoke";
+const EXPECT_PHASE = "09f-admin-recovery-image-smoke";
 
 const url = process.argv[2] || process.env.HEALTH_URL || DEFAULT_URL;
 const safeUrl = (() => {

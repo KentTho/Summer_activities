@@ -44,9 +44,9 @@ const PROMPT = [
 ].join("\n");
 
 async function extract(buffer, mime) {
-  const res = await fetch(`${baseUrl}/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+  const res = await fetch(`${baseUrl}/v1beta/models/${model}:generateContent`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
     body: JSON.stringify({
       contents: [
         {
@@ -110,7 +110,7 @@ async function main() {
       });
     } catch (e) {
       body += `_Lỗi khi gọi Gemini: ${esc(e.message)}_\n`;
-      console.error(`[ai-test] lỗi ảnh ${file}: ${e.message}`);
+      console.error(`[ai-test] lỗi một ảnh: ${e.message}`);
     }
   }
   body += `\n---\nTổng: ${totalRows} dòng từ ${files.length} ảnh. birth_year/gender chỉ điền khi ảnh có; không suy đoán.\n`;

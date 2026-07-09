@@ -19,11 +19,15 @@ export default async function AdminLoginPage() {
       accountLabel="Tài khoản quản trị"
       accountPlaceholder="Admin"
       submitLabel="Đăng nhập Quản trị"
-      forgotHref="/forgot-password?portal=admin"
       footer={
         <>
           Chỉ tài khoản Quản trị viên mới đăng nhập được ở cổng này. Tài khoản do
           hệ thống cấp, không cho tự đăng ký.
+          <br />
+          <span className="mt-1 block">
+            Không vào được tài khoản Admin? Dùng quy trình <b>khôi phục Admin trên máy chủ</b>{" "}
+            (<code>npm run recover:admin</code>) — không dùng “Quên mật khẩu” công khai.
+          </span>
         </>
       }
     />

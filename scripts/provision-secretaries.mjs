@@ -2,7 +2,7 @@
  * Cấp phát tài khoản Bí thư/Chi Đoàn theo yêu cầu (09E). SERVER/LOCAL ONLY.
  *
  * ⚠️ KHÔNG hardcode mật khẩu vào source/report. Đọc danh sách từ env RUNTIME:
- *   NEW_SECRETARY_ACCOUNTS_JSON='[{"identifier":"0944577905","full_name":"...","password":"***"}]'
+ *   NEW_SECRETARY_ACCOUNTS_JSON='[{"identifier":"<phone-or-login>","full_name":"...","password":"***"}]'
  * Cần: NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (bỏ qua RLS).
  *
  * Cách chạy (KHÔNG commit .env.local, KHÔNG in mật khẩu):
@@ -32,7 +32,7 @@ if (!url || !serviceKey) {
 const raw = process.env.NEW_SECRETARY_ACCOUNTS_JSON;
 if (!raw) {
   console.error("BLOCKED: thiếu NEW_SECRETARY_ACCOUNTS_JSON (mảng JSON các tài khoản).");
-  console.error('Ví dụ: NEW_SECRETARY_ACCOUNTS_JSON=\'[{"identifier":"0944577905"},{"identifier":"0368103532"}]\'');
+  console.error('Ví dụ: NEW_SECRETARY_ACCOUNTS_JSON=\'[{"identifier":"<phone-or-login-1>"},{"identifier":"<phone-or-login-2>"}]\'');
   console.error('(password tùy chọn; bỏ trống → sinh mật khẩu tạm ngẫu nhiên, Admin đặt lại sau.)');
   process.exit(1);
 }
@@ -61,6 +61,13 @@ function identifierToEmail(rawInput) {
 function maskId(identifier) {
   const s = String(identifier);
   return s.length <= 3 ? "***" : "***" + s.slice(-3);
+}
+
+function safeMessage(message) {
+  return String(message ?? "")
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[email]")
+    .replace(/\d{6,}/g, "[number]")
+    .replace(/(sb_secret_|sbp_|AIza)[A-Za-z0-9_-]+/g, "[secret]");
 }
 
 const admin = createClient(url, serviceKey, {
@@ -106,6 +113,16 @@ async function ensureSecretary(acc) {
     console.log(`[provision] + tạo tài khoản: ${maskId(identifier)}`);
   }
 
+  const { data: existingProfile, error: existingProfileErr } = await admin
+    .from("profiles")
+    .select("id, role")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+  if (existingProfileErr) throw existingProfileErr;
+  if (existingProfile && existingProfile.role !== "SECRETARY") {
+    throw new Error("identifier đã thuộc profile role khác; dừng để tránh đổi quyền ngoài ý muốn");
+  }
+
   const { error: pErr } = await admin.from("profiles").upsert(
     {
       auth_user_id: user.id,
@@ -129,6 +146,6 @@ try {
   }
   console.log("[provision] Xong. Tài khoản bị ép đổi mật khẩu lần đầu. Admin hãy phân công Khu phố.");
 } catch (err) {
-  console.error("[provision] LỖI:", String(err.message ?? err).replace(/(sb_secret_|sbp_|AIza)[A-Za-z0-9_-]+/g, "[secret]"));
+  console.error("[provision] LỖI:", safeMessage(err.message ?? err));
   process.exit(1);
 }

@@ -13,7 +13,8 @@
     "cleanup:ai-import-images": "node scripts/cleanup-ai-import-images.mjs",
     "healthcheck": "node scripts/check-production-health.mjs",
     "provision:secretaries": "node --env-file=.env.local scripts/provision-secretaries.mjs",
-    "test:ai-local-images": "node --env-file=.env.local scripts/test-ai-import-local-images.mjs"
+    "test:ai-local-images": "node --env-file=.env.local scripts/test-ai-import-local-images.mjs",
+    "recover:admin": "node scripts/recover-admin-account.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

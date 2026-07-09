@@ -2,6 +2,10 @@
 
 > Người dùng **không tự đổi** mật khẩu qua email/SMS. Họ gửi **yêu cầu**; Admin cấp **mật khẩu tạm**
 > (bắt buộc đổi lần đầu). Không gửi email/SMS thật.
+>
+> **Phạm vi**: luồng này dành cho **Bí thư/Phụ huynh** (cổng Người dùng). **Admin gốc KHÔNG** dùng luồng
+> công khai này — xem [`admin-access-recovery.md`](./admin-access-recovery.md). Form vẫn nhận `portal=admin`
+> (hỗ trợ hệ thống nhiều Admin) nhưng **không** hiển thị nổi bật ở `/admin/login` (09F).
 
 ## Luồng
 1. Người dùng bấm **"Quên mật khẩu?"** ở `/user/login` hoặc `/admin/login` → `/forgot-password?portal=user|admin`.

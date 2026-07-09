@@ -365,9 +365,15 @@
   Độ chính xác AI là best-effort (bước duyệt tay bù lại). **PDF chưa hỗ trợ.**
 - **09E**: luồng **Quên mật khẩu** → Admin cấp mật khẩu tạm (bảng `password_reset_requests`, RLS chỉ Admin,
   RPC trung lập chống spam; audit `RESOLVE/REJECT_PASSWORD_RESET_REQUEST`; alert PENDING ở dashboard). Thêm
-  UUID validate route ảnh; 2 tài khoản Bí thư `0944577905`/`0368103532` (must_change_password, **chưa phân
+  UUID validate route ảnh; 2 tài khoản Bí thư mới (must_change_password, **chưa phân
   công** — Admin cần gán Khu phố + đặt lại mật khẩu tạm); Gemini dry-run 3 ảnh (report PII **gitignored**).
   ⚠️ Smoke xem ảnh bằng session thật cho từng vai trò **chưa chạy** (chưa có dữ liệu ảnh AI trong DB).
+- **09F**: **Admin gốc khỏe mạnh** (role ADMIN/active/`must_change_password=false`) → không vào được = **sai
+  mật khẩu**, không phải lỗi hệ thống. Thêm **break-glass** `recover:admin` (đặt lại mật khẩu qua env, không
+  hardcode/không in); bỏ link "Quên mật khẩu?" ở `/admin/login` (chỉ dẫn khôi phục máy chủ); giữ
+  `/forgot-password` cho Bí thư/Phụ huynh. **Smoke session thật**: đăng nhập Admin + ép đổi mật khẩu (6/6);
+  phân quyền route ảnh 4 vai trò (8/8, fixtures `SMOKE_09F_`, đã cleanup). 2 Bí thư mới **vẫn chưa phân
+  công** — cần Admin gán Khu phố.
 - ✅ (Đã gỡ) DOCX export **render server-side + log audit** (08C): bộ ghi ZIP/OOXML zero-dependency;
   mẫu `.docx` lưu Storage **private** (chặn `.docm`/macro). Còn lại: **placeholder-merge** vào mẫu upload
   (hiện export dùng bộ sinh riêng, mẫu chỉ là tệp tham chiếu) — làm khi cần khớp mẫu in chính xác.

@@ -2,13 +2,26 @@
 
 > Tạo ở **Prompt 09A**. Theo dõi việc cần sửa/nâng cấp, tách rõ: đã xử lý · còn lại · không làm ngay.
 
+## Đã xử lý ở 09F
+- [x] **Chẩn đoán Admin login**: script `recover-admin-account.mjs` (chế độ chẩn đoán) — Admin gốc **khỏe mạnh**
+      (auth có, role ADMIN, active, `must_change_password=false`); nguyên nhân không vào được = **sai mật khẩu**.
+- [x] **Admin recovery (break-glass)**: `npm run recover:admin` đặt lại mật khẩu (env `ADMIN_RECOVERY_*`,
+      không hardcode/không in), đảm bảo role ADMIN/active; `docs/admin-access-recovery.md`.
+- [x] **Admin login UX**: bỏ link "Quên mật khẩu?" công khai ở `/admin/login`, thay bằng chỉ dẫn khôi phục
+      trên máy chủ; giữ `/forgot-password` cho Bí thư/Phụ huynh.
+- [x] **Smoke session thật**: đăng nhập Admin + ép đổi mật khẩu (6 pass, tài khoản disposable, cleanup);
+      **phân quyền route ảnh 4 vai trò** (8 pass, fixtures `SMOKE_09F_`, cleanup) — `smoke-ai-image-route.mjs`.
+- [x] Health phase `09f-…` + cờ `adminRecoveryReady/adminLoginSmokeReady/aiImageRoleSmokeReady`.
+- [ ] **Gán Khu phố cho 2 Bí thư** `0944577905`/`0368103532` — **cần Admin** làm qua `/admin/secretaries`
+      (không tự gán bừa).
+
 ## Đã xử lý ở 09E
 - [x] **Quên mật khẩu**: bảng `password_reset_requests` (RLS chỉ Admin) + RPC `request_password_reset`
       (SECURITY DEFINER, trung lập, chống spam 24h, khớp hồ sơ). Trang công khai `/forgot-password` + link 2 cổng.
 - [x] **Admin xử lý**: `/admin/password-requests` cấp mật khẩu tạm (reuse reset, must_change_password) / từ chối;
       audit `RESOLVE/REJECT_PASSWORD_RESET_REQUEST`; alert PENDING ở dashboard + nav.
 - [x] **UUID validate sớm** cho route ảnh (`batchId`/`documentId`) → 404 nhanh, không lộ path.
-- [x] **2 tài khoản Bí thư** `0944577905`/`0368103532` (script `provision-secretaries.mjs`, env-driven,
+- [x] **2 tài khoản Bí thư mới** (script `provision-secretaries.mjs`, env-driven, số tài khoản không ghi vào report/source,
       must_change_password, chưa phân công) + highlight "chưa phân công" ở `/admin/secretaries`.
 - [x] **Gemini dry-run 3 ảnh** `src/images` (`test:ai-local-images`) — report **gitignored** (PII).
 - [x] Health phase `09e-…` + cờ `passwordResetRequestReady/secretaryProvisioningReady/realSessionImageSmokeReady`.

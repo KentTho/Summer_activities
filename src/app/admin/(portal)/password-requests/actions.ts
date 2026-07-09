@@ -40,7 +40,7 @@ export async function resolvePasswordRequest(
 
   const { data: prof } = await supabase
     .from("profiles")
-    .select("auth_user_id, full_name")
+    .select("auth_user_id")
     .eq("id", req.matched_profile_id)
     .maybeSingle();
   if (!prof) return { error: "Hồ sơ khớp không còn tồn tại." };
@@ -60,7 +60,7 @@ export async function resolvePasswordRequest(
   await logAudit(supabase, admin, {
     action: "RESOLVE_PASSWORD_RESET_REQUEST",
     entity: "password_reset_requests",
-    detail: `Cấp mật khẩu tạm cho ${prof.full_name}`,
+    detail: `request ${requestId.data}, profile ${req.matched_profile_id}`,
   });
   revalidatePath("/admin/password-requests");
   revalidatePath("/admin");

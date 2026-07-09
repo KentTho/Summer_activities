@@ -32,7 +32,7 @@ export async function resetPassword(
   const supabase = await createSupabaseServerClient();
   const { data: prof } = await supabase
     .from("profiles")
-    .select("auth_user_id, full_name")
+    .select("auth_user_id")
     .eq("id", profileId.data)
     .maybeSingle();
   if (!prof) return { error: "Không tìm thấy tài khoản." };
@@ -47,7 +47,7 @@ export async function resetPassword(
   await logAudit(supabase, admin, {
     action: "RESET_PASSWORD",
     entity: "profiles",
-    detail: prof.full_name,
+    detail: profileId.data,
   });
   revalidatePath("/admin/secretaries");
   revalidatePath("/admin/parents");

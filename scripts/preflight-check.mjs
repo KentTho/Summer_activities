@@ -94,6 +94,7 @@ const OLD_PHASES = [
   "09b-gemini-ai-import",
   "09c-ai-import-hardening",
   "09d-ai-import-evidence-monitoring",
+  "09e-password-requests-real-smoke",
 ];
 const healthPath = "src/app/api/health/route.ts";
 if (existsSync(healthPath)) {
