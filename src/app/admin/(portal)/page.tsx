@@ -2,11 +2,15 @@ import Link from "next/link";
 import { Card, StatCard } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
 import { getAdminOverview } from "@/lib/data/admin";
+import { countPendingPasswordRequests } from "@/lib/data/password-requests";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
-  const o = await getAdminOverview();
+  const [o, pendingResets] = await Promise.all([
+    getAdminOverview(),
+    countPendingPasswordRequests(),
+  ]);
 
   return (
     <>
@@ -14,6 +18,18 @@ export default async function AdminDashboard() {
         title="Tổng quan hệ thống"
         description="Số liệu thật từ cơ sở dữ liệu: Khu phố, Bí thư, học sinh, buổi sinh hoạt."
       />
+
+      {pendingResets > 0 ? (
+        <Link
+          href="/admin/password-requests"
+          className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm hover:bg-amber-100"
+        >
+          <span className="font-medium text-amber-800">
+            🔑 {pendingResets} yêu cầu đặt lại mật khẩu đang chờ xử lý
+          </span>
+          <span className="text-amber-700">Xử lý ngay →</span>
+        </Link>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard

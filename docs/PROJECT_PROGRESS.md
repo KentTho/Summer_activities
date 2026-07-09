@@ -363,6 +363,11 @@
   `VIEW/DOWNLOAD_AI_IMPORT_IMAGE`), nút "Xem ảnh gốc" (không lộ path), retention dry-run
   (`cleanup:ai-import-images`), monitoring `healthcheck` + workflow, `raw_data.source="AI"`.
   Độ chính xác AI là best-effort (bước duyệt tay bù lại). **PDF chưa hỗ trợ.**
+- **09E**: luồng **Quên mật khẩu** → Admin cấp mật khẩu tạm (bảng `password_reset_requests`, RLS chỉ Admin,
+  RPC trung lập chống spam; audit `RESOLVE/REJECT_PASSWORD_RESET_REQUEST`; alert PENDING ở dashboard). Thêm
+  UUID validate route ảnh; 2 tài khoản Bí thư `0944577905`/`0368103532` (must_change_password, **chưa phân
+  công** — Admin cần gán Khu phố + đặt lại mật khẩu tạm); Gemini dry-run 3 ảnh (report PII **gitignored**).
+  ⚠️ Smoke xem ảnh bằng session thật cho từng vai trò **chưa chạy** (chưa có dữ liệu ảnh AI trong DB).
 - ✅ (Đã gỡ) DOCX export **render server-side + log audit** (08C): bộ ghi ZIP/OOXML zero-dependency;
   mẫu `.docx` lưu Storage **private** (chặn `.docm`/macro). Còn lại: **placeholder-merge** vào mẫu upload
   (hiện export dùng bộ sinh riêng, mẫu chỉ là tệp tham chiếu) — làm khi cần khớp mẫu in chính xác.

@@ -37,6 +37,11 @@ yarn-error.log*
 # vercel
 .vercel
 
+# ảnh test AI import cục bộ (có thể chứa PII) — KHÔNG commit
+/src/images/
+# kết quả trích xuất AI cục bộ (chứa họ tên thật = PII) — KHÔNG commit
+/docs/reports/PROMPT-09E-local-images-ai-extraction.md
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -20,6 +20,7 @@ export default async function UserLoginPage() {
       accountLabel="Tài khoản (số điện thoại hoặc email)"
       accountPlaceholder="0932077136"
       submitLabel="Đăng nhập"
+      forgotHref="/forgot-password?portal=user"
       footer={
         <p>
           Đăng nhập thành công sẽ tự chuyển đến khu vực theo vai trò (Bí thư hoặc

@@ -20,6 +20,7 @@ export default async function AdminSecretariesPage({ searchParams }: PageProps) 
   const q = one((await searchParams).q);
   const [staff, neighborhoods] = await Promise.all([listStaff(q), listNeighborhoods()]);
   const activeNeighborhoods = neighborhoods.filter((n) => n.active);
+  const unassignedCount = staff.filter((s) => s.neighborhoods.length === 0).length;
 
   return (
     <>
@@ -29,6 +30,12 @@ export default async function AdminSecretariesPage({ searchParams }: PageProps) 
       />
 
       <CreateStaffForm />
+
+      {unassignedCount > 0 ? (
+        <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
+          ⚠ {unassignedCount} tài khoản chưa được phân công Khu phố — hãy phân công để họ thấy dữ liệu.
+        </p>
+      ) : null}
 
       <form method="get" className="mb-3">
         <input
@@ -63,6 +70,9 @@ export default async function AdminSecretariesPage({ searchParams }: PageProps) 
                       <Badge tone={profile.active ? "green" : "slate"}>
                         {profile.active ? "Đang hoạt động" : "Đã khóa"}
                       </Badge>
+                      {assigned.length === 0 ? (
+                        <Badge tone="amber">⚠ Chưa phân công</Badge>
+                      ) : null}
                     </div>
                     <p className="mt-0.5 truncate text-xs text-slate-500">
                       {profile.phone ?? "—"}

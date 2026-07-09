@@ -51,6 +51,16 @@ const admin = createClient(url, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
+function safeMessage(message) {
+  return String(message ?? "")
+    .replace(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/\d{4}-\d{2}-\d{2}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[A-Za-z0-9_-]+\.(?:jpg|jpeg|png|webp)/gi,
+      "[storage-path-redacted]",
+    )
+    .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, "[uuid]")
+    .replace(/(sb_secret_|sbp_|AIza)[A-Za-z0-9_-]+/g, "[secret-redacted]");
+}
+
 async function main() {
   console.log(`[cleanup] bucket=${BUCKET} · giữ lại ${days} ngày · cắt trước ${cutoff.toISOString().slice(0, 10)} · mode=${apply ? "APPLY" : "DRY-RUN"}`);
 
@@ -60,7 +70,7 @@ async function main() {
     .eq("bucket", BUCKET)
     .lt("created_at", cutoff.toISOString());
   if (error) {
-    console.error("BLOCKED: không đọc được uploaded_documents:", error.message);
+    console.error("BLOCKED: không đọc được uploaded_documents:", safeMessage(error.message));
     process.exit(1);
   }
 
@@ -88,14 +98,14 @@ async function main() {
     if (paths.length) {
       const { error: rmErr } = await admin.storage.from(BUCKET).remove(paths);
       if (rmErr) {
-        console.error(`[cleanup] lỗi xóa storage lô ${i / CHUNK + 1}: ${rmErr.message}`);
+        console.error(`[cleanup] lỗi xóa storage lô ${i / CHUNK + 1}: ${safeMessage(rmErr.message)}`);
         continue; // giữ metadata để retry lần sau — không mồ côi
       }
       removedStorage += paths.length;
     }
     const ids = chunk.map((d) => d.id);
     const { error: delErr } = await admin.from("uploaded_documents").delete().in("id", ids);
-    if (delErr) console.error(`[cleanup] lỗi xóa metadata lô ${i / CHUNK + 1}: ${delErr.message}`);
+    if (delErr) console.error(`[cleanup] lỗi xóa metadata lô ${i / CHUNK + 1}: ${safeMessage(delErr.message)}`);
     else removedRows += ids.length;
   }
 
@@ -103,6 +113,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error("[cleanup] lỗi:", e.message);
+  console.error("[cleanup] lỗi:", safeMessage(e.message));
   process.exit(1);
 });

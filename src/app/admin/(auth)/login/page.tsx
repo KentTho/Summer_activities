@@ -19,6 +19,7 @@ export default async function AdminLoginPage() {
       accountLabel="Tài khoản quản trị"
       accountPlaceholder="Admin"
       submitLabel="Đăng nhập Quản trị"
+      forgotHref="/forgot-password?portal=admin"
       footer={
         <>
           Chỉ tài khoản Quản trị viên mới đăng nhập được ở cổng này. Tài khoản do

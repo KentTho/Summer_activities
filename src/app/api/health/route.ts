@@ -7,7 +7,7 @@ import { hasGeminiConfigured, hasSupabaseEnv, isAiImportReady } from "@/lib/env"
 export async function GET() {
   return Response.json({
     status: "ok",
-    phase: "09d-ai-import-evidence-monitoring",
+    phase: "09e-password-requests-real-smoke",
     supabaseConfigured: hasSupabaseEnv(),
     databaseTypesReady: true,
     geminiConfigured: hasGeminiConfigured(),
@@ -20,6 +20,12 @@ export async function GET() {
     aiImportRetentionReady: true,
     // 09D — script check production health + docs uptime.
     monitoringReady: true,
+    // 09E — luồng quên mật khẩu → Admin cấp lại mật khẩu tạm.
+    passwordResetRequestReady: true,
+    // 09E — script cấp phát tài khoản Bí thư (đọc env, must_change_password).
+    secretaryProvisioningReady: true,
+    // 09E — đã smoke route ảnh bằng session thật (Admin/Bí thư/PARENT).
+    realSessionImageSmokeReady: true,
     docxExportReady: true,
     passwordChangeReady: true,
     time: new Date().toISOString(),

@@ -10,7 +10,7 @@
   chất lượng tốt hơn cho ảnh danh sách.
 
 ## 2. Luồng (KHÔNG đổi nguyên tắc staging)
-Ảnh → **Gemini (server-side)** → dòng NHÁP (`reviewed=false`, `source=GEMINI`) trong `import_batch_rows`
+Ảnh → **Gemini (server-side)** → dòng NHÁP (`reviewed=false`, `raw_data.source="AI"`, provider=Gemini) trong `import_batch_rows`
 → Bí thư/Chi Đoàn **kiểm tra/sửa tay** → **Xác nhận** thì mới tạo `students`.
 **KHÔNG auto-import.** AI là gợi ý, không phải nguồn sự thật.
 

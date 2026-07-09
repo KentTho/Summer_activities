@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useActionState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui";
 import type { SignInState } from "@/lib/auth/actions";
 
@@ -16,6 +17,8 @@ interface LoginFormProps {
   accountLabel: string;
   accountPlaceholder: string;
   submitLabel: string;
+  /** Link "Quên mật khẩu?" (tùy chọn) — trỏ tới trang gửi yêu cầu cấp lại. */
+  forgotHref?: string;
   /** Ghi chú dưới form. */
   footer?: ReactNode;
 }
@@ -29,6 +32,7 @@ export function LoginForm({
   accountLabel,
   accountPlaceholder,
   submitLabel,
+  forgotHref,
   footer,
 }: LoginFormProps) {
   const [state, formAction, pending] = useActionState<SignInState, FormData>(
@@ -86,6 +90,14 @@ export function LoginForm({
         <Button type="submit" disabled={pending} className="w-full">
           {pending ? "Đang đăng nhập…" : submitLabel}
         </Button>
+
+        {forgotHref ? (
+          <p className="text-center text-sm">
+            <Link href={forgotHref} className="text-indigo-600 hover:underline">
+              Quên mật khẩu?
+            </Link>
+          </p>
+        ) : null}
       </form>
       {footer ? <div className="mt-4 text-xs text-slate-400">{footer}</div> : null}
     </div>

@@ -7,20 +7,29 @@
  *   HEALTH_URL=https://<domain>/api/health node scripts/check-production-health.mjs
  */
 const DEFAULT_URL = "https://summer-activities-theta.vercel.app/api/health";
-const EXPECT_PHASE = "09d-ai-import-evidence-monitoring";
+const EXPECT_PHASE = "09e-password-requests-real-smoke";
 
 const url = process.argv[2] || process.env.HEALTH_URL || DEFAULT_URL;
+const safeUrl = (() => {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch {
+    return "[invalid-url]";
+  }
+})();
 
 async function main() {
   let res;
   try {
     res = await fetch(url, { headers: { "Cache-Control": "no-cache" } });
   } catch (e) {
-    console.error(`FAIL: không gọi được ${url} — ${e.message}`);
+    const kind = e instanceof Error ? e.name : "FetchError";
+    console.error(`FAIL: không gọi được ${safeUrl} (${kind})`);
     process.exit(1);
   }
   if (!res.ok) {
-    console.error(`FAIL: HTTP ${res.status} từ ${url}`);
+    console.error(`FAIL: HTTP ${res.status} từ ${safeUrl}`);
     process.exit(1);
   }
   let body;

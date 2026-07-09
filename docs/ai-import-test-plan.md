@@ -47,6 +47,15 @@
 - [ ] **Health**: `/api/health` phase `09d-…` + cờ `aiImportImageViewerReady/aiImportRetentionReady/monitoringReady`.
 - [ ] **`npm run healthcheck`**: PASS khi status=ok & phase khớp; FAIL (exit≠0) khi lệch.
 
+## Quên mật khẩu + UUID + provisioning (09E)
+- [x] **UUID sai** ở route ảnh (`batchId`/`documentId`) → 404 nhanh, không lộ path (đã build/logic; unauth vẫn 307 middleware).
+- [x] **Forgot-password submit**: thông báo trung lập; anon KHÔNG đọc được `password_reset_requests` (RLS).
+- [x] **Anti-spam**: gọi lại cùng identifier trong 24h → vẫn 1 PENDING.
+- [x] **Khớp hồ sơ**: yêu cầu của tài khoản tồn tại có `matched_profile_id` (service role kiểm).
+- [x] **2 tài khoản Bí thư** tạo mới: SECRETARY/active/Bí thư, **0 phân công** (chưa gán Khu phố).
+- [ ] **Admin cấp mật khẩu tạm** (session thật): RESOLVED + `must_change_password=true` + audit — cần đăng nhập Admin.
+- [ ] **Xem ảnh theo vai trò** (session thật): cần seed dữ liệu ảnh AI trong DB — hiện chưa có → NOT VERIFIED.
+
 ## Bảo mật/log
 - [ ] Log server: chỉ số lượng/mime/size — **không** ảnh/base64/SĐT/họ tên/key.
 - [ ] Audit có sự kiện `AI_IMPORT` (số dòng), không PII.

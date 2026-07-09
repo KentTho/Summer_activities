@@ -2,6 +2,17 @@
 
 > Tạo ở **Prompt 09A**. Theo dõi việc cần sửa/nâng cấp, tách rõ: đã xử lý · còn lại · không làm ngay.
 
+## Đã xử lý ở 09E
+- [x] **Quên mật khẩu**: bảng `password_reset_requests` (RLS chỉ Admin) + RPC `request_password_reset`
+      (SECURITY DEFINER, trung lập, chống spam 24h, khớp hồ sơ). Trang công khai `/forgot-password` + link 2 cổng.
+- [x] **Admin xử lý**: `/admin/password-requests` cấp mật khẩu tạm (reuse reset, must_change_password) / từ chối;
+      audit `RESOLVE/REJECT_PASSWORD_RESET_REQUEST`; alert PENDING ở dashboard + nav.
+- [x] **UUID validate sớm** cho route ảnh (`batchId`/`documentId`) → 404 nhanh, không lộ path.
+- [x] **2 tài khoản Bí thư** `0944577905`/`0368103532` (script `provision-secretaries.mjs`, env-driven,
+      must_change_password, chưa phân công) + highlight "chưa phân công" ở `/admin/secretaries`.
+- [x] **Gemini dry-run 3 ảnh** `src/images` (`test:ai-local-images`) — report **gitignored** (PII).
+- [x] Health phase `09e-…` + cờ `passwordResetRequestReady/secretaryProvisioningReady/realSessionImageSmokeReady`.
+
 ## Đã xử lý ở 09D
 - [x] **Route xem/tải ảnh gốc** `GET /user/secretary/import/[batchId]/documents/[documentId]` (+`?download=1`):
       xác thực trong handler, ADMIN tất cả / SECRETARY theo scope lô / PARENT chặn; ràng buộc `import_batch_id`+bucket.

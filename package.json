@@ -11,7 +11,9 @@
     "preflight": "node scripts/preflight-check.mjs",
     "bootstrap:auth": "node --env-file=.env.local scripts/bootstrap-auth-users.mjs",
     "cleanup:ai-import-images": "node scripts/cleanup-ai-import-images.mjs",
-    "healthcheck": "node scripts/check-production-health.mjs"
+    "healthcheck": "node scripts/check-production-health.mjs",
+    "provision:secretaries": "node --env-file=.env.local scripts/provision-secretaries.mjs",
+    "test:ai-local-images": "node --env-file=.env.local scripts/test-ai-import-local-images.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

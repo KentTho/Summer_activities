@@ -10,6 +10,7 @@
  * Đọc nhị phân bằng service role CHỈ SAU khi đã chứng minh quyền với lô. Ghi audit,
  * KHÔNG log PII/path/nội dung. KHÔNG trả bucket/path ra client.
  */
+import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { logAudit } from "@/lib/admin/audit";
@@ -23,6 +24,7 @@ import {
 export const dynamic = "force-dynamic";
 
 const IMAGE_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+const uuid = z.string().uuid();
 
 export async function GET(
   request: Request,
@@ -35,6 +37,11 @@ export async function GET(
   }
 
   const { batchId, documentId } = await params;
+
+  // (0) Validate UUID SỚM trước khi chạm DB — id sai định dạng ⇒ 404 nhanh, không lộ path/bucket.
+  if (!uuid.safeParse(batchId).success || !uuid.safeParse(documentId).success) {
+    return new Response("Không tìm thấy.", { status: 404 });
+  }
 
   // (1) Chứng minh quyền với LÔ qua RLS (ib_select: admin / chủ lô / Khu phố phụ trách).
   //     Không thấy lô ⇒ 404 (không tiết lộ tồn tại).

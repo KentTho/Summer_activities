@@ -564,6 +564,60 @@ export type Database = {
           },
         ]
       }
+      password_reset_requests: {
+        Row: {
+          created_at: string
+          id: string
+          identifier: string
+          matched_profile_id: string | null
+          note: string | null
+          portal: string
+          requested_role: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          identifier: string
+          matched_profile_id?: string | null
+          note?: string | null
+          portal: string
+          requested_role?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          identifier?: string
+          matched_profile_id?: string | null
+          note?: string | null
+          portal?: string
+          requested_role?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "password_reset_requests_matched_profile_id_fkey"
+            columns: ["matched_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "password_reset_requests_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           active: boolean
@@ -946,6 +1000,10 @@ export type Database = {
       }
       is_secretary: { Args: never; Returns: boolean }
       my_ai_import_usage_today: { Args: never; Returns: number }
+      request_password_reset: {
+        Args: { p_identifier: string; p_portal: string }
+        Returns: undefined
+      }
     }
     Enums: {
       attendance_status: "PRESENT" | "EXCUSED" | "UNEXCUSED"
