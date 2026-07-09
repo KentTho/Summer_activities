@@ -359,7 +359,10 @@
 - Import ảnh (AI) phải qua staging review, không auto-import (đã enforce: confirm chỉ tạo từ dòng đã duyệt).
 - **09B: chuyển sang Gemini Vision.** Production cần `GEMINI_API_KEY` (server-only, không `NEXT_PUBLIC_`)
   trên Vercel để bật AI; thiếu → nút AI tắt, **nhập tay vẫn chạy**. Gemini free tier có **quota** (429 → thử lại).
-- AI import chưa lưu ảnh gốc/audit ảnh; độ chính xác AI là best-effort (bước duyệt tay bù lại). PDF chưa hỗ trợ.
+- ✅ (Đã gỡ) **09C** lưu ảnh gốc private; **09D** thêm route xem/tải ảnh (xác thực + audit
+  `VIEW/DOWNLOAD_AI_IMPORT_IMAGE`), nút "Xem ảnh gốc" (không lộ path), retention dry-run
+  (`cleanup:ai-import-images`), monitoring `healthcheck` + workflow, `raw_data.source="AI"`.
+  Độ chính xác AI là best-effort (bước duyệt tay bù lại). **PDF chưa hỗ trợ.**
 - ✅ (Đã gỡ) DOCX export **render server-side + log audit** (08C): bộ ghi ZIP/OOXML zero-dependency;
   mẫu `.docx` lưu Storage **private** (chặn `.docm`/macro). Còn lại: **placeholder-merge** vào mẫu upload
   (hiện export dùng bộ sinh riêng, mẫu chỉ là tệp tham chiếu) — làm khi cần khớp mẫu in chính xác.

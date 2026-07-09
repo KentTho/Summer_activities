@@ -92,6 +92,7 @@ const OLD_PHASES = [
   "08c-docx-export-admin-hardening",
   "09a-production-hardening",
   "09b-gemini-ai-import",
+  "09c-ai-import-hardening",
 ];
 const healthPath = "src/app/api/health/route.ts";
 if (existsSync(healthPath)) {

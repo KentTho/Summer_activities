@@ -1,0 +1,27 @@
+name: Healthcheck
+
+# Giám sát nhẹ production /api/health (09D). Không dùng secret.
+on:
+  schedule:
+    # Mỗi 30 phút.
+    - cron: "*/30 * * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: healthcheck-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  health:
+    name: Production /api/health
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check production health
+        run: node scripts/check-production-health.mjs

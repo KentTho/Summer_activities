@@ -9,7 +9,9 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "preflight": "node scripts/preflight-check.mjs",
-    "bootstrap:auth": "node --env-file=.env.local scripts/bootstrap-auth-users.mjs"
+    "bootstrap:auth": "node --env-file=.env.local scripts/bootstrap-auth-users.mjs",
+    "cleanup:ai-import-images": "node scripts/cleanup-ai-import-images.mjs",
+    "healthcheck": "node scripts/check-production-health.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

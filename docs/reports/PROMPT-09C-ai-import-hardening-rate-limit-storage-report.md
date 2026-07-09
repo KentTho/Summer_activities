@@ -37,7 +37,8 @@ lại OCR.space, không phá Auth/RBAC/RLS/CRUD/Attendance/Leave/Notification/DO
   user/role. UI liệt kê "Ảnh gốc đã lưu (riêng tư)" (size/ngày, không path/link).
 
 ## 6. Import flow update (`aiExtractRows`)
-1. require login (SECRETARY/ADMIN qua guard sẵn có) + validate file (ảnh, ≤ MB, chặn PDF).
+1. require login + **Server Action tự kiểm role SECRETARY/ADMIN và batch thuộc người gọi** + validate file
+   (ảnh, ≤ MB, chặn PDF). Sai quyền/batch → dừng trước quota/upload/Gemini.
 2. `isAiImportReady` (thiếu key/tắt → nhập tay).
 3. **rate-limit** `consumeAiQuota` (vượt → dừng, báo, không Gemini/không upload).
 4. **upload ảnh private** + ghi `uploaded_documents` (lỗi upload KHÔNG chặn — vẫn thử Gemini).

@@ -17,6 +17,7 @@ import { env } from "@/lib/env";
 import { logEvent, logError } from "@/lib/monitoring/server-log";
 import { logAudit } from "@/lib/admin/audit";
 import { consumeAiQuota } from "@/lib/data/ai-import-usage";
+import { ROLES } from "@/modules/auth/domain/roles";
 import {
   AI_IMPORT_BUCKET,
   ensureAiImportBucket,
@@ -133,6 +134,9 @@ export async function aiExtractRows(
 
   const profile = await getCurrentProfile();
   if (!profile) return { error: "Phiên đăng nhập không hợp lệ." };
+  if (profile.role !== ROLES.SECRETARY && profile.role !== ROLES.ADMIN) {
+    return { error: "Bạn không có quyền dùng AI import." };
+  }
 
   const raw = formData.get("file");
   const file = raw instanceof File ? raw : null;
@@ -146,6 +150,20 @@ export async function aiExtractRows(
     };
   }
 
+  const supabase = await createSupabaseServerClient();
+  const { data: batch, error: batchError } = await supabase
+    .from("import_batches")
+    .select("id, status, created_by")
+    .eq("id", batchId.data)
+    .eq("created_by", profile.profileId)
+    .maybeSingle();
+  if (batchError || !batch) {
+    return { error: "Không tìm thấy lô import hợp lệ hoặc bạn không có quyền với lô này." };
+  }
+  if (batch.status === "COMMITTED") {
+    return { error: "Lô import đã ghi nhận, không thể dùng AI để thêm dòng mới." };
+  }
+
   // (D) Rate-limit theo user/ngày TRƯỚC khi gọi Gemini/upload — bảo vệ quota.
   const quota = await consumeAiQuota();
   if (!quota.allowed) {
@@ -155,7 +173,6 @@ export async function aiExtractRows(
     };
   }
 
-  const supabase = await createSupabaseServerClient();
   const bytes = new Uint8Array(await file.arrayBuffer());
 
   // (E) Lưu ảnh gốc vào Storage PRIVATE + metadata (đối chiếu khi AI đọc sai).
@@ -214,7 +231,9 @@ export async function aiExtractRows(
       full_name: r.full_name,
       birth_date: r.birth_date ?? "",
       guardian_phone: r.guardian_phone,
-      source: "GEMINI",
+      // Nguồn NGHIỆP VỤ của dòng nháp = "AI" (đồng bộ với import_batches.source='AI').
+      // Provider kỹ thuật là Gemini; nghiệp vụ chỉ quan tâm "do AI đọc" (09D).
+      source: "AI",
       confidence: r.confidence,
       needs_review: r.needs_review,
       notes: r.notes,

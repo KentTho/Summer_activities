@@ -39,8 +39,9 @@ thử lại sau; nhập tay vẫn hoạt động.
 - Ảnh gốc lưu ở bucket **PRIVATE** `ai-import-uploads` (không public URL), path
   `<profileId>/<date>/<batchId>/<random>.<ext>`. Metadata vào `uploaded_documents` (bucket/path/mime/
   size/sha256/uploaded_by/**import_batch_id**) qua RLS. Dùng để **đối chiếu khi AI đọc sai**.
-- Thứ tự: rate-limit → **upload ảnh** → `uploaded_documents` → Gemini. Gemini fail sau upload → ảnh vẫn
-  còn để đối chiếu; user nhập tay được. Storage thao tác bằng service role **sau** khi xác thực user/role.
+- Thứ tự: xác thực role + batch thuộc người gọi → rate-limit → **upload ảnh** → `uploaded_documents` → Gemini.
+  Gemini fail sau upload → ảnh vẫn còn để đối chiếu; user nhập tay được. Storage thao tác bằng service role
+  **sau** khi xác thực user/role/quyền với lô.
 
 ## 4. Cấu hình trên Vercel (thủ công — không tự thêm khi user chưa cấp)
 1. Vercel → Project → Settings → Environment Variables.
@@ -62,10 +63,20 @@ thử lại sau; nhập tay vẫn hoạt động.
 - Mã nguồn: `src/lib/ai-import/{types,gemini,normalize,index}.ts`; action
   `src/app/user/secretary/import/actions.ts#aiExtractRows`; log an toàn qua `lib/monitoring/server-log.ts`.
 
+## 3d. Xem/tải ảnh gốc + retention + monitoring (09D)
+- **Route xem/tải ảnh**: `GET /user/secretary/import/[batchId]/documents/[documentId]` (`?download=1` để tải).
+  Xác thực trong route handler: ADMIN tất cả; SECRETARY chỉ ảnh thuộc lô mình có quyền (RLS lô); PARENT chặn.
+  Ảnh ràng buộc `import_batch_id`+bucket; stream inline/attachment; audit `VIEW/DOWNLOAD_AI_IMPORT_IMAGE`.
+  UI lô có nút **"Xem ảnh gốc"** (không lộ path/URL). Chi tiết: [`storage-policy.md`](./storage-policy.md).
+- **Retention**: `npm run cleanup:ai-import-images -- --days=90` (dry-run) → thêm `--apply` mới xóa.
+- **Monitoring**: `npm run healthcheck` gọi `/api/health` production; xem [`monitoring-uptime.md`](./monitoring-uptime.md).
+
 ## 7. Ghi chú kỹ thuật
 - **09C**: enum `import_source` đã thêm giá trị **`AI`** (migration additive) → lô AI đánh `source='AI'`.
-  Giá trị `OCR` cũ **giữ lại** cho dữ liệu lịch sử (không đổi/xóa). Dòng vẫn ghi
-  `import_batch_rows.raw_data.source = "GEMINI"`.
+  Giá trị `OCR` cũ **giữ lại** cho dữ liệu lịch sử (không đổi/xóa).
+- **09D**: dòng AI ghi `import_batch_rows.raw_data.source = "AI"` (nguồn **nghiệp vụ**), đồng bộ với
+  `import_batches.source='AI'`. **`GEMINI` là provider kỹ thuật**, **`AI` là nguồn nghiệp vụ** — không
+  mass-update dữ liệu cũ.
 - Mã nguồn 09C: `supabase/migrations/20260708010000_*`, `..._20260708010100_*`;
   `src/lib/storage/ai-import.ts`, `src/lib/data/ai-import-usage.ts`; RPC `consume_ai_import_quota` /
   `my_ai_import_usage_today`.

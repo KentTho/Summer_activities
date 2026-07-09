@@ -56,3 +56,31 @@ export async function downloadAiImportImage(path: string): Promise<Buffer | null
   if (error || !data) return null;
   return Buffer.from(await data.arrayBuffer());
 }
+
+export interface AiImportDocMeta {
+  path: string;
+  mimeType: string | null;
+  sizeBytes: number | null;
+}
+
+/**
+ * Metadata ảnh AI import **ràng buộc** vào đúng lô (import_batch_id) và bucket
+ * `ai-import-uploads`. Dùng service role (bỏ RLS) — nơi gọi PHẢI chứng minh quyền
+ * với lô (qua RLS server client) TRƯỚC khi gọi hàm này. Trả null nếu không khớp.
+ * KHÔNG trả path ra client — chỉ dùng nội bộ để stream nhị phân.
+ */
+export async function getAiImportDocForBatch(
+  documentId: string,
+  batchId: string,
+): Promise<AiImportDocMeta | null> {
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("uploaded_documents")
+    .select("path, mime_type, size_bytes")
+    .eq("id", documentId)
+    .eq("import_batch_id", batchId)
+    .eq("bucket", AI_IMPORT_BUCKET)
+    .maybeSingle();
+  if (error || !data?.path) return null;
+  return { path: data.path, mimeType: data.mime_type, sizeBytes: data.size_bytes };
+}

@@ -76,15 +76,25 @@ export default async function ImportBatchDetailPage({ params }: PageProps) {
       {images.length > 0 ? (
         <Card title="Ảnh gốc đã lưu (riêng tư)" className="mb-4">
           <p className="mb-2 text-xs text-slate-500">
-            Ảnh được lưu riêng tư để đối chiếu khi cần. Không có liên kết công khai.
+            Ảnh được lưu riêng tư để đối chiếu khi AI đọc sai. Không có liên kết công khai.
           </p>
           <ul className="divide-y divide-slate-100 text-sm">
             {images.map((img, i) => (
               <li key={img.id} className="flex items-center justify-between gap-3 py-2">
-                <span className="text-slate-700">Ảnh {i + 1}</span>
-                <span className="text-xs text-slate-400">
-                  {img.sizeBytes ? `${Math.round(img.sizeBytes / 1024)}KB · ` : ""}
-                  {img.createdAt.slice(0, 10)}
+                <span className="min-w-0 truncate text-slate-700">Ảnh {i + 1}</span>
+                <span className="flex shrink-0 items-center gap-3">
+                  <span className="text-xs text-slate-400">
+                    {img.sizeBytes ? `${Math.round(img.sizeBytes / 1024)}KB · ` : ""}
+                    {img.createdAt.slice(0, 10)}
+                  </span>
+                  <a
+                    href={`/user/secretary/import/${batchId}/documents/${img.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-medium text-indigo-600 hover:underline"
+                  >
+                    Xem ảnh gốc
+                  </a>
                 </span>
               </li>
             ))}

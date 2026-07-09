@@ -2,6 +2,16 @@
 
 > Tạo ở **Prompt 09A**. Theo dõi việc cần sửa/nâng cấp, tách rõ: đã xử lý · còn lại · không làm ngay.
 
+## Đã xử lý ở 09D
+- [x] **Route xem/tải ảnh gốc** `GET /user/secretary/import/[batchId]/documents/[documentId]` (+`?download=1`):
+      xác thực trong handler, ADMIN tất cả / SECRETARY theo scope lô / PARENT chặn; ràng buộc `import_batch_id`+bucket.
+- [x] **Audit** `VIEW_AI_IMPORT_IMAGE`/`DOWNLOAD_AI_IMPORT_IMAGE` (không PII/path). UI nút "Xem ảnh gốc" (không lộ path).
+- [x] **Retention** `scripts/cleanup-ai-import-images.mjs` (dry-run mặc định, cần `--apply`; chỉ bucket ai-import-uploads).
+- [x] **Monitoring nhẹ** `scripts/check-production-health.mjs` + `docs/monitoring-uptime.md` + workflow `healthcheck.yml`.
+- [x] **raw_data.source** dòng AI = `"AI"` (đồng bộ `import_batches.source`); `GEMINI`=provider, `AI`=nghiệp vụ.
+- [x] Health phase `09d-ai-import-evidence-monitoring` + cờ `aiImportImageViewerReady/aiImportRetentionReady/monitoringReady`.
+- [x] Docs tiêu chí prompt AI `docs/ai-agent-prompt-criteria.md` (rút gọn cho dự án).
+
 ## Đã xử lý ở 09C
 - [x] Enum `import_source='AI'` (additive) — lô AI đánh `source='AI'`; `OCR` giữ cho lịch sử.
 - [x] **Rate-limit** AI theo user/ngày (`ai_import_usage` + RPC atomic `consume_ai_import_quota`), env `AI_IMPORT_DAILY_LIMIT`.
@@ -26,11 +36,11 @@
 - [x] Docs OCR production (`ocr-production-setup.md`).
 
 ## Còn lại trước khi "UI polish"
-1. **Monitoring nâng cao**: (09B/09C có logger nhẹ redact PII) — còn lại: alert khi `/api/health` fail;
-   gom log tập trung; uptime check.
+1. **Monitoring nâng cao**: (09B/09C logger redact PII; **09D** có uptime check `healthcheck.yml` +
+   `check-production-health.mjs`) — còn lại: alert Slack/Telegram khi fail liên tiếp; gom log tập trung.
 2. **Load test sau MVP**: mô phỏng ghi điểm danh dồn cuối buổi; xem index/độ trễ.
-3. **Xem lại ảnh gốc AI trên UI**: (09C đã lưu private + liệt kê metadata) — còn lại: route xác thực để
-   tải/xem ảnh + audit tải; retention xóa ảnh cũ.
+3. **Xem lại ảnh gốc AI trên UI**: ✅ **XONG ở 09D** (route xác thực + audit + nút xem + retention dry-run).
+   Còn lại (không gấp): tự động chạy retention `--apply` định kỳ (cron/GitHub Actions) sau khi xác nhận an toàn.
 4. **PDF cho AI import**: hiện chặn PDF; thêm khi xác nhận Gemini path ổn với PDF.
 5. **Advanced DOCX template engine**: vòng lặp/điều kiện/bảng động, placeholder bị tách run.
 6. **Dọn `DemoNotice` component** nếu vẫn không dùng (hiện chỉ export, không render ở app).
