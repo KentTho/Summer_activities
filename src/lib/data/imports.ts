@@ -9,13 +9,20 @@ import type { Tables } from "@/lib/types";
 export type ImportBatchRow = Tables<"import_batches">;
 export type ImportRow = Tables<"import_batch_rows">;
 
-/** Hình dạng dữ liệu nháp trong raw_data (3 trường quan trọng + phụ). */
+/** Hình dạng dữ liệu nháp trong raw_data (trường quan trọng + mở rộng 10B). */
 export interface ImportRowData {
   full_name?: string;
+  birth_year?: string;
   birth_date?: string;
+  gender?: string;
+  signature_present?: string; // "true" | "false" | ""
+  signature_note?: string;
   guardian_phone?: string;
   guardian_name?: string;
   school?: string;
+  /** Metadata AI (nếu dòng từ AI đọc ảnh). */
+  confidence?: number;
+  needs_review?: boolean;
 }
 
 export function rowData(row: ImportRow): ImportRowData {

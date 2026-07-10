@@ -43,18 +43,52 @@ function buildDate(year: number, month: number, day: number): string | null {
   return `${year}-${pad(month)}-${pad(day)}`;
 }
 
+/** Năm sinh: 4 chữ số hợp lệ (1990..2100); ngoài khoảng/không hợp lệ ⇒ null. */
+export function normalizeBirthYear(raw: unknown): number | null {
+  if (raw == null || raw === "") return null;
+  const n = typeof raw === "number" ? raw : parseInt(String(raw).replace(/[^\d]/g, ""), 10);
+  if (!Number.isInteger(n) || n < 1990 || n > 2100) return null;
+  return n;
+}
+
 /**
- * Dòng cần kiểm tra tay khi: thiếu họ tên, HOẶC thiếu cả ngày sinh và SĐT,
- * HOẶC độ tin cậy thấp (< 0.6).
+ * Giới tính CHỈ nhận tập giá trị rõ ràng (map cả nhãn tiếng Việt). KHÔNG suy đoán từ tên.
+ * Không xác định ⇒ null.
+ */
+export function normalizeGender(raw: unknown): "MALE" | "FEMALE" | "OTHER" | "UNKNOWN" | null {
+  if (raw == null) return null;
+  const s = String(raw).trim().toLowerCase();
+  if (!s || s === "null") return null;
+  if (["male", "nam", "m", "boy", "trai"].includes(s)) return "MALE";
+  if (["female", "nữ", "nu", "f", "girl", "gái", "gai"].includes(s)) return "FEMALE";
+  if (["other", "khác", "khac"].includes(s)) return "OTHER";
+  if (["unknown", "chưa rõ", "chua ro"].includes(s)) return "UNKNOWN";
+  return null; // không khớp ⇒ để trống, không đoán
+}
+
+/** signature_present: boolean rõ ràng; giá trị mơ hồ ⇒ null (chưa rõ). */
+export function normalizeSignaturePresent(raw: unknown): boolean | null {
+  if (raw === true || raw === false) return raw;
+  if (raw == null) return null;
+  const s = String(raw).trim().toLowerCase();
+  if (["true", "yes", "có", "co", "1"].includes(s)) return true;
+  if (["false", "no", "không", "khong", "0"].includes(s)) return false;
+  return null;
+}
+
+/**
+ * Dòng cần kiểm tra tay khi: thiếu họ tên, HOẶC thiếu cả năm sinh + ngày sinh + SĐT,
+ * HOẶC độ tin cậy thấp (< 0.6). Giới tính/chữ ký thiếu KHÔNG bắt buộc review (để trống hợp lệ).
  */
 export function computeNeedsReview(row: {
   full_name: string;
+  birth_year: number | null;
   birth_date: string | null;
   guardian_phone: string;
   confidence: number;
 }): boolean {
   if (!row.full_name.trim()) return true;
-  if (!row.birth_date && !row.guardian_phone) return true;
+  if (!row.birth_year && !row.birth_date && !row.guardian_phone) return true;
   if (row.confidence < 0.6) return true;
   return false;
 }

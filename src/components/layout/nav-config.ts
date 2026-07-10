@@ -24,6 +24,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: "Báo cáo", href: "/admin/reports" },
     { label: "Audit log", href: "/admin/audit" },
     { label: "Cấu hình", href: "/admin/settings" },
+    { label: "Thông tin cá nhân", href: "/admin/profile" },
   ],
   SECRETARY: [
     { label: "Tổng quan", href: "/user/secretary" },
@@ -34,6 +35,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: "Nhập giấy tờ", href: "/user/secretary/import" },
     { label: "Thông báo", href: "/user/secretary/notifications" },
     { label: "Báo cáo", href: "/user/secretary/reports" },
+    { label: "Thông tin cá nhân", href: "/user/secretary/profile" },
   ],
   PARENT: [
     { label: "Tổng quan", href: "/user/parent" },
@@ -41,6 +43,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: "Lịch sử điểm danh", href: "/user/parent/attendance" },
     { label: "Xin phép nghỉ", href: "/user/parent/leave-requests" },
     { label: "Thông báo", href: "/user/parent/notifications" },
+    { label: "Thông tin cá nhân", href: "/user/parent/profile" },
   ],
 };
 

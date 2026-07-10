@@ -38,6 +38,13 @@ const IMPORT_PATH = "/user/secretary/import";
 
 const rowSchema = z.object({
   full_name: z.string().trim().max(120).optional().default(""),
+  birth_year: z
+    .string()
+    .trim()
+    .regex(/^\d{4}$/u, "Năm sinh phải là 4 chữ số.")
+    .or(z.literal(""))
+    .optional()
+    .default(""),
   birth_date: z
     .string()
     .trim()
@@ -45,6 +52,9 @@ const rowSchema = z.object({
     .or(z.literal(""))
     .optional()
     .default(""),
+  gender: z.enum(["MALE", "FEMALE", "OTHER", "UNKNOWN"]).or(z.literal("")).optional().default(""),
+  signature_present: z.enum(["true", "false"]).or(z.literal("")).optional().default(""),
+  signature_note: z.string().trim().max(200).optional().default(""),
   guardian_phone: z.string().trim().max(20).optional().default(""),
   guardian_name: z.string().trim().max(120).optional().default(""),
   school: z.string().trim().max(150).optional().default(""),
@@ -53,7 +63,11 @@ const rowSchema = z.object({
 function readRow(formData: FormData) {
   return rowSchema.safeParse({
     full_name: formData.get("full_name") ?? "",
+    birth_year: formData.get("birth_year") ?? "",
     birth_date: formData.get("birth_date") ?? "",
+    gender: formData.get("gender") ?? "",
+    signature_present: formData.get("signature_present") ?? "",
+    signature_note: formData.get("signature_note") ?? "",
     guardian_phone: formData.get("guardian_phone") ?? "",
     guardian_name: formData.get("guardian_name") ?? "",
     school: formData.get("school") ?? "",
@@ -229,7 +243,11 @@ export async function aiExtractRows(
     // Dòng AI: chưa duyệt (reviewed=false) → phải kiểm tra/sửa tay trước khi confirm.
     raw_data: {
       full_name: r.full_name,
+      birth_year: r.birth_year ? String(r.birth_year) : "",
       birth_date: r.birth_date ?? "",
+      gender: r.gender ?? "",
+      signature_present: r.signature_present === null ? "" : String(r.signature_present),
+      signature_note: r.signature_note,
       guardian_phone: r.guardian_phone,
       // Nguồn NGHIỆP VỤ của dòng nháp = "AI" (đồng bộ với import_batches.source='AI').
       // Provider kỹ thuật là Gemini; nghiệp vụ chỉ quan tâm "do AI đọc" (09D).
@@ -328,16 +346,27 @@ export async function confirmBatch(formData: FormData): Promise<void> {
     .eq("reviewed", true)
     .is("created_student_id", null);
 
+  let createdCount = 0;
   for (const row of rows ?? []) {
     const d = (row.raw_data ?? {}) as Record<string, string>;
     const fullName = (d.full_name ?? "").trim();
     if (!fullName) continue;
 
+    // Field mới (10B): năm sinh/giới tính/chữ ký — chỉ điền khi hợp lệ, KHÔNG bịa.
+    const birthYear = /^\d{4}$/.test(d.birth_year ?? "") ? Number(d.birth_year) : null;
+    const gender = ["MALE", "FEMALE", "OTHER", "UNKNOWN"].includes(d.gender ?? "") ? d.gender : null;
+    const signaturePresent =
+      d.signature_present === "true" ? true : d.signature_present === "false" ? false : null;
+
     const { data: created, error } = await supabase
       .from("students")
       .insert({
         full_name: fullName,
+        birth_year: birthYear,
         birth_date: d.birth_date ? d.birth_date : null,
+        gender,
+        signature_present: signaturePresent,
+        signature_note: d.signature_note ? d.signature_note : null,
         guardian_phone: d.guardian_phone ? d.guardian_phone : null,
         guardian_name: d.guardian_name ? d.guardian_name : null,
         school: d.school ? d.school : null,
@@ -348,11 +377,21 @@ export async function confirmBatch(formData: FormData): Promise<void> {
       .single();
 
     if (!error && created) {
+      createdCount += 1;
       await supabase
         .from("import_batch_rows")
         .update({ created_student_id: created.id })
         .eq("id", row.id);
     }
+  }
+
+  if (createdCount > 0) {
+    // Audit: chỉ số lượng + mã lô, KHÔNG tên/PII học sinh.
+    await logAudit(supabase, profile, {
+      action: "CONFIRM_AI_IMPORT",
+      entity: "students",
+      detail: `lô ${batchId.data} → tạo ${createdCount} học sinh từ dòng đã duyệt`,
+    });
   }
 
   // Chỉ đóng lô (COMMITTED) khi KHÔNG còn dòng nào chờ (chưa tạo học sinh) — tránh

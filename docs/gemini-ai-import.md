@@ -80,3 +80,9 @@ thử lại sau; nhập tay vẫn hoạt động.
 - Mã nguồn 09C: `supabase/migrations/20260708010000_*`, `..._20260708010100_*`;
   `src/lib/storage/ai-import.ts`, `src/lib/data/ai-import-usage.ts`; RPC `consume_ai_import_quota` /
   `my_ai_import_usage_today`.
+
+## Field mở rộng (10B)
+AI import nay nhận thêm: **birth_year** (năm sinh 4 số), **gender** (MALE/FEMALE/OTHER/UNKNOWN — KHÔNG suy
+đoán từ tên), **signature_present** (true/false/null — chỉ metadata, KHÔNG ảnh chữ ký), **signature_note**.
+Prompt Gemini + normalize bắt buộc: chỉ đọc thông tin CÓ trong ảnh, field thiếu để null/rỗng, không bịa.
+Confirm import map các field hợp lệ vào `students` (cột `birth_year/gender/signature_present/signature_note`).

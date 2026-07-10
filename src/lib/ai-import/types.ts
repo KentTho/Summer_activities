@@ -11,11 +11,19 @@ export interface AiImportInput {
   fileName: string;
 }
 
+/** Giới tính chuẩn hóa — KHÔNG suy đoán từ tên; ảnh không ghi ⇒ null. */
+export type AiGender = "MALE" | "FEMALE" | "OTHER" | "UNKNOWN" | null;
+
 /** Một dòng học sinh nháp do AI trích xuất (đã chuẩn hóa). */
 export interface AiDraftRow {
   full_name: string;
+  birth_year: number | null; // 4 chữ số hợp lệ, hoặc null
   birth_date: string | null; // YYYY-MM-DD hoặc null
+  gender: AiGender;
   guardian_phone: string; // "" nếu không thấy
+  /** Có chữ ký trong giấy tờ hay không (null = chưa rõ). Chỉ metadata, KHÔNG ảnh chữ ký. */
+  signature_present: boolean | null;
+  signature_note: string; // ghi chú chữ ký (không ảnh/base64)
   confidence: number; // 0..1
   notes: string;
   /** true nếu thiếu field quan trọng / độ tin cậy thấp → bắt buộc kiểm tra tay. */

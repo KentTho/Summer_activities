@@ -18,9 +18,9 @@
 | Phase 6 — Auth thật + RBAC guard | ✅ Done | Prompt 05 — Supabase Auth, guard 2 lớp, redirect vai trò, logout |
 | Phase 7 — CRUD thật | ✅ Done | 06A: CRUD học sinh (Bí thư); 08A: Admin CRUD tài khoản; **08B: CRUD Khu phố + phân công phụ trách có vai trò (chính/phối hợp)** |
 | Phase 8 — Attendance workflow thật | ✅ Done | **07: tạo buổi, điểm danh (4 trạng thái), sửa/chốt buổi, xin nghỉ, dashboard thật** — qua RLS |
-| Phase 9 — Import ảnh (AI) staging thật | ✅ Done (MVP) | 06A: staging + confirm; 06B: OCR.space (đã gỡ); **09B: Gemini Vision đọc ảnh → JSON → dòng nháp → duyệt tay → confirm**; lưu ảnh/audit để sau |
+| Phase 9 — Import ảnh (AI) staging thật | ✅ Done (MVP) | 06A: staging + confirm; 06B: OCR.space (đã gỡ); **09B: Gemini Vision đọc ảnh → JSON → dòng nháp → duyệt tay → confirm**; **10B: mở rộng field năm sinh/giới tính/chữ ký (không suy đoán)** |
 | Phase 10 — DOCX export thật | ✅ Done (MVP) | **08C: upload binary mẫu vào Storage private + render DOCX thật server-side** (DS học sinh, điểm danh buổi, tổng hợp hệ thống) qua bộ ghi ZIP/OOXML zero-dependency |
-| Phase 11 — Notification thật | ✅ Done (MVP/core) | 08A: gửi theo buổi; **09H: tự gửi khi hủy/dời buổi, Admin gửi hệ thống/Khu phố, unread + mark-read (Phụ huynh), smoke 8/8** — qua RLS. Realtime + nav badge Bí thư/Admin còn backlog |
+| Phase 11 — Notification thật | ✅ Done (MVP/core) | 08A: gửi theo buổi; **09H: tự gửi khi hủy/dời buổi, Admin gửi hệ thống/Khu phố, unread + mark-read, smoke 8/8; 09I: nav badge unread 3 cổng** — qua RLS. Realtime subscription còn backlog |
 | Phase 12 — Vercel deploy + hardening | ✅ Done (MVP/core) | Deploy live (04A); **09H: service role production đã set + prod smoke 25/25, defensive 503, CI smoke + retention workflows, health phase sync (09I)**. Alert monitoring nâng cao còn backlog |
 
 ## 3. Checklist chi tiết
@@ -388,7 +388,7 @@
 - [x] **Health phase** `09h-prod-hardening-ci-notifications` + cờ `serviceRoleConfigured`/`notificationCoreReady`/
       `retentionWorkflowReady`/`ciSmokeReady`.
 - [x] **Deploy production + verify** (health 09h, endpoints 200) + Report 09H + Codex prompt.
-- [ ] Nav badge unread cho Secretary/Admin + realtime subscription (backlog — hiện near-real-time).
+- [x] **Nav badge unread 3 cổng** (09I, near-real-time qua `countMyUnreadNotifications`); realtime subscription còn backlog.
 
 > Ghi chú: **không** đổi RLS/schema (cột `read_at` đã có), không migration, không public bucket, không
 > refactor `src/modules/*`. Notification qua RLS + helper SECURITY DEFINER (không đệ quy 42P17). Service
@@ -404,11 +404,33 @@
 - [x] **Progress sync**: Phase 11 Notification + Phase 12 Deploy → ✅ Done (MVP/core); rủi ro service role
       production → **đã gỡ**; notification smoke **8/8**.
 - [x] **healthcheck local rerun** với production → PASS (phase 09h).
-- [ ] Nav badge unread Bí thư/Admin + realtime (backlog — near-real-time hiện tại).
+- [x] **Nav badge unread 3 cổng** (Phụ huynh/Bí thư/Admin) qua RLS; realtime subscription còn backlog.
 
-> Ghi chú: 09I chỉ sửa **scripts/workflows/docs** (không đổi runtime app) → **không cần redeploy**. Nguyên nhân
-> gốc là file đúng nằm ở working tree chưa commit; hotfix = commit bản đúng + thêm `EXPECT_PHASE` override
-> chống tái diễn. GitHub healthcheck xanh lại sau khi push (rerun trên commit mới).
+> Ghi chú: 09I sửa **scripts/workflows/docs** và **runtime app nhỏ** (nav badge trong dashboard) → cần redeploy
+> nếu muốn badge lên production. Nguyên nhân gốc của healthcheck fail là file đúng nằm ở working tree chưa commit;
+> hotfix = commit bản đúng + thêm `EXPECT_PHASE` override chống tái diễn. GitHub healthcheck xanh lại sau khi push
+> (rerun trên commit mới).
+
+### Prompt 10B — Product logic audit + Profile center + AI import field upgrade
+- [x] **Product logic audit** User/Admin (`docs/product-logic-audit-10B.md`) — bảng từng tính năng + backlog.
+- [x] **Profile center Admin** `/admin/profile` (tự cập nhật họ tên/SĐT).
+- [x] **Profile center Secretary** `/user/secretary/profile` (+ Khu phố phụ trách, vai trò).
+- [x] **Profile center Parent** `/user/parent/profile` (+ học sinh liên kết, chỉ xem).
+- [x] **AI import schema extended**: `birth_year/gender/signature_present/signature_note` — KHÔNG suy đoán, thiếu để trống.
+- [x] **AI import UI extended**: EditableRow thêm năm sinh/giới tính/chữ ký + cảnh báo kiểm tra trước xác nhận.
+- [x] **Import confirm maps extended fields** vào `students` (chỉ hợp lệ, không bịa) + audit `CONFIRM_AI_IMPORT`.
+- [x] **Migration additive**: `students.gender/signature_present/signature_note` + RPC `update_own_profile`
+      (SECURITY DEFINER, chỉ họ tên/SĐT của chính mình — không đổi role/active). Đã push remote + gen types.
+- [x] **Vercel runtime smoothness audit** (`docs/vercel-runtime-smoothness-audit.md`) — không lỗi lớn.
+- [x] **Network security notes** từ hình HTTPS/SSH (`docs/network-security-notes.md`) — chỉ docs, không UI.
+- [x] **Health phase** `10b-profile-ai-fields-logic-audit` + cờ `profileCenterReady`/`aiImportExtendedFieldsReady`/
+      `productLogicAuditReady`/`vercelSmoothnessAuditReady`.
+- [x] Report 10B + Codex prompt.
+- [ ] Ảnh đại diện + form CRUD học sinh hiển thị/sửa giới tính/chữ ký (backlog).
+
+> Ghi chú: chữ ký học sinh chỉ lưu **metadata** (có/không + note), KHÔNG lưu ảnh chữ ký (private storage prompt sau).
+> User tự cập nhật qua **RPC** (không nới `profiles_update` admin-only → không tự đổi role/quyền). Không suy đoán
+> giới tính/năm sinh/chữ ký; thiếu để trống + bắt kiểm tra. Không auto-import, không public bucket.
 
 ## 4. Next planned prompts
 1. Prompt 06B — Full CRUD Admin (Khu phố/Bí thư/Phân công) + tạo tài khoản Phụ huynh

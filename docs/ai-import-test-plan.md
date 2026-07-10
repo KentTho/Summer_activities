@@ -73,11 +73,19 @@
       nosniff`; **không rò bucket/path**; audit `VIEW/DOWNLOAD_AI_IMPORT_IMAGE` đúng actor + detail sạch.
 - [x] **Password E2E** (`e2e-password-request-smoke.mjs`): anon RPC → PENDING → Admin resolve → RESOLVED →
       đăng nhập mật khẩu tạm OK → audit không PII. Fixtures `SMOKE_09G_`, cleanup (audit giữ lại).
-- [x] **RUNTIME đã chạy**: `smoke:password-request` **8/8**; `smoke:ai-image-http` **local 19/19** (mọi
-      status/header/audit đúng). **Production**: gating đúng (307/403/404) nhưng ADMIN/SEC-in **500** vì
+- [x] **RUNTIME đã chạy**: `smoke:password-request` **8/8**; `smoke:ai-image-http` **local 19/19** trước
+      Codex review hardening. Script hiện thêm fail-fast `E2E_BASE_URL` + header leak asserts (rerun kỳ vọng **25/25**).
+      **Production**: gating đúng (307/403/404) nhưng ADMIN/SEC-in **500** vì
       Vercel prod thiếu `SUPABASE_SERVICE_ROLE_KEY` → 🔴 set env + redeploy (xem report 09G).
 
 ## Bảo mật/log
 - [ ] Log server: chỉ số lượng/mime/size — **không** ảnh/base64/SĐT/họ tên/key.
 - [ ] Audit có sự kiện `AI_IMPORT` (số dòng), không PII.
 - [ ] Dòng AI mới: `raw_data.source = "AI"` (không còn `"GEMINI"`).
+
+## AI import field mở rộng (10B)
+- [ ] Ảnh có cột Nam/Nữ → gender MALE/FEMALE; KHÔNG có cột giới tính → null (không suy từ tên).
+- [ ] Ảnh chỉ có tên → birth_year/gender/signature_present = null; needs_review có thể true.
+- [ ] Cột chữ ký đã ký → signature_present=true; để trống → false; không rõ → null.
+- [ ] Confirm chỉ tạo từ reviewed=true; map năm sinh/giới tính/chữ ký vào students; null không ghi đè.
+- [ ] Audit CONFIRM_AI_IMPORT ghi số lượng, không PII.

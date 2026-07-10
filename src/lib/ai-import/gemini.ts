@@ -11,9 +11,15 @@ import type { AiImportInput } from "./types";
 const PROMPT = [
   "Bạn là trợ lý nhập liệu. Ảnh là danh sách/giấy tờ học sinh (tiếng Việt).",
   "Trích xuất TỪNG học sinh. CHỈ trả về JSON hợp lệ đúng schema sau, KHÔNG kèm giải thích, KHÔNG markdown:",
-  '{ "rows": [ { "full_name": "string", "birth_date": "YYYY-MM-DD hoặc null", "guardian_phone": "string", "confidence": 0.0, "notes": "string" } ], "warnings": ["string"] }',
-  "Quy tắc: full_name là họ tên học sinh; birth_date để null nếu không rõ; guardian_phone là SĐT phụ huynh nếu có (giữ nguyên chữ số).",
-  "confidence 0..1 theo độ chắc chắn của bạn. Nếu ảnh mờ/không đọc được, trả rows rỗng và thêm cảnh báo vào warnings.",
+  '{ "rows": [ { "full_name": "string", "birth_year": 2015 hoặc null, "birth_date": "YYYY-MM-DD hoặc null", "gender": "MALE|FEMALE|OTHER|UNKNOWN|null", "guardian_phone": "string", "signature_present": true|false|null, "signature_note": "string", "confidence": 0.0, "notes": "string" } ], "warnings": ["string"] }',
+  "QUY TẮC BẮT BUỘC — CHỈ đọc thông tin CÓ TRONG ẢNH, TUYỆT ĐỐI KHÔNG suy đoán/bịa:",
+  "- full_name: họ tên học sinh, giữ ĐỦ DẤU tiếng Việt nếu ảnh có.",
+  "- birth_year: chỉ điền khi thấy năm sinh 4 chữ số; birth_date chỉ khi thấy đủ ngày/tháng/năm; không rõ ⇒ null.",
+  "- gender: CHỈ theo cột giới tính ghi trong ảnh (Nam→MALE, Nữ→FEMALE, khác→OTHER). KHÔNG suy ra giới tính từ TÊN. Không có cột giới tính ⇒ null.",
+  "- guardian_phone: SĐT phụ huynh nếu có (giữ nguyên chữ số); không có ⇒ chuỗi rỗng.",
+  "- signature_present: true nếu thấy RÕ có chữ ký/cột chữ ký đã ký; false nếu cột chữ ký để trống; không rõ/không có cột ⇒ null. signature_note ghi ngắn gọn (KHÔNG mô tả nhận dạng cá nhân).",
+  "- confidence 0..1 theo độ chắc chắn. Ảnh mờ/không đọc được ⇒ rows rỗng + thêm cảnh báo vào warnings.",
+  "Field nào thiếu thì để null/rỗng — KHÔNG tự thêm dữ liệu.",
 ].join("\n");
 
 interface GeminiRawResponse {

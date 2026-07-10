@@ -10,7 +10,11 @@ const cls =
 /** Dữ liệu dòng nháp (plain — truyền từ server page, không import module server). */
 export interface EditableRowData {
   full_name?: string;
+  birth_year?: string;
   birth_date?: string;
+  gender?: string;
+  signature_present?: string; // "true" | "false" | ""
+  signature_note?: string;
   guardian_phone?: string;
   guardian_name?: string;
   school?: string;
@@ -55,7 +59,38 @@ export function EditableRow({
           placeholder="Họ tên *"
           className={`${cls} lg:col-span-2`}
         />
+        <input
+          name="birth_year"
+          inputMode="numeric"
+          maxLength={4}
+          defaultValue={data.birth_year ?? ""}
+          placeholder="Năm sinh"
+          className={cls}
+        />
         <input name="birth_date" type="date" defaultValue={data.birth_date ?? ""} className={cls} />
+        <select name="gender" defaultValue={data.gender ?? ""} className={cls} aria-label="Giới tính">
+          <option value="">Giới tính (chưa rõ)</option>
+          <option value="MALE">Nam</option>
+          <option value="FEMALE">Nữ</option>
+          <option value="OTHER">Khác</option>
+          <option value="UNKNOWN">Chưa rõ</option>
+        </select>
+        <select
+          name="signature_present"
+          defaultValue={data.signature_present ?? ""}
+          className={cls}
+          aria-label="Có chữ ký?"
+        >
+          <option value="">Chữ ký? (chưa rõ)</option>
+          <option value="true">Có chữ ký</option>
+          <option value="false">Không có</option>
+        </select>
+        <input
+          name="signature_note"
+          defaultValue={data.signature_note ?? ""}
+          placeholder="Ghi chú chữ ký"
+          className={cls}
+        />
         <input
           name="guardian_phone"
           inputMode="tel"

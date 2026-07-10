@@ -810,11 +810,14 @@ export type Database = {
           created_by: string | null
           deleted_at: string | null
           full_name: string
+          gender: string | null
           guardian_name: string | null
           guardian_phone: string | null
           id: string
           neighborhood_id: string
           school: string | null
+          signature_note: string | null
+          signature_present: boolean | null
           updated_at: string
         }
         Insert: {
@@ -825,11 +828,14 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           full_name: string
+          gender?: string | null
           guardian_name?: string | null
           guardian_phone?: string | null
           id?: string
           neighborhood_id: string
           school?: string | null
+          signature_note?: string | null
+          signature_present?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -840,11 +846,14 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           full_name?: string
+          gender?: string | null
           guardian_name?: string | null
           guardian_phone?: string | null
           id?: string
           neighborhood_id?: string
           school?: string | null
+          signature_note?: string | null
+          signature_present?: boolean | null
           updated_at?: string
         }
         Relationships: [
@@ -1002,6 +1011,10 @@ export type Database = {
       my_ai_import_usage_today: { Args: never; Returns: number }
       request_password_reset: {
         Args: { p_identifier: string; p_portal: string }
+        Returns: undefined
+      }
+      update_own_profile: {
+        Args: { p_full_name: string; p_phone: string }
         Returns: undefined
       }
     }

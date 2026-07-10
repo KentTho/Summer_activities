@@ -17,6 +17,13 @@ import { confirmBatch } from "../actions";
 
 export const dynamic = "force-dynamic";
 
+const GENDER_LABEL: Record<string, string> = {
+  MALE: "Nam",
+  FEMALE: "Nữ",
+  OTHER: "Khác",
+  UNKNOWN: "Chưa rõ",
+};
+
 interface PageProps {
   params: Promise<{ batchId: string }>;
 }
@@ -61,6 +68,10 @@ export default async function ImportBatchDetailPage({ params }: PageProps) {
 
       {!committed ? (
         <>
+          <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            AI có thể đọc sai. Vui lòng kiểm tra <strong>tên, năm sinh, giới tính và chữ ký</strong> trước khi
+            xác nhận. Field nào ảnh không ghi rõ sẽ để trống — không tự điền.
+          </p>
           <AiImportForm
             batchId={batchId}
             ready={aiReady}
@@ -133,7 +144,9 @@ export default async function ImportBatchDetailPage({ params }: PageProps) {
                       {d.full_name || "(thiếu họ tên)"}
                     </p>
                     <p className="mt-0.5 truncate text-xs text-slate-500">
-                      {d.birth_date ? `Sinh ${d.birth_date} · ` : ""}
+                      {d.birth_year ? `Năm sinh ${d.birth_year} · ` : d.birth_date ? `Sinh ${d.birth_date} · ` : ""}
+                      {GENDER_LABEL[d.gender ?? ""] ? `${GENDER_LABEL[d.gender ?? ""]} · ` : ""}
+                      {d.signature_present === "true" ? "có chữ ký · " : ""}
                       {d.guardian_phone ? `PH: ${d.guardian_phone}` : "chưa có SĐT PH"}
                       {d.school ? ` · ${d.school}` : ""}
                     </p>

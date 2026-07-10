@@ -12,7 +12,7 @@
  */
 const DEFAULT_URL = "https://summer-activities-theta.vercel.app/api/health";
 // ⚠️ ĐỒNG BỘ với `phase` trong src/app/api/health/route.ts mỗi khi lên phase mới.
-const DEFAULT_EXPECT_PHASE = "09h-prod-hardening-ci-notifications";
+const DEFAULT_EXPECT_PHASE = "10b-profile-ai-fields-logic-audit";
 const EXPECT_PHASE = process.env.EXPECT_PHASE || DEFAULT_EXPECT_PHASE;
 
 const url = process.argv[2] || process.env.HEALTH_URL || DEFAULT_URL;

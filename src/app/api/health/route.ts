@@ -7,7 +7,7 @@ import { hasGeminiConfigured, hasServiceRoleKey, hasSupabaseEnv, isAiImportReady
 export async function GET() {
   return Response.json({
     status: "ok",
-    phase: "09h-prod-hardening-ci-notifications",
+    phase: "10b-profile-ai-fields-logic-audit",
     supabaseConfigured: hasSupabaseEnv(),
     databaseTypesReady: true,
     geminiConfigured: hasGeminiConfigured(),
@@ -48,6 +48,14 @@ export async function GET() {
     retentionWorkflowReady: true,
     // 09H — workflow CI chạy smoke E2E với Repository Secrets (fail-fast khi thiếu).
     ciSmokeReady: true,
+    // 10B — Trung tâm thông tin cá nhân (Admin/Bí thư/Phụ huynh) + tự cập nhật an toàn qua RPC.
+    profileCenterReady: true,
+    // 10B — AI import mở rộng field: năm sinh/giới tính/chữ ký (không suy đoán, thiếu để trống).
+    aiImportExtendedFieldsReady: true,
+    // 10B — đã rà soát logic sản phẩm User/Admin (docs/product-logic-audit-10B.md).
+    productLogicAuditReady: true,
+    // 10B — đã rà soát độ mượt runtime Vercel (docs/vercel-runtime-smoothness-audit.md).
+    vercelSmoothnessAuditReady: true,
     docxExportReady: true,
     passwordChangeReady: true,
     time: new Date().toISOString(),

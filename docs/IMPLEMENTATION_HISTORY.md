@@ -412,3 +412,21 @@ redact PII trong log; service role chỉ để seed/cleanup; không `git add .` 
 **Chưa làm (đúng phạm vi / môi trường):** RUNTIME smoke **chưa chạy** trong sandbox — cần `.env.local`
 (service role + publishable key, bị gitignore) và `E2E_BASE_URL` (app đang chạy). Script sẵn sàng +
 static-check OK → **PASS WITH WARNINGS**. Gán Khu phố thật cho 2 Bí thư mới chờ **Admin chỉ định** (dry-run sẵn).
+
+## Chi tiết Prompt 10B (Product logic audit + Profile center + AI import field upgrade)
+
+**Loại:** FEATURE + AUDIT. Additive migration, không đổi RLS bảng (dùng RPC SECURITY DEFINER cho self-update).
+
+**Đã làm:**
+- **Migration additive** `20260711010000` (students.gender check MALE/FEMALE/OTHER/UNKNOWN, signature_present bool,
+  signature_note text) + `20260711020000` (RPC `update_own_profile(full_name, phone)` cho chính chủ). Push remote + gen types.
+- **AI import mở rộng** (`src/lib/ai-import/*`): types + gemini prompt/schema + normalize (birth_year/gender/
+  signature) — CHỈ đọc trong ảnh, KHÔNG suy đoán từ tên; thiếu để null. index.ts map field mới + needs_review.
+- **Import UI/confirm** (`src/app/user/secretary/import/*`): EditableRow thêm năm sinh/giới tính/chữ ký + note;
+  cảnh báo kiểm tra trước xác nhận; confirmBatch map field hợp lệ vào students + audit CONFIRM_AI_IMPORT.
+- **Profile center**: `src/lib/data/profile.ts` (+ role-specific) + `profile-actions.ts` (updateOwnProfile qua RPC,
+  audit UPDATE_OWN_PROFILE) + `components/profile/ProfileForm.tsx` + 3 trang (admin/secretary/parent) + nav links.
+- **Docs**: product-logic-audit-10B, vercel-runtime-smoothness-audit, network-security-notes; health phase 10b + 4 cờ.
+
+**An toàn:** không suy đoán giới tính/năm sinh/chữ ký; chữ ký chỉ metadata; user không đổi role/quyền (RPC giới hạn cột);
+không log PII; không public bucket; không auto-import.
