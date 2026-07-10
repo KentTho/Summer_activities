@@ -16,7 +16,6 @@ export interface ForgotPasswordState {
 
 const schema = z.object({
   identifier: z.string().trim().min(3, "Nhập số điện thoại hoặc tài khoản.").max(120),
-  portal: z.enum(["ADMIN", "USER"]).default("USER"),
 });
 
 export async function submitForgotPassword(
@@ -25,14 +24,15 @@ export async function submitForgotPassword(
 ): Promise<ForgotPasswordState> {
   const parsed = schema.safeParse({
     identifier: formData.get("identifier"),
-    portal: formData.get("portal") ?? "USER",
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dữ liệu không hợp lệ." };
   }
 
   try {
-    await createPasswordResetRequest(parsed.data.identifier, parsed.data.portal);
+    // Portal separation 10C: public forgot-password is USER-only.
+    // Ignore any forged client `portal=ADMIN`; Admin recovery is server/local break-glass.
+    await createPasswordResetRequest(parsed.data.identifier, "USER");
   } catch {
     // Vẫn trả trung lập — không lộ lỗi/hệ thống.
   }

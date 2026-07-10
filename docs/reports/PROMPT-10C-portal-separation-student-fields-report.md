@@ -45,6 +45,8 @@ bảng, không `using(true)`. Đã `supabase db push --linked` (remote khớp) +
 - `/` landing: thêm "Cổng quản trị dành cho người được phân quyền và truy cập riêng theo đường dẫn quản trị." (không link).
 - `/forgot-password`: chỉ cổng User; `ForgotPasswordForm` thay `<select>` cổng bằng `<input hidden value="USER">`,
   bỏ option "Quản trị viên". Admin dùng break-glass (`admin-access-recovery.md`).
+- Codex review hardening: `submitForgotPassword` không tin hidden input/query client nữa; mọi request công khai luôn
+  truyền `portal=USER`, chặn forged `portal=ADMIN`.
 - **Bảo mật:** đây là UX/bề mặt — **không** thay Auth/RBAC/RLS (Admin vẫn `/admin/login`, guard + RLS chặn thật).
 
 ## 7. Student extended fields CRUD/display
@@ -75,6 +77,7 @@ static-verified: chỉ đọc trong ảnh, không suy đoán giới tính từ t
 
 ## 12. Runtime smoke
 - Build OK (routes profile/students build). typecheck/lint/build xanh.
+- Codex review re-run sau hardening forgot-password: preflight/lint/typecheck/build/healthcheck/smoke portal pass.
 - `scripts/smoke-portal-separation.mjs` (`smoke:portal-separation`) — chạy sau deploy (§13).
 
 ## 13. Deploy/git

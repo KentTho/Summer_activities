@@ -16,7 +16,7 @@ export function ForgotPasswordForm({
   defaultPortal,
   backHref,
 }: {
-  defaultPortal: "ADMIN" | "USER";
+  defaultPortal: "USER";
   backHref: string;
 }) {
   const [state, formAction, pending] = useActionState<ForgotPasswordState, FormData>(

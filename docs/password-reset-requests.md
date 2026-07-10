@@ -4,13 +4,13 @@
 > (bắt buộc đổi lần đầu). Không gửi email/SMS thật.
 >
 > **Phạm vi**: luồng này dành cho **Bí thư/Phụ huynh** (cổng Người dùng). **Admin gốc KHÔNG** dùng luồng
-> công khai này — xem [`admin-access-recovery.md`](./admin-access-recovery.md). Form vẫn nhận `portal=admin`
-> (hỗ trợ hệ thống nhiều Admin) nhưng **không** hiển thị nổi bật ở `/admin/login` (09F).
+> công khai này — xem [`admin-access-recovery.md`](./admin-access-recovery.md). Từ 10C, public server action
+> luôn ép `portal=USER`; mọi giá trị `portal=ADMIN` do client tự sửa sẽ bị bỏ qua.
 
 ## Luồng
 1. Người dùng bấm **"Quên mật khẩu?"** ở `/user/login` → `/forgot-password?portal=user`.
-   Với `portal=admin`, mở trực tiếp khi cần cho hệ thống nhiều Admin; Admin gốc dùng quy trình khôi phục máy chủ.
-2. Nhập số điện thoại/tài khoản + chọn cổng → gửi. Thông báo **TRUNG LẬP**:
+   Query `portal` chỉ còn mang tính tương thích URL; server action công khai vẫn tạo yêu cầu `USER`.
+2. Nhập số điện thoại/tài khoản → gửi. Thông báo **TRUNG LẬP**:
    *"Nếu tài khoản tồn tại, Quản trị viên sẽ xử lý…"* — **không tiết lộ** tài khoản có tồn tại hay không.
 3. Admin thấy badge/alert PENDING ở `/admin` + trang `/admin/password-requests`.
 4. Admin bấm **"Cấp mật khẩu tạm"** → reset auth user của hồ sơ khớp + `must_change_password=true`;
@@ -25,6 +25,8 @@
   - **Chống spam**: cùng identifier còn PENDING trong 24h ⇒ không tạo trùng.
   - Best-effort khớp hồ sơ (phone/email/synthetic email + đúng cổng) → `matched_profile_id`.
   - `grant execute` cho `anon, authenticated` (form công khai gọi được).
+- Public action `submitForgotPassword` luôn truyền `USER`, không tin hidden input/query client. Admin recovery dùng
+  script server/local riêng.
 - Reset dùng service role **sau** `requireAdmin()` (guardrail 08A). Audit `RESOLVE_PASSWORD_RESET_REQUEST`
   / `REJECT_PASSWORD_RESET_REQUEST` — không PII/mật khẩu.
 

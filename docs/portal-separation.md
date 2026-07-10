@@ -7,7 +7,8 @@
 - Landing/giới thiệu chỉ ghi câu mô tả **không-link**: "Cổng quản trị dành cho người được phân quyền và truy
   cập riêng theo đường dẫn quản trị."
 - `/forgot-password` chỉ phục vụ **Người dùng** (Bí thư/Phụ huynh). Admin dùng khôi phục break-glass máy chủ
-  (`docs/admin-access-recovery.md`) — không có option "Quản trị viên" ở form công khai.
+  (`docs/admin-access-recovery.md`) — không có option "Quản trị viên" ở form công khai; server action luôn ép
+  `portal=USER` kể cả khi client tự sửa hidden input/query.
 
 ## Đây KHÔNG phải lớp bảo mật thay thế
 Ẩn link chỉ **giảm bề mặt/nhiễu** cho người dùng thường. Bảo mật thật vẫn là:
