@@ -453,10 +453,10 @@
 
 ## 4. Next planned prompts
 > (Danh sách cũ 06B/07/08/09/10 đã hoàn thành — thay bằng kế hoạch hiện tại.)
-1. **Prompt 10C** — Portal separation + student extended fields + Codex 10B patch push (đang làm/xong).
-2. **Prompt 10D** — UI/UX polish toàn bộ Admin/User (nhất quán màu/nhịp/skeleton/responsive) — không đổi nghiệp vụ.
-3. **Prompt 10E** — Avatar private storage + Parent gửi yêu cầu sửa thông tin học sinh (Bí thư/Admin duyệt) + realtime notification.
-4. **Prompt 10F** — Load test + monitoring nâng cao (alert) + production readiness final.
+1. **Prompt 10D** — UI/UX polish toàn bộ Admin/User (nhất quán màu/nhịp/skeleton/responsive) — không đổi nghiệp vụ.
+2. **Prompt 10E** — Avatar private storage + Parent gửi yêu cầu sửa thông tin học sinh (Bí thư/Admin duyệt) + realtime notification.
+3. **Prompt 10F** — Load test + monitoring nâng cao (alert) + production readiness final.
+4. **Prompt 10G** — Final acceptance pass: docs sync, smoke matrix, rollback checklist.
 
 ## 5. Rủi ro đang mở
 - **(10C) Rủi ro/việc mở hiện tại:**

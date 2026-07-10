@@ -67,7 +67,7 @@ static-verified: chỉ đọc trong ảnh, không suy đoán giới tính từ t
 
 ## 10. PROJECT_PROGRESS update
 - Tick Prompt 10B done; thêm checklist Prompt 10C.
-- Thay "Next planned prompts" cũ (06B/07/08/09/10) bằng **10C/10D/10E/10F**.
+- Thay "Next planned prompts" cũ (06B/07/08/09/10) bằng kế hoạch sau 10C: **10D/10E/10F/10G**.
 - Cập nhật rủi ro: 2 Bí thư chưa phân công; portal separation ✅; AI live smoke chờ ảnh; xóa PROMPT-10A tồn đọng;
   `src/modules/*` skeleton; email synthetic.
 

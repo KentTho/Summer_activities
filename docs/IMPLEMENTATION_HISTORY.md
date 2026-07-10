@@ -439,11 +439,12 @@ không log PII; không public bucket; không auto-import.
   đổi ngày/giờ; route ảnh 503 kèm header no-store/nosniff. Migration `20260711030000_restrict_update_own_profile_execute`
   (revoke public/anon, grant authenticated) — **db push remote + gen types**.
 - **Portal separation**: `(public)/gioi-thieu` bỏ link "Cổng Admin"; `/` thêm copy không-link; `/forgot-password`
-  chỉ còn cổng User (bỏ option Quản trị) — Admin dùng break-glass. Smoke `scripts/smoke-portal-separation.mjs`.
+  chỉ còn cổng User (bỏ option Quản trị), server action ép `portal=USER` kể cả client giả mạo — Admin dùng
+  break-glass. Smoke `scripts/smoke-portal-separation.mjs`.
 - **Student extended fields**: form Bí thư (`StudentForm`) + schema (`students/actions.ts`) thêm birth_year/gender/
   signature_present/signature_note (validate, không ghi đè bừa); danh sách Bí thư + Admin (`listAllStudents`) hiển thị;
   Parent profile (`getMyLinkedStudents`) hiển thị giới tính/chữ ký (chỉ xem).
 - Health phase `10c-portal-separation-student-fields` + 4 cờ; `check-production-health` default + preflight OLD_PHASES thêm 10b.
-- Docs: `portal-separation.md`; cập nhật PROJECT_PROGRESS (kế hoạch 10D/10E/10F + rủi ro).
+- Docs: `portal-separation.md`; cập nhật PROJECT_PROGRESS (kế hoạch 10D/10E/10F/10G + rủi ro).
 
 **An toàn:** ẩn link Admin KHÔNG thay Auth/RBAC/RLS; không suy đoán giới tính/chữ ký; Parent chỉ xem HS; migration additive.
