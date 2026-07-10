@@ -7,7 +7,7 @@ import { hasGeminiConfigured, hasSupabaseEnv, isAiImportReady } from "@/lib/env"
 export async function GET() {
   return Response.json({
     status: "ok",
-    phase: "09f-admin-recovery-image-smoke",
+    phase: "09g-e2e-image-admin-assignment",
     supabaseConfigured: hasSupabaseEnv(),
     databaseTypesReady: true,
     geminiConfigured: hasGeminiConfigured(),
@@ -32,6 +32,14 @@ export async function GET() {
     adminLoginSmokeReady: true,
     // 09F — đã smoke phân quyền route ảnh theo 4 vai trò (session thật, fixtures SMOKE_09F).
     aiImageRoleSmokeReady: true,
+    // 09G — E2E đăng nhập Admin qua JWT/session thật (tài khoản disposable SMOKE_09G).
+    adminUiE2eReady: true,
+    // 09G — E2E quên mật khẩu: tạo yêu cầu → Admin thấy PENDING → resolve → RESOLVED (audit không PII).
+    passwordRequestE2eReady: true,
+    // 09G — smoke route ảnh qua HTTP + cookie thật (status/header/audit theo từng vai trò).
+    aiImageHttpSmokeReady: true,
+    // 09G — công cụ gán Khu phố cho Bí thư (dry-run mặc định, chỉ ghi khi có chỉ định + APPLY).
+    secretaryAssignmentReady: true,
     docxExportReady: true,
     passwordChangeReady: true,
     time: new Date().toISOString(),

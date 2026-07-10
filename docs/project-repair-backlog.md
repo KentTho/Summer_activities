@@ -10,9 +10,9 @@
 - [x] **Admin login UX**: bỏ link "Quên mật khẩu?" công khai ở `/admin/login`, thay bằng chỉ dẫn khôi phục
       trên máy chủ; giữ `/forgot-password` cho Bí thư/Phụ huynh.
 - [x] **Smoke session thật**: đăng nhập Admin + ép đổi mật khẩu (6 pass, tài khoản disposable, cleanup);
-      **phân quyền route ảnh 4 vai trò** (8 pass, fixtures `SMOKE_09F_`, cleanup) — `smoke-ai-image-route.mjs`.
+      **gate phân quyền ảnh 4 vai trò** (8 pass, fixtures `SMOKE_09F_`, cleanup) — `smoke-ai-image-route.mjs`.
 - [x] Health phase `09f-…` + cờ `adminRecoveryReady/adminLoginSmokeReady/aiImageRoleSmokeReady`.
-- [ ] **Gán Khu phố cho 2 Bí thư** `0944577905`/`0368103532` — **cần Admin** làm qua `/admin/secretaries`
+- [ ] **Gán Khu phố cho 2 Bí thư mới** — **cần Admin** làm qua `/admin/secretaries`
       (không tự gán bừa).
 
 ## Đã xử lý ở 09E
@@ -69,6 +69,12 @@
 5. **Advanced DOCX template engine**: vòng lặp/điều kiện/bảng động, placeholder bị tách run.
 6. **Dọn `DemoNotice` component** nếu vẫn không dùng (hiện chỉ export, không render ở app).
 7. **Đồng bộ Postgres local `major_version`** (15 local vs 17 remote) — chỉ ảnh hưởng dev.
+8. 🔴 **CAO — set `SUPABASE_SERVICE_ROLE_KEY` trên Vercel production**: smoke HTTP 09G phát hiện route ảnh AI
+   **500** cho ADMIN/SECRETARY hợp lệ trên prod vì thiếu env này (local 19/19 pass). Set env + redeploy;
+   cân nhắc bắt lỗi service role → 503 thân thiện thay vì 500 trần. (RUNTIME smoke 09G đã chạy: admin-login
+   4/4, password-request 8/8, ai-image-http local 19/19.)
+9. **Gán Khu phố cho 2 Bí thư mới**: dùng `assign:secretaries` (DRY-RUN xem trạng thái) rồi Admin chỉ định
+   Khu phố ở `/admin/secretaries` — **không tự gán bừa** khi chưa có chỉ định.
 
 ## Không nên làm ngay (tránh lan man)
 - Logout-all / token-version thật (chỉ backlog trong `auth-session-hardening.md` — chưa cần).

@@ -8,7 +8,8 @@
 > (hỗ trợ hệ thống nhiều Admin) nhưng **không** hiển thị nổi bật ở `/admin/login` (09F).
 
 ## Luồng
-1. Người dùng bấm **"Quên mật khẩu?"** ở `/user/login` hoặc `/admin/login` → `/forgot-password?portal=user|admin`.
+1. Người dùng bấm **"Quên mật khẩu?"** ở `/user/login` → `/forgot-password?portal=user`.
+   Với `portal=admin`, mở trực tiếp khi cần cho hệ thống nhiều Admin; Admin gốc dùng quy trình khôi phục máy chủ.
 2. Nhập số điện thoại/tài khoản + chọn cổng → gửi. Thông báo **TRUNG LẬP**:
    *"Nếu tài khoản tồn tại, Quản trị viên sẽ xử lý…"* — **không tiết lộ** tài khoản có tồn tại hay không.
 3. Admin thấy badge/alert PENDING ở `/admin` + trang `/admin/password-requests`.
@@ -33,3 +34,10 @@
   data `src/lib/data/password-requests.ts`.
 - Admin: `src/app/admin/(portal)/password-requests/{page,actions,ResolveRequestButton}.tsx|ts`;
   nav `Yêu cầu mật khẩu`; alert ở `/admin`.
+
+## E2E kiểm chứng (09G)
+`npm run smoke:password-request` (cần `.env.local`) mô phỏng đúng luồng:
+anon gọi RPC (trung lập) → anon KHÔNG đọc bảng (RLS) → Admin thấy PENDING + `matched_profile_id` đúng →
+resolve (RESOLVED + mật khẩu tạm + `must_change_password`) → đăng nhập mật khẩu tạm OK →
+audit `RESOLVE_PASSWORD_RESET_REQUEST` **không PII/mật khẩu**. Fixtures `SMOKE_09G_`, cleanup (audit giữ lại).
+Script: `scripts/e2e-password-request-smoke.mjs`.

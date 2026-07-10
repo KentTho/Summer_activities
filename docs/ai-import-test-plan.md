@@ -54,15 +54,28 @@
 - [x] **Khớp hồ sơ**: yêu cầu của tài khoản tồn tại có `matched_profile_id` (service role kiểm).
 - [x] **2 tài khoản Bí thư** tạo mới: SECRETARY/active/Bí thư, **0 phân công** (chưa gán Khu phố).
 - [ ] **Admin cấp mật khẩu tạm** (session thật): RESOLVED + `must_change_password=true` + audit — cần đăng nhập Admin.
-- [x] **Xem ảnh theo vai trò** (09F, session thật, fixtures `SMOKE_09F_`): SECRETARY đúng scope thấy lô (200);
-      sai scope không thấy (404); PARENT chặn bởi role (403); ADMIN thấy (200); chưa login không thấy; ảnh ràng
+- [x] **Gate xem ảnh theo vai trò** (09F, session thật, fixtures `SMOKE_09F_`): SECRETARY đúng scope thấy lô;
+      sai scope không thấy; PARENT không thuộc role được phép; ADMIN thấy lô; chưa login không thấy; ảnh ràng
       buộc đúng lô+bucket (chống IDOR); đọc được nhị phân private. **8/8 pass**, cleanup sạch.
+      Chưa gọi HTTP/cookie route thật trong script — cần E2E riêng nếu muốn bắt status/header/audit end-to-end.
 
 ## Admin login + recovery (09F)
 - [x] **Chẩn đoán**: `recover:admin` (diagnose) — Admin gốc khỏe (role ADMIN/active/`must_change_password=false`).
 - [x] **Login logic** (session thật, disposable admin): sai mật khẩu → lỗi; đúng + `must_change_password=true`
       → `/change-password`; đổi xong `must_change_password=false` → `/admin`. **6/6 pass**, cleanup.
 - [x] **Recovery**: đặt lại mật khẩu Admin qua env (không hardcode/không in); role ADMIN/active đảm bảo.
+
+## HTTP cookie route ảnh + Password E2E (09G)
+- [x] **Script HTTP + cookie thật** (`e2e-ai-image-route-http-smoke.mjs`): dựng cookie `sb-<ref>-auth-token`
+      đúng format `@supabase/ssr` v0.12 (`base64-`+base64url, chunk `.0/.1`), gọi route thật từng vai trò.
+      Assert: chưa login bị chặn; ADMIN 200; SECRETARY đúng scope 200; sai scope 403/404; PARENT 403/404;
+      inline `image/png`+`inline`, download `attachment`, `Cache-Control: no-store`, `X-Content-Type-Options:
+      nosniff`; **không rò bucket/path**; audit `VIEW/DOWNLOAD_AI_IMPORT_IMAGE` đúng actor + detail sạch.
+- [x] **Password E2E** (`e2e-password-request-smoke.mjs`): anon RPC → PENDING → Admin resolve → RESOLVED →
+      đăng nhập mật khẩu tạm OK → audit không PII. Fixtures `SMOKE_09G_`, cleanup (audit giữ lại).
+- [x] **RUNTIME đã chạy**: `smoke:password-request` **8/8**; `smoke:ai-image-http` **local 19/19** (mọi
+      status/header/audit đúng). **Production**: gating đúng (307/403/404) nhưng ADMIN/SEC-in **500** vì
+      Vercel prod thiếu `SUPABASE_SERVICE_ROLE_KEY` → 🔴 set env + redeploy (xem report 09G).
 
 ## Bảo mật/log
 - [ ] Log server: chỉ số lượng/mime/size — **không** ảnh/base64/SĐT/họ tên/key.

@@ -160,7 +160,7 @@
 
 ### Prompt 06A — Bootstrap accounts + Secretary CRUD + dashboard + import staging
 - [x] Migration additive `students` (birth_date/school/guardian_name/guardian_phone) → push remote + gen types
-- [x] Đăng nhập bằng identifier (`identifierToEmail`): Admin="Admin", Bí thư="0932077136"
+- [x] Đăng nhập bằng identifier (`identifierToEmail`): Admin="Admin", Bí thư=tài khoản được cấp
 - [x] CRUD học sinh (Bí thư) qua RLS: thêm/sửa/xóa mềm/tìm/lọc (Khu phố·Trường·Trạng thái)
 - [x] Dashboard Bí thư dữ liệu thật (HS trong phạm vi, buổi sắp tới, đơn nghỉ, tỉ lệ điểm danh)
 - [x] Import staging DB thật: lô nháp + dòng nháp + **confirm mới tạo học sinh** (không auto-import)
@@ -168,7 +168,7 @@
 - [x] Bỏ banner DemoNotice cố định (nhiều trang đã dữ liệu thật)
 - [x] Lint/typecheck/build pass; guard smoke (307) cho trang mới
 - [x] Report 06A + cập nhật history/progress
-- [ ] Chạy `npm run bootstrap:auth` (tạo Admin/`admin@123`, `0932077136`/`tho@123`, KP01, phân công)
+- [ ] Chạy `npm run bootstrap:auth` (tạo Admin + Bí thư bằng env `BOOTSTRAP_*`, KP01, phân công)
       — **skip**: thiếu `SUPABASE_SERVICE_ROLE_KEY` trong `.env.local`
 
 > Ghi chú: CRUD/import đi qua RLS (không service role ở UI). Chưa làm OCR AI/DOCX/Notification/
@@ -176,7 +176,7 @@
 
 ### Prompt 06B — Bootstrap accounts (chạy thật) + OCR import + security/devops notes
 - [x] Xác nhận DB sau reset: 2 auth users, KP01, 1 phân công, 0 học sinh (sạch)
-- [x] **Bootstrap đã chạy** (service role key có sẵn): Admin/`admin@123`, `0932077136`/`tho@123`
+- [x] **Bootstrap đã chạy** (service role key có sẵn): Admin + Bí thư bằng mật khẩu runtime
 - [x] **Test login thật** cả 2 tài khoản → OK (ADMIN + SECRETARY, đúng role)
 - [x] OCR server-side (`src/lib/ocr/*`): interface + adapter OCR.space + parser VN + factory
 - [x] Server Action `ocrExtractRows` (upload ảnh/PDF → OCR → dòng nháp `reviewed=false`)
@@ -338,6 +338,38 @@
 > docs (Phase 1 backlog) rồi chốt kiến trúc `src/modules/`. Tài liệu: `project-structure-audit.md`,
 > `folder-architecture-standard.md`, `project-structure-refactor-backlog.md`, report 10A.
 
+### Prompt 09G — Admin UI E2E + Secretary assignment + HTTP cookie image smoke
+- [x] Script **E2E đăng nhập Admin** (`e2e-admin-login-smoke.mjs`): sai mật khẩu → lỗi; đúng → có
+      session + JWT hợp lệ (`getUser`); hồ sơ ADMIN/active; (tùy chọn `E2E_BASE_URL`) `/admin` không
+      cookie → redirect login. Tài khoản **disposable** `SMOKE_09G_` (không đụng Admin gốc), cleanup.
+- [x] Script **gán Khu phố cho Bí thư** (`assign-secretaries-neighborhoods.mjs`): **mặc định DRY-RUN**
+      (liệt kê Bí thư + "CHƯA PHÂN CÔNG" + hướng dẫn Admin); chỉ ghi khi `ASSIGN_SECRETARIES_JSON` +
+      `ASSIGN_SECRETARIES_APPLY=true` → gán đúng chỉ định + audit `ASSIGN_NEIGHBORHOOD`, giữ ràng buộc 1 chính.
+- [x] Script **E2E quên mật khẩu** (`e2e-password-request-smoke.mjs`): anon gọi RPC (trung lập); anon
+      KHÔNG đọc bảng (RLS); Admin thấy PENDING + `matched_profile_id` đúng; resolve → RESOLVED; đăng nhập
+      mật khẩu tạm được; audit `RESOLVE_PASSWORD_RESET_REQUEST` **không PII/mật khẩu**. Cleanup (audit giữ lại).
+- [x] Script **E2E route ảnh qua HTTP + cookie thật** (`e2e-ai-image-route-http-smoke.mjs`): dựng cookie
+      `sb-<ref>-auth-token` đúng format `@supabase/ssr` v0.12; gọi route thật từng vai trò.
+- [x] **Header assertions** trong script HTTP: inline `Content-Type: image/png`, `Content-Disposition: inline`,
+      download `attachment`, `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`; không rò bucket/path.
+- [x] **Audit view/download** trong script HTTP: `VIEW_AI_IMPORT_IMAGE`/`DOWNLOAD_AI_IMPORT_IMAGE` đúng actor,
+      detail không bucket/path/PII.
+- [x] **Cleanup fixtures**: mọi script xóa users/KP/lô/ảnh/`SMOKE_09G_`; audit append-only **giữ lại** (ghi rõ).
+- [x] **Health phase** → `09g-e2e-image-admin-assignment` + cờ `adminUiE2eReady`/`passwordRequestE2eReady`/
+      `aiImageHttpSmokeReady`/`secretaryAssignmentReady` (giữ cờ cũ).
+- [x] node --check 4 script + preflight/lint/typecheck/build pass.
+- [x] Report 09G + Codex review prompt.
+- [x] **RUNTIME smoke ĐÃ CHẠY THẬT** (có `.env.local`): `smoke:admin-login` **4/4**, `smoke:password-request`
+      **8/8**, `smoke:ai-image-http` **local 19/19** (mọi status/header/audit đúng). Cleanup sạch.
+- [ ] 🔴 **PRODUCTION: set `SUPABASE_SERVICE_ROLE_KEY` trên Vercel** — smoke HTTP prod cho thấy ADMIN/SEC-in
+      → **500** (thiếu service role env), dù gating đúng (307/403/404). Route ảnh AI **hỏng trên prod** tới khi set env.
+- [ ] **Gán Khu phố thật cho 2 Bí thư mới** — chờ **Admin chỉ định** Khu phố (dry-run đã sẵn, không tự gán bừa).
+
+> Ghi chú: đúng phạm vi 09G — không đổi RLS/schema, không reset DB, không public bucket, không UI polish.
+> Runtime cần secret `.env.local` (bị gitignore, không mở trong sandbox) → smoke chạy khi vận hành. Cookie
+> HTTP dựng khớp `@supabase/ssr` (đã đối chiếu `node_modules`: `sb-<ref>-auth-token`, `base64-`+base64url,
+> chunk `.0/.1` khi > 3180). Audit append-only theo policy → dòng smoke `SMOKE_09G_` giữ lại (đã ghi rõ).
+
 ## 4. Next planned prompts
 1. Prompt 06B — Full CRUD Admin (Khu phố/Bí thư/Phân công) + tạo tài khoản Phụ huynh
 2. Prompt 07 — Attendance + leave request thật
@@ -372,7 +404,7 @@
   mật khẩu**, không phải lỗi hệ thống. Thêm **break-glass** `recover:admin` (đặt lại mật khẩu qua env, không
   hardcode/không in); bỏ link "Quên mật khẩu?" ở `/admin/login` (chỉ dẫn khôi phục máy chủ); giữ
   `/forgot-password` cho Bí thư/Phụ huynh. **Smoke session thật**: đăng nhập Admin + ép đổi mật khẩu (6/6);
-  phân quyền route ảnh 4 vai trò (8/8, fixtures `SMOKE_09F_`, đã cleanup). 2 Bí thư mới **vẫn chưa phân
+  gate phân quyền ảnh 4 vai trò (8/8, fixtures `SMOKE_09F_`, đã cleanup). 2 Bí thư mới **vẫn chưa phân
   công** — cần Admin gán Khu phố.
 - ✅ (Đã gỡ) DOCX export **render server-side + log audit** (08C): bộ ghi ZIP/OOXML zero-dependency;
   mẫu `.docx` lưu Storage **private** (chặn `.docm`/macro). Còn lại: **placeholder-merge** vào mẫu upload
