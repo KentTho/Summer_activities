@@ -40,3 +40,8 @@ Chưa dùng Supabase Realtime subscription — coi là **near-real-time**. Nâng
 
 ## Không làm ngay
 - SMS/email/push thật; realtime subscription; gom nhóm/đánh dấu quan trọng; lịch gửi hẹn giờ.
+
+## Unread badge (09I)
+Badge số thông báo chưa đọc hiện trên mục "Thông báo" của **cả 3 cổng** (Phụ huynh/Bí thư/Admin) qua
+`DashboardShell` → `countMyUnreadNotifications()` (server-side, count nhẹ). **Near-real-time**: cập nhật mỗi
+lần render trang; chưa realtime subscription (backlog).

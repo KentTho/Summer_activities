@@ -5,9 +5,15 @@
  *   node scripts/check-production-health.mjs
  *   node scripts/check-production-health.mjs https://<domain>/api/health
  *   HEALTH_URL=https://<domain>/api/health node scripts/check-production-health.mjs
+ *   EXPECT_PHASE=09h-prod-hardening-ci-notifications node scripts/check-production-health.mjs
+ *
+ * Phase kỳ vọng: mặc định = phase hiện tại; override bằng env EXPECT_PHASE (để không phải
+ * sửa nhiều nơi mỗi lần đổi phase — CHỈ cập nhật DEFAULT_EXPECT_PHASE ở đây + health route).
  */
 const DEFAULT_URL = "https://summer-activities-theta.vercel.app/api/health";
-const EXPECT_PHASE = "09f-admin-recovery-image-smoke";
+// ⚠️ ĐỒNG BỘ với `phase` trong src/app/api/health/route.ts mỗi khi lên phase mới.
+const DEFAULT_EXPECT_PHASE = "09h-prod-hardening-ci-notifications";
+const EXPECT_PHASE = process.env.EXPECT_PHASE || DEFAULT_EXPECT_PHASE;
 
 const url = process.argv[2] || process.env.HEALTH_URL || DEFAULT_URL;
 const safeUrl = (() => {
@@ -48,7 +54,7 @@ async function main() {
     console.error(`FAIL: ${problems.join(" · ")}`);
     process.exit(1);
   }
-  console.log(`OK: status=ok · phase=${body.phase} · ${new Date().toISOString()}`);
+  console.log(`OK: ${safeUrl} · status=ok · phase=${body.phase} (mong đợi ${EXPECT_PHASE}) · ${new Date().toISOString()}`);
 }
 
 main();

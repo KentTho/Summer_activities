@@ -2,6 +2,14 @@
 
 > Tạo ở **Prompt 09A**. Theo dõi việc cần sửa/nâng cấp, tách rõ: đã xử lý · còn lại · không làm ngay.
 
+## Đã xử lý ở 09I
+- [x] **CI healthcheck hotfix**: bản committed của `check-production-health.mjs` còn `EXPECT_PHASE=09f` →
+      GitHub job fail (prod = 09h). Commit bản đúng (09h) + thêm override `EXPECT_PHASE` env chống tái diễn.
+- [x] **Preflight OLD_PHASES** gồm 09f/09g (không gồm 09h) — commit bản đúng.
+- [x] **Progress sync**: Phase 11 Notification + Phase 12 Deploy → ✅ Done (MVP/core); service role prod đã gỡ.
+- [x] **Unread badge** nav 3 cổng (Phụ huynh/Bí thư/Admin) qua `countMyUnreadNotifications` (near-real-time).
+- [ ] Realtime subscription cho notification (còn near-real-time).
+
 ## Đã xử lý ở 09H
 - [x] **Defensive 503 route ảnh AI**: thiếu service role / admin client lỗi → trả **503 thân thiện**
       + log `ai_image_storage_not_configured`/`ai_image_storage_error` (không PII/path), **không 500 trần**.

@@ -35,3 +35,14 @@ curl -I https://summer-activities-theta.vercel.app/admin/login
 ## 5. Cảnh báo (alert) — định hướng
 - Giai đoạn này: dựa vào cron GitHub Actions fail → email GitHub.
 - Về sau (không làm ngay): thêm webhook Slack/Telegram khi healthcheck fail nhiều lần liên tiếp.
+
+## Healthcheck phase (09I)
+GitHub `.github/workflows/healthcheck.yml` gọi `scripts/check-production-health.mjs` → kiểm
+`/api/health.phase` khớp **phase hiện tại**. Phase kỳ vọng:
+- Mặc định: `DEFAULT_EXPECT_PHASE` trong script (đồng bộ `src/app/api/health/route.ts`).
+- Override: env `EXPECT_PHASE=<phase>`.
+
+Chạy tay: `npm run healthcheck` (hoặc `EXPECT_PHASE=<phase> node scripts/check-production-health.mjs`).
+
+> ⚠️ Khi lên phase mới: cập nhật **cả** `health route` **và** `DEFAULT_EXPECT_PHASE`, rồi **commit**.
+Nếu GitHub healthcheck còn báo phase cũ, khả năng workflow chạy commit cũ — rerun sau khi push hotfix.

@@ -24,4 +24,6 @@ jobs:
         with:
           node-version: 20
       - name: Check production health
+        # Phase kỳ vọng lấy từ DEFAULT_EXPECT_PHASE trong script (đồng bộ health route).
+        # Có thể override tạm: `EXPECT_PHASE: <phase>` nếu cần, KHÔNG in secret.
         run: node scripts/check-production-health.mjs

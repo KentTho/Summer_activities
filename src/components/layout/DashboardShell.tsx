@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ROLES, type Role } from "@/modules/auth/domain/roles";
 import { signOut } from "@/lib/auth/actions";
+import { countMyUnreadNotifications } from "@/lib/data/notifications";
 import { NAV_BY_ROLE, ROLE_LABEL } from "./nav-config";
 import { SidebarNav } from "./SidebarNav";
 
@@ -16,13 +17,15 @@ interface DashboardShellProps {
  * - Top bar dính trên cùng: thương hiệu, nhãn vai trò, lối "Đăng xuất".
  * - Điều hướng: thanh cuộn ngang trên mobile, cột dọc (sidebar) từ md trở lên.
  */
-export function DashboardShell({
+export async function DashboardShell({
   role,
   fullName,
   children,
 }: DashboardShellProps) {
   const nav = NAV_BY_ROLE[role];
   const portal = role === ROLES.ADMIN ? "admin" : "user";
+  // Badge "chưa đọc" (near-real-time): cập nhật mỗi lần render trang. Nhẹ (count head).
+  const unreadCount = await countMyUnreadNotifications();
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800">
@@ -55,7 +58,7 @@ export function DashboardShell({
 
       <div className="flex flex-1 flex-col md:flex-row">
         <aside className="border-b border-slate-200 bg-white md:w-60 md:border-b-0 md:border-r">
-          <SidebarNav items={nav} />
+          <SidebarNav items={nav} unreadCount={unreadCount} />
         </aside>
         <main className="flex-1 px-4 py-6 md:px-8">
           <div className="mx-auto w-full max-w-5xl">{children}</div>

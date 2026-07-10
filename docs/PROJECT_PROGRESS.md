@@ -20,8 +20,8 @@
 | Phase 8 — Attendance workflow thật | ✅ Done | **07: tạo buổi, điểm danh (4 trạng thái), sửa/chốt buổi, xin nghỉ, dashboard thật** — qua RLS |
 | Phase 9 — Import ảnh (AI) staging thật | ✅ Done (MVP) | 06A: staging + confirm; 06B: OCR.space (đã gỡ); **09B: Gemini Vision đọc ảnh → JSON → dòng nháp → duyệt tay → confirm**; lưu ảnh/audit để sau |
 | Phase 10 — DOCX export thật | ✅ Done (MVP) | **08C: upload binary mẫu vào Storage private + render DOCX thật server-side** (DS học sinh, điểm danh buổi, tổng hợp hệ thống) qua bộ ghi ZIP/OOXML zero-dependency |
-| Phase 11 — Notification thật | 🟡 In progress | **08A: Bí thư/Chi Đoàn gửi thông báo phụ huynh theo buổi (RLS thật); Phụ huynh nhận thật** |
-| Phase 12 — Vercel deploy + hardening | 🟡 In progress | Deploy production live, đã sửa 404 (04A); hardening sau |
+| Phase 11 — Notification thật | ✅ Done (MVP/core) | 08A: gửi theo buổi; **09H: tự gửi khi hủy/dời buổi, Admin gửi hệ thống/Khu phố, unread + mark-read (Phụ huynh), smoke 8/8** — qua RLS. Realtime + nav badge Bí thư/Admin còn backlog |
+| Phase 12 — Vercel deploy + hardening | ✅ Done (MVP/core) | Deploy live (04A); **09H: service role production đã set + prod smoke 25/25, defensive 503, CI smoke + retention workflows, health phase sync (09I)**. Alert monitoring nâng cao còn backlog |
 
 ## 3. Checklist chi tiết
 
@@ -362,8 +362,8 @@
 - [x] **RUNTIME smoke ĐÃ CHẠY THẬT** (có `.env.local`): `smoke:admin-login` **4/4**, `smoke:password-request`
       **8/8**, `smoke:ai-image-http` **local 19/19** trước Codex review hardening; script hiện thêm fail-fast
       `E2E_BASE_URL` + header leak asserts (rerun kỳ vọng **25/25**). Cleanup sạch.
-- [ ] 🔴 **PRODUCTION: set `SUPABASE_SERVICE_ROLE_KEY` trên Vercel** — smoke HTTP prod cho thấy ADMIN/SEC-in
-      → **500** (thiếu service role env), dù gating đúng (307/403/404). Route ảnh AI **hỏng trên prod** tới khi set env.
+- [x] ✅ **(Đã gỡ ở 09H)** `SUPABASE_SERVICE_ROLE_KEY` đã set trên Vercel Production + redeploy → prod smoke
+      **25/25** (ADMIN/SEC-in 200). Route cũng hardened 503 thân thiện khi thiếu key. **Lưu ý: rotate key nếu từng lộ.**
 - [ ] **Gán Khu phố thật cho 2 Bí thư mới** — chờ **Admin chỉ định** Khu phố (dry-run đã sẵn, không tự gán bừa).
 
 > Ghi chú: đúng phạm vi 09G — không đổi RLS/schema, không reset DB, không public bucket, không UI polish.
@@ -376,7 +376,7 @@
       Production + Preview (không in giá trị). Blocker 09G **đã gỡ**.
 - [x] **AI image route defensive 503**: thiếu service role/admin client lỗi → **503 thân thiện** + log
       `ai_image_storage_not_configured`/`ai_image_storage_error` (không PII/path), **không 500 trần**.
-- [x] **Local smoke rerun**: `smoke:ai-image-http` **25/25**; `smoke:notification` **6/6**.
+- [x] **Local smoke rerun**: `smoke:ai-image-http` **25/25**; `smoke:notification` **8/8**.
 - [x] **Production smoke rerun**: sau redeploy → **25/25** (ADMIN/SECRETARY **200**, health `serviceRoleConfigured:true`).
 - [x] **CI smoke workflow** `e2e-smoke.yml` (Repository Secrets, fail-fast, không lộ secret).
 - [x] **Retention workflow** `ai-import-retention.yml` (dry-run mặc định; apply chỉ khi `vars.AI_IMPORT_RETENTION_APPLY`).
@@ -393,6 +393,22 @@
 > Ghi chú: **không** đổi RLS/schema (cột `read_at` đã có), không migration, không public bucket, không
 > refactor `src/modules/*`. Notification qua RLS + helper SECURITY DEFINER (không đệ quy 42P17). Service
 > role chỉ ở route/script server. Blocker service role production **đóng hoàn toàn** (prod smoke 25/25).
+
+### Prompt 09I — CI healthcheck hotfix + Notification status sync
+- [x] **Chẩn đoán**: GitHub `healthcheck.yml` chạy bản **committed** của `check-production-health.mjs`
+      có `EXPECT_PHASE=09f-…` (thay đổi 09h nằm ở working tree **chưa commit** từ 09G/09H) → mismatch với
+      production `09h-…` → job fail. Source app luôn đúng (health route = 09h).
+- [x] **Fix healthcheck script**: default `09h-prod-hardening-ci-notifications` + override `EXPECT_PHASE` env;
+      output in URL + phase thực tế + phase mong đợi; exit 1 khi unreachable/JSON lỗi/mismatch. **Không** hardcode 09F.
+- [x] **Preflight OLD_PHASES**: gồm 09f/09g (stale), **không** gồm 09h → commit bản đúng.
+- [x] **Progress sync**: Phase 11 Notification + Phase 12 Deploy → ✅ Done (MVP/core); rủi ro service role
+      production → **đã gỡ**; notification smoke **8/8**.
+- [x] **healthcheck local rerun** với production → PASS (phase 09h).
+- [ ] Nav badge unread Bí thư/Admin + realtime (backlog — near-real-time hiện tại).
+
+> Ghi chú: 09I chỉ sửa **scripts/workflows/docs** (không đổi runtime app) → **không cần redeploy**. Nguyên nhân
+> gốc là file đúng nằm ở working tree chưa commit; hotfix = commit bản đúng + thêm `EXPECT_PHASE` override
+> chống tái diễn. GitHub healthcheck xanh lại sau khi push (rerun trên commit mới).
 
 ## 4. Next planned prompts
 1. Prompt 06B — Full CRUD Admin (Khu phố/Bí thư/Phân công) + tạo tài khoản Phụ huynh
