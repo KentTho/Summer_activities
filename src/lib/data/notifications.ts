@@ -195,6 +195,9 @@ export async function sendNotificationToProfiles(
 
   const rows = recipients.map((profile_id) => ({ notification_id: notif.id, profile_id }));
   const { error: rErr } = await supabase.from("notification_recipients").insert(rows);
-  if (rErr) throw rErr;
+  if (rErr) {
+    await supabase.from("notifications").delete().eq("id", notif.id);
+    throw rErr;
+  }
   return recipients.length;
 }

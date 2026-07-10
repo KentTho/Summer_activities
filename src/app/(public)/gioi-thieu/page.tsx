@@ -23,13 +23,10 @@ export default function AboutPage() {
         >
           Đăng nhập Người dùng →
         </Link>
-        <Link
-          href="/admin/login"
-          className="text-sm font-medium text-slate-500 hover:underline"
-        >
-          Cổng Admin →
-        </Link>
       </div>
+      <p className="mt-4 text-xs text-slate-400">
+        Cổng quản trị dành cho người được phân quyền và truy cập riêng theo đường dẫn quản trị.
+      </p>
     </main>
   );
 }

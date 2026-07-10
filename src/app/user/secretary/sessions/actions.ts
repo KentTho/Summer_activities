@@ -228,9 +228,15 @@ export async function rescheduleSession(formData: FormData): Promise<void> {
     .update(patch)
     .eq("id", parsed.data.session_id);
 
-  if (!error && before) {
+  const nextStartTime =
+    parsed.data.start_time !== undefined
+      ? parsed.data.start_time
+        ? parsed.data.start_time
+        : null
+      : before?.start_time ?? null;
+  if (!error && before && (before.session_date !== patch.session_date || before.start_time !== nextStartTime)) {
     const oldWhen = `${before.session_date}${before.start_time ? ` ${before.start_time}` : ""}`;
-    const newWhen = `${patch.session_date}${patch.start_time ? ` ${patch.start_time}` : ""}`;
+    const newWhen = `${patch.session_date}${nextStartTime ? ` ${nextStartTime}` : ""}`;
     const body = `Buổi sinh hoạt "${before.title}" đổi lịch từ ${oldWhen} sang ${newWhen}.`;
     await autoNotifySession(supabase, parsed.data.session_id, `Đổi lịch: ${before.title}`, body);
   }
@@ -270,61 +276,28 @@ export async function notifySessionParents(
 
   const supabase = await createSupabaseServerClient();
 
-  // Khu phố của buổi → học sinh → phụ huynh (profile_id).
-  const { data: snb } = await supabase
-    .from("session_neighborhoods")
-    .select("neighborhood_id")
-    .eq("session_id", parsed.data.session_id);
-  const nIds = (snb ?? []).map((r) => r.neighborhood_id);
-  if (nIds.length === 0) return { error: "Buổi chưa gắn Khu phố." };
-
-  const { data: students } = await supabase
-    .from("students")
-    .select("id")
-    .in("neighborhood_id", nIds)
-    .is("deleted_at", null);
-  const studentIds = (students ?? []).map((s) => s.id);
-  if (studentIds.length === 0) return { error: "Không có học sinh nào trong Khu phố của buổi." };
-
-  const { data: links } = await supabase
-    .from("student_guardians")
-    .select("guardian_id")
-    .in("student_id", studentIds);
-  const guardianIds = [...new Set((links ?? []).map((l) => l.guardian_id))];
-  if (guardianIds.length === 0) {
-    return { error: "Chưa có phụ huynh nào được liên kết với học sinh của buổi." };
-  }
-
-  const { data: guardians } = await supabase
-    .from("guardians")
-    .select("profile_id")
-    .in("id", guardianIds)
-    .not("profile_id", "is", null);
-  const profileIds = [...new Set((guardians ?? []).map((g) => g.profile_id).filter((v): v is string => !!v))];
+  const profileIds = await getSessionRecipientProfileIds(supabase, parsed.data.session_id);
   if (profileIds.length === 0) {
-    return { error: "Phụ huynh chưa có tài khoản để nhận thông báo." };
+    return { error: "Không tìm thấy phụ huynh có tài khoản nhận thông báo cho buổi này." };
   }
 
-  const { data: notif, error: nErr } = await supabase
-    .from("notifications")
-    .insert({
-      title: parsed.data.title,
-      body: parsed.data.body,
-      scope: "SESSION",
-      session_id: parsed.data.session_id,
-      created_by: profile.profileId,
-    })
-    .select("id")
-    .single();
-  if (nErr || !notif) return { error: "Không tạo được thông báo. " + (nErr?.message ?? "") };
-
-  const recipients = profileIds.map((profile_id) => ({
-    notification_id: notif.id,
-    profile_id,
-  }));
-  const { error: rErr } = await supabase.from("notification_recipients").insert(recipients);
-  if (rErr) return { error: "Tạo thông báo nhưng gửi người nhận lỗi. " + rErr.message };
+  let count = 0;
+  try {
+    count = await sendNotificationToProfiles(
+      supabase,
+      {
+        title: parsed.data.title,
+        body: parsed.data.body,
+        scope: "SESSION",
+        sessionId: parsed.data.session_id,
+        createdBy: profile.profileId,
+      },
+      profileIds,
+    );
+  } catch {
+    return { error: "Không gửi được thông báo. Vui lòng thử lại." };
+  }
 
   revalidatePath(`${SESSIONS_PATH}/${parsed.data.session_id}`);
-  return { ok: true, count: profileIds.length };
+  return { ok: true, count };
 }

@@ -28,6 +28,8 @@ export interface MyLinkedStudent {
   id: string;
   fullName: string;
   birthYear: number | null;
+  gender: string | null;
+  signaturePresent: boolean | null;
   neighborhoodName: string | null;
   relationship: string | null;
 }
@@ -84,7 +86,7 @@ export async function getMyLinkedStudents(): Promise<MyLinkedStudent[]> {
   if (!guardian) return [];
   const { data: links } = await supabase
     .from("student_guardians")
-    .select("relationship, students(id, full_name, birth_year, neighborhoods(name))")
+    .select("relationship, students(id, full_name, birth_year, gender, signature_present, neighborhoods(name))")
     .eq("guardian_id", guardian.id);
   return (links ?? [])
     .filter((l) => l.students)
@@ -92,6 +94,8 @@ export async function getMyLinkedStudents(): Promise<MyLinkedStudent[]> {
       id: l.students!.id,
       fullName: l.students!.full_name,
       birthYear: l.students!.birth_year,
+      gender: l.students!.gender,
+      signaturePresent: l.students!.signature_present,
       neighborhoodName: l.students!.neighborhoods?.name ?? null,
       relationship: l.relationship,
     }));

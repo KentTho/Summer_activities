@@ -252,6 +252,9 @@ export interface AdminStudentRow {
   school: string | null;
   guardianPhone: string | null;
   active: boolean;
+  birthYear: number | null;
+  gender: string | null;
+  signaturePresent: boolean | null;
 }
 
 export interface AdminStudentsResult {
@@ -288,7 +291,10 @@ export async function listAllStudents(filters: {
 
   let query = supabase
     .from("students")
-    .select("id, full_name, neighborhood_id, school, guardian_phone, active", { count: "exact" })
+    .select(
+      "id, full_name, neighborhood_id, school, guardian_phone, active, birth_year, gender, signature_present",
+      { count: "exact" },
+    )
     .is("deleted_at", null);
 
   if (filters.status === "active") query = query.eq("active", true);
@@ -313,6 +319,9 @@ export async function listAllStudents(filters: {
       school: s.school,
       guardianPhone: s.guardian_phone,
       active: s.active,
+      birthYear: s.birth_year,
+      gender: s.gender,
+      signaturePresent: s.signature_present,
     })),
     total,
     page,

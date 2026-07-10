@@ -109,3 +109,10 @@
 ## Ưu tiên đề xuất
 1. Monitoring nâng cao (alert/uptime) → 2. Load test sau MVP → 3. AI import image private storage →
 4. PDF cho AI import → 5. Advanced DOCX template → 6. UI polish toàn hệ thống.
+
+## Đã xử lý ở 10C
+- [x] Codex 10B patches applied + migration restrict RPC execute pushed.
+- [x] Portal separation: public/User bỏ link Admin; Admin vào riêng `/admin`.
+- [x] Student extended fields hiển thị/sửa (Bí thư sửa; Admin/Parent xem).
+- [ ] AI live smoke ảnh giới tính/chữ ký thật (chờ ảnh mẫu).
+- [ ] Parent gửi yêu cầu sửa thông tin học sinh → Bí thư/Admin duyệt (kế hoạch 10E).

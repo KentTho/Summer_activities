@@ -432,14 +432,40 @@
 > User tự cập nhật qua **RPC** (không nới `profiles_update` admin-only → không tự đổi role/quyền). Không suy đoán
 > giới tính/năm sinh/chữ ký; thiếu để trống + bắt kiểm tra. Không auto-import, không public bucket.
 
+### Prompt 10C — Portal separation + Student extended fields + Codex 10B patch push
+- [x] **Apply Codex 10B patches**: zod max-length field AI (`index.ts`), update/delete import row bind
+      `row_id` + `batch_id` (`actions.ts`), notification orphan-delete, reschedule chỉ báo khi thực đổi, route 503 header.
+- [x] **Push migration** `20260711030000_restrict_update_own_profile_execute` (revoke public/anon, grant authenticated) — đã `db push` remote + gen types.
+- [x] **Public/User bỏ link Admin**: `(public)/gioi-thieu` bỏ "Cổng Admin"; landing thêm copy không-link;
+      `/forgot-password` chỉ còn cổng User (Admin dùng break-glass). `/user/login` không có link Admin.
+- [x] **Portal separation smoke** `scripts/smoke-portal-separation.mjs` (`smoke:portal-separation`).
+- [x] **Secretary student form** thêm Năm sinh/Giới tính/Có chữ ký?/Ghi chú + validate; danh sách hiện field mới.
+- [x] **Admin students** hiển thị năm sinh/giới tính/chữ ký (read-only; CRUD học sinh vẫn ở cổng Bí thư).
+- [x] **Parent profile** hiển thị năm sinh/giới tính/chữ ký của HS liên kết (chỉ xem, hướng dẫn liên hệ Bí thư).
+- [ ] **AI live smoke** với ảnh có cột giới tính/chữ ký thật — **PASS WITH WARNINGS** (chưa có ảnh mẫu trong phiên).
+- [x] **Health phase** `10c-portal-separation-student-fields` + cờ `portalSeparationReady`/`studentExtendedFieldsReady`/
+      `codex10bPatchApplied`/`progressPlanUpdated`.
+- [x] Report 10C + Codex prompt. Deploy/commit/push.
+
+> Ghi chú: ẩn link Admin CHỈ là quyết định UX/bảo mật bề mặt — **không** thay thế Auth/RBAC/RLS (Admin vẫn
+> phải đăng nhập `/admin/login`, guard + RLS chặn thật). Không suy đoán giới tính/năm sinh/chữ ký; chữ ký chỉ
+> metadata. Parent KHÔNG tự sửa dữ liệu học sinh (chỉ xem + liên hệ Bí thư). Migration additive-only.
+
 ## 4. Next planned prompts
-1. Prompt 06B — Full CRUD Admin (Khu phố/Bí thư/Phân công) + tạo tài khoản Phụ huynh
-2. Prompt 07 — Attendance + leave request thật
-3. Prompt 08 — Import/OCR staging thật
-4. Prompt 09 — DOCX export thật
-5. Prompt 10 — Notification thật + deploy Vercel
+> (Danh sách cũ 06B/07/08/09/10 đã hoàn thành — thay bằng kế hoạch hiện tại.)
+1. **Prompt 10C** — Portal separation + student extended fields + Codex 10B patch push (đang làm/xong).
+2. **Prompt 10D** — UI/UX polish toàn bộ Admin/User (nhất quán màu/nhịp/skeleton/responsive) — không đổi nghiệp vụ.
+3. **Prompt 10E** — Avatar private storage + Parent gửi yêu cầu sửa thông tin học sinh (Bí thư/Admin duyệt) + realtime notification.
+4. **Prompt 10F** — Load test + monitoring nâng cao (alert) + production readiness final.
 
 ## 5. Rủi ro đang mở
+- **(10C) Rủi ro/việc mở hiện tại:**
+  - 2 Bí thư mới **chưa phân công Khu phố** — cần Admin gán (`assign:secretaries` DRY-RUN → UI).
+  - ✅ **Portal separation** public/User bỏ link Admin đã xong ở 10C (Admin vào riêng qua `/admin`).
+  - **AI live smoke** với ảnh có cột giới tính/chữ ký thật **chưa chạy** (chưa có ảnh mẫu) → PASS WITH WARNINGS.
+  - **Xóa `docs/reports/PROMPT-10A...`** vẫn nằm trong working tree (ngoài scope) — cần xác nhận khôi phục/commit.
+  - `src/modules/*` skeleton vẫn backlog (chưa refactor).
+  - `profiles.email` = synthetic login email → user chưa tự sửa email (tránh phá password-reset).
 - ✅ (Đã gỡ) Bootstrap đã chạy: 2 tài khoản Admin/Bí thư đăng nhập được; service role key có sẵn.
   **09A: đã làm UI ép đổi mật khẩu lần đầu** — tài khoản có `must_change_password=true` bị chặn ở
   `/change-password` cho tới khi đổi. Admin hiện còn cờ true → sẽ đổi khi vào cổng lần tới.

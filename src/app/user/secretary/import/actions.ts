@@ -300,6 +300,7 @@ export async function updateRow(
     .from("import_batch_rows")
     .update({ raw_data: parsed.data, reviewed: true })
     .eq("id", rowId.data)
+    .eq("batch_id", batchId.data)
     .is("created_student_id", null);
   if (error) return { error: "Không thể cập nhật dòng. " + error.message };
 
@@ -309,12 +310,16 @@ export async function updateRow(
 
 export async function deleteRow(formData: FormData): Promise<void> {
   const rowId = z.string().uuid().safeParse(formData.get("row_id"));
-  const batchId = String(formData.get("batch_id") ?? "");
-  if (!rowId.success) return;
+  const batchId = z.string().uuid().safeParse(formData.get("batch_id"));
+  if (!rowId.success || !batchId.success) return;
 
   const supabase = await createSupabaseServerClient();
-  await supabase.from("import_batch_rows").delete().eq("id", rowId.data);
-  revalidatePath(`${IMPORT_PATH}/${batchId}`);
+  await supabase
+    .from("import_batch_rows")
+    .delete()
+    .eq("id", rowId.data)
+    .eq("batch_id", batchId.data);
+  revalidatePath(`${IMPORT_PATH}/${batchId.data}`);
 }
 
 /**

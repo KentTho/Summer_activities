@@ -50,24 +50,12 @@ export function ForgotPasswordForm({
             type="text"
             required
             autoComplete="username"
-            placeholder="0932077136"
+            placeholder="Số điện thoại hoặc tài khoản"
             className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
           />
         </div>
-        <div>
-          <label htmlFor="portal" className="mb-1 block text-sm font-medium text-slate-700">
-            Cổng đăng nhập
-          </label>
-          <select
-            id="portal"
-            name="portal"
-            defaultValue={defaultPortal}
-            className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-          >
-            <option value="USER">Người dùng (Bí thư / Phụ huynh)</option>
-            <option value="ADMIN">Quản trị viên</option>
-          </select>
-        </div>
+        {/* Chỉ cổng Người dùng — Quản trị dùng khôi phục break-glass riêng, không qua đây. */}
+        <input type="hidden" name="portal" value={defaultPortal} />
 
         {state.error ? (
           <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">

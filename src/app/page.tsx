@@ -55,6 +55,10 @@ export default function Home() {
       </div>
 
       <p className="text-xs text-slate-400">
+        Cổng quản trị dành cho người được phân quyền và truy cập riêng theo đường dẫn quản trị.
+      </p>
+
+      <p className="text-xs text-slate-400">
         <Link href="/gioi-thieu" className="hover:text-slate-600 hover:underline">
           Tìm hiểu thêm về hệ thống →
         </Link>

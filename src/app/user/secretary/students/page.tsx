@@ -12,6 +12,13 @@ import { softDeleteStudent } from "./actions";
 
 export const dynamic = "force-dynamic";
 
+const GENDER_LABEL: Record<string, string> = {
+  MALE: "Nam",
+  FEMALE: "Nữ",
+  OTHER: "Khác",
+  UNKNOWN: "Chưa xác định",
+};
+
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
@@ -137,7 +144,9 @@ export default async function SecretaryStudentsPage({ searchParams }: PageProps)
                     {s.full_name}
                   </p>
                   <p className="mt-0.5 truncate text-xs text-slate-500">
-                    {s.birth_date ? `Sinh ${s.birth_date} · ` : ""}
+                    {s.birth_year ? `Năm sinh ${s.birth_year} · ` : s.birth_date ? `Sinh ${s.birth_date} · ` : ""}
+                    {GENDER_LABEL[s.gender ?? ""] ? `${GENDER_LABEL[s.gender ?? ""]} · ` : ""}
+                    {s.signature_present === true ? "có chữ ký · " : s.signature_present === false ? "chưa ký · " : ""}
                     {nbName(s.neighborhood_id)}
                     {s.school ? ` · ${s.school}` : ""}
                     {s.guardian_phone ? ` · PH: ${s.guardian_phone}` : ""}

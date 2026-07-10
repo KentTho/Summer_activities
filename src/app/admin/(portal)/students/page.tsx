@@ -4,6 +4,13 @@ import { ADMIN_STUDENTS_PAGE_SIZES, listAllStudents, listNeighborhoodsDetailed }
 
 export const dynamic = "force-dynamic";
 
+const ADMIN_GENDER_LABEL: Record<string, string> = {
+  MALE: "Nam",
+  FEMALE: "Nữ",
+  OTHER: "Khác",
+  UNKNOWN: "Chưa xác định",
+};
+
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
@@ -103,6 +110,9 @@ export default async function AdminStudentsOverviewPage({ searchParams }: PagePr
                 <div className="min-w-0">
                   <p className="truncate font-medium text-slate-900">{s.fullName}</p>
                   <p className="mt-0.5 truncate text-xs text-slate-500">
+                    {s.birthYear ? `Năm sinh ${s.birthYear} · ` : ""}
+                    {ADMIN_GENDER_LABEL[s.gender ?? ""] ? `${ADMIN_GENDER_LABEL[s.gender ?? ""]} · ` : ""}
+                    {s.signaturePresent === true ? "có chữ ký · " : ""}
                     {s.neighborhoodName}
                     {s.school ? ` · ${s.school}` : ""}
                     {s.guardianPhone ? ` · ${s.guardianPhone}` : ""}

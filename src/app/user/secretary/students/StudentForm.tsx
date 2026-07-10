@@ -50,12 +50,66 @@ export function StudentForm({ mode, neighborhoods, student }: StudentFormProps) 
 
         <div>
           <label className="mb-1 block text-xs font-medium text-slate-600">
+            Năm sinh
+          </label>
+          <input
+            name="birth_year"
+            inputMode="numeric"
+            maxLength={4}
+            defaultValue={student?.birth_year ? String(student.birth_year) : ""}
+            placeholder="VD 2015"
+            className={inputCls}
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">
             Ngày sinh
           </label>
           <input
             name="birth_date"
             type="date"
             defaultValue={student?.birth_date ?? ""}
+            className={inputCls}
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">Giới tính</label>
+          <select name="gender" defaultValue={student?.gender ?? ""} className={inputCls}>
+            <option value="">Chưa rõ</option>
+            <option value="MALE">Nam</option>
+            <option value="FEMALE">Nữ</option>
+            <option value="OTHER">Khác</option>
+            <option value="UNKNOWN">Chưa xác định</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">Có chữ ký?</label>
+          <select
+            name="signature_present"
+            defaultValue={
+              student?.signature_present === true
+                ? "true"
+                : student?.signature_present === false
+                  ? "false"
+                  : ""
+            }
+            className={inputCls}
+          >
+            <option value="">Chưa rõ</option>
+            <option value="true">Có</option>
+            <option value="false">Không</option>
+          </select>
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className="mb-1 block text-xs font-medium text-slate-600">Ghi chú chữ ký</label>
+          <input
+            name="signature_note"
+            defaultValue={student?.signature_note ?? ""}
+            placeholder="VD: ký ở cột 5 (không lưu ảnh chữ ký)"
             className={inputCls}
           />
         </div>

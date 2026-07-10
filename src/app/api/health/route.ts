@@ -7,7 +7,7 @@ import { hasGeminiConfigured, hasServiceRoleKey, hasSupabaseEnv, isAiImportReady
 export async function GET() {
   return Response.json({
     status: "ok",
-    phase: "10b-profile-ai-fields-logic-audit",
+    phase: "10c-portal-separation-student-fields",
     supabaseConfigured: hasSupabaseEnv(),
     databaseTypesReady: true,
     geminiConfigured: hasGeminiConfigured(),
@@ -56,6 +56,14 @@ export async function GET() {
     productLogicAuditReady: true,
     // 10B — đã rà soát độ mượt runtime Vercel (docs/vercel-runtime-smoothness-audit.md).
     vercelSmoothnessAuditReady: true,
+    // 10C — public/User không quảng bá link Admin; Admin vào riêng qua /admin.
+    portalSeparationReady: true,
+    // 10C — bảng/form học sinh hiển thị & sửa năm sinh/giới tính/chữ ký (Bí thư sửa, Admin xem).
+    studentExtendedFieldsReady: true,
+    // 10C — đã áp/push các patch Codex review 10B (zod length, batch bind, RPC execute restrict).
+    codex10bPatchApplied: true,
+    // 10C — PROJECT_PROGRESS cập nhật đầy đủ + kế hoạch 10D/10E/10F.
+    progressPlanUpdated: true,
     docxExportReady: true,
     passwordChangeReady: true,
     time: new Date().toISOString(),

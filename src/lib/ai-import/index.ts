@@ -23,12 +23,12 @@ export type { AiDraftRow, AiExtractResult, AiImportInput } from "./types";
 /** Schema NGHIÊM NGẶT cho JSON Gemini trả về (trước chuẩn hóa). Chấp nhận field mới; giá trị lạ → chuẩn hóa sau. */
 const geminiRowSchema = z.object({
   full_name: z.string().max(200).optional().default(""),
-  birth_year: z.union([z.number(), z.string(), z.null()]).optional().default(null),
-  birth_date: z.union([z.string(), z.null()]).optional().default(null),
-  gender: z.union([z.string(), z.null()]).optional().default(null),
-  guardian_phone: z.union([z.string(), z.null()]).optional().default(""),
-  signature_present: z.union([z.boolean(), z.string(), z.null()]).optional().default(null),
-  signature_note: z.union([z.string(), z.null()]).optional().default(""),
+  birth_year: z.union([z.number(), z.string().max(10), z.null()]).optional().default(null),
+  birth_date: z.union([z.string().max(30), z.null()]).optional().default(null),
+  gender: z.union([z.string().max(20), z.null()]).optional().default(null),
+  guardian_phone: z.union([z.string().max(30), z.null()]).optional().default(""),
+  signature_present: z.union([z.boolean(), z.string().max(20), z.null()]).optional().default(null),
+  signature_note: z.union([z.string().max(200), z.null()]).optional().default(""),
   confidence: z.coerce.number().min(0).max(1).optional().default(0.5),
   notes: z.string().max(500).optional().default(""),
 }).strict();

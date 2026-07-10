@@ -27,12 +27,36 @@ const optionalText = z
 const studentSchema = z.object({
   full_name: z.string().trim().min(2, "Họ tên quá ngắn.").max(120),
   neighborhood_id: z.string().uuid("Chưa chọn Khu phố hợp lệ."),
+  birth_year: z
+    .string()
+    .trim()
+    .regex(/^\d{4}$/u, "Năm sinh phải là 4 chữ số.")
+    .refine((v) => Number(v) >= 1990 && Number(v) <= 2100, "Năm sinh ngoài khoảng hợp lệ.")
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v ? Number(v) : null)),
   birth_date: z
     .string()
     .trim()
     .regex(/^\d{4}-\d{2}-\d{2}$/u, "Ngày sinh phải dạng YYYY-MM-DD.")
     .optional()
     .or(z.literal(""))
+    .transform((v) => (v ? v : null)),
+  gender: z
+    .enum(["MALE", "FEMALE", "OTHER", "UNKNOWN"])
+    .or(z.literal(""))
+    .optional()
+    .transform((v) => (v ? v : null)),
+  signature_present: z
+    .enum(["true", "false"])
+    .or(z.literal(""))
+    .optional()
+    .transform((v) => (v === "true" ? true : v === "false" ? false : null)),
+  signature_note: z
+    .string()
+    .trim()
+    .max(200)
+    .optional()
     .transform((v) => (v ? v : null)),
   guardian_phone: z
     .string()
@@ -50,7 +74,11 @@ function parseForm(formData: FormData) {
   return studentSchema.safeParse({
     full_name: formData.get("full_name"),
     neighborhood_id: formData.get("neighborhood_id"),
+    birth_year: formData.get("birth_year") ?? "",
     birth_date: formData.get("birth_date") ?? "",
+    gender: formData.get("gender") ?? "",
+    signature_present: formData.get("signature_present") ?? "",
+    signature_note: formData.get("signature_note") ?? "",
     guardian_phone: formData.get("guardian_phone") ?? "",
     guardian_name: formData.get("guardian_name") ?? "",
     school: formData.get("school") ?? "",

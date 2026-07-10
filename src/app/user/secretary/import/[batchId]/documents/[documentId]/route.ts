@@ -31,21 +31,32 @@ export const dynamic = "force-dynamic";
 const IMAGE_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 const uuid = z.string().uuid();
 
+function textResponse(message: string, status: number): Response {
+  return new Response(message, {
+    status,
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ batchId: string; documentId: string }> },
 ) {
   const profile = await getCurrentProfile();
-  if (!profile) return new Response("Chưa đăng nhập.", { status: 403 });
+  if (!profile) return textResponse("Chưa đăng nhập.", 403);
   if (profile.role !== ROLES.ADMIN && profile.role !== ROLES.SECRETARY) {
-    return new Response("Không có quyền truy cập.", { status: 403 });
+    return textResponse("Không có quyền truy cập.", 403);
   }
 
   const { batchId, documentId } = await params;
 
   // (0) Validate UUID SỚM trước khi chạm DB — id sai định dạng ⇒ 404 nhanh, không lộ path/bucket.
   if (!uuid.safeParse(batchId).success || !uuid.safeParse(documentId).success) {
-    return new Response("Không tìm thấy.", { status: 404 });
+    return textResponse("Không tìm thấy.", 404);
   }
 
   // (1) Chứng minh quyền với LÔ qua RLS (ib_select: admin / chủ lô / Khu phố phụ trách).
@@ -56,13 +67,13 @@ export async function GET(
     .select("id")
     .eq("id", batchId)
     .maybeSingle();
-  if (!batch) return new Response("Không tìm thấy.", { status: 404 });
+  if (!batch) return textResponse("Không tìm thấy.", 404);
 
   // (2a) Phần đọc nhị phân cần SERVICE ROLE. Thiếu key (vd chưa cấu hình env production)
   //      ⇒ trả 503 THÂN THIỆN thay vì 500 trần. KHÔNG log key/path/PII.
   if (!hasServiceRoleKey()) {
     logEvent("ai_image_storage_not_configured", { role: profile.role });
-    return new Response(STORAGE_NOT_CONFIGURED, { status: 503 });
+    return textResponse(STORAGE_NOT_CONFIGURED, 503);
   }
 
   // (2b) Ảnh phải thuộc ĐÚNG lô này + bucket ai-import-uploads (service role, đã có quyền lô).
@@ -71,13 +82,13 @@ export async function GET(
   let buffer: Awaited<ReturnType<typeof downloadAiImportImage>>;
   try {
     doc = await getAiImportDocForBatch(documentId, batchId);
-    if (!doc) return new Response("Không tìm thấy ảnh.", { status: 404 });
+    if (!doc) return textResponse("Không tìm thấy ảnh.", 404);
     buffer = await downloadAiImportImage(doc.path);
   } catch (err) {
     logError("ai_image_storage_error", err, { role: profile.role });
-    return new Response(STORAGE_NOT_CONFIGURED, { status: 503 });
+    return textResponse(STORAGE_NOT_CONFIGURED, 503);
   }
-  if (!buffer) return new Response("Không đọc được ảnh từ kho lưu trữ.", { status: 404 });
+  if (!buffer) return textResponse("Không đọc được ảnh từ kho lưu trữ.", 404);
 
   const download = new URL(request.url).searchParams.get("download") === "1";
   const mime = doc.mimeType && IMAGE_MIME.has(doc.mimeType) ? doc.mimeType : "application/octet-stream";

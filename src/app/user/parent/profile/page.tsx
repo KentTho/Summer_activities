@@ -5,6 +5,13 @@ import { ProfileForm } from "@/components/profile/ProfileForm";
 
 export const dynamic = "force-dynamic";
 
+const GENDER_LABEL: Record<string, string> = {
+  MALE: "Nam",
+  FEMALE: "Nữ",
+  OTHER: "Khác",
+  UNKNOWN: "Chưa xác định",
+};
+
 export default async function ParentProfilePage() {
   const [me, students] = await Promise.all([getMyProfileDetails(), getMyLinkedStudents()]);
   if (!me) return null;
@@ -25,6 +32,8 @@ export default async function ParentProfilePage() {
                 <span className="font-medium text-slate-900">{s.fullName}</span>
                 <span className="text-xs text-slate-500">
                   {s.birthYear ? `Năm sinh ${s.birthYear}` : ""}
+                  {GENDER_LABEL[s.gender ?? ""] ? ` · ${GENDER_LABEL[s.gender ?? ""]}` : ""}
+                  {s.signaturePresent === true ? " · có chữ ký" : ""}
                   {s.neighborhoodName ? ` · ${s.neighborhoodName}` : ""}
                   {s.relationship ? ` · ${s.relationship}` : ""}
                 </span>
