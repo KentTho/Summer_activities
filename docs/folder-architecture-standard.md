@@ -144,3 +144,13 @@
 9. **Kiểm thử** → thêm/really-run RLS smoke bằng **client đăng nhập thật** (không chỉ service role).
 10. **Tài liệu** → cập nhật `PROJECT_PROGRESS.md` + `IMPLEMENTATION_HISTORY.md` + tạo report + health phase.
 </content>
+
+## Ghi chú thực tế (09H)
+Cập nhật theo audit 10A + hoàn thiện 09H:
+- **Business logic + data-access thật hiện nằm ở `src/lib/*`**, đặc biệt `src/lib/data/*` (mọi đọc/ghi
+  qua RLS server client). Đây là nguồn sự thật khi thêm feature.
+- `src/modules/*` phần lớn là **domain/skeleton** (enum roles/scope, nhãn). Tầng `application/`+`infrastructure/`
+  chưa bắt buộc; **KHÔNG refactor lớn** cho tới khi có test bao phủ.
+- **Quy tắc feature mới:** giữ data-access trong `src/lib/data`, Server Action trong `src/app/**/actions.ts`,
+  gọi qua RLS (không service role ở UI). Service role chỉ ở route/script server sau khi đã xác thực.
+- Thông báo (09H): helper dùng chung ở `src/lib/data/notifications.ts` — tham chiếu khi mở rộng.

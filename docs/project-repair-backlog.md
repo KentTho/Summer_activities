@@ -2,6 +2,21 @@
 
 > Tạo ở **Prompt 09A**. Theo dõi việc cần sửa/nâng cấp, tách rõ: đã xử lý · còn lại · không làm ngay.
 
+## Đã xử lý ở 09H
+- [x] **Defensive 503 route ảnh AI**: thiếu service role / admin client lỗi → trả **503 thân thiện**
+      + log `ai_image_storage_not_configured`/`ai_image_storage_error` (không PII/path), **không 500 trần**.
+- [x] **CI smoke** `.github/workflows/e2e-smoke.yml`: chạy 3 smoke với Repository Secrets, fail-fast khi thiếu,
+      không in secret. Lịch chạy khi `vars.RUN_E2E_SMOKE=='true'` hoặc dispatch tay.
+- [x] **Retention workflow** `.github/workflows/ai-import-retention.yml`: dry-run mặc định; `--apply` CHỈ khi
+      `vars.AI_IMPORT_RETENTION_APPLY=='true'`. Script `cleanup-ai-import-images.mjs` giữ nguyên (đã an toàn).
+- [x] **Notification Phase 11 core**: tự gửi khi hủy/dời buổi; Admin gửi hệ thống/Khu phố (`/admin/notifications`);
+      unread count + mark-read (Phụ huynh); audit `NOTIFY_SESSION_PARENTS`/`SEND_SYSTEM_NOTIFICATION`.
+- [x] **README/architecture sync**: README đúng trạng thái 09H + yêu cầu `SUPABASE_SERVICE_ROLE_KEY`;
+      `folder-architecture-standard.md` phản ánh `src/lib/data/*`; `notification-system.md`, `production-env-checklist.md`.
+- [x] Health phase `09h-…` + cờ `serviceRoleConfigured/notificationCoreReady/retentionWorkflowReady/ciSmokeReady`.
+- [ ] 🔴 **OPERATION REQUIRED — set `SUPABASE_SERVICE_ROLE_KEY` trên Vercel Production** rồi redeploy +
+      rerun `smoke:ai-image-http` prod (→ 200). Xem `docs/production-env-checklist.md`.
+
 ## Đã xử lý ở 09F
 - [x] **Chẩn đoán Admin login**: script `recover-admin-account.mjs` (chế độ chẩn đoán) — Admin gốc **khỏe mạnh**
       (auth có, role ADMIN, active, `must_change_password=false`); nguyên nhân không vào được = **sai mật khẩu**.
@@ -70,9 +85,9 @@
 6. **Dọn `DemoNotice` component** nếu vẫn không dùng (hiện chỉ export, không render ở app).
 7. **Đồng bộ Postgres local `major_version`** (15 local vs 17 remote) — chỉ ảnh hưởng dev.
 8. 🔴 **CAO — set `SUPABASE_SERVICE_ROLE_KEY` trên Vercel production**: smoke HTTP 09G phát hiện route ảnh AI
-   **500** cho ADMIN/SECRETARY hợp lệ trên prod vì thiếu env này (local 19/19 pass). Set env + redeploy;
-   cân nhắc bắt lỗi service role → 503 thân thiện thay vì 500 trần. (RUNTIME smoke 09G đã chạy: admin-login
-   4/4, password-request 8/8, ai-image-http local 19/19.)
+   **500** cho ADMIN/SECRETARY hợp lệ trên prod vì thiếu env này (local 19/19 pass trước review hardening).
+   Set env + redeploy; cân nhắc bắt lỗi service role → 503 thân thiện thay vì 500 trần. (RUNTIME smoke 09G
+   đã chạy: admin-login 4/4, password-request 8/8; ai-image-http cần rerun sau patch header leak asserts.)
 9. **Gán Khu phố cho 2 Bí thư mới**: dùng `assign:secretaries` (DRY-RUN xem trạng thái) rồi Admin chỉ định
    Khu phố ở `/admin/secretaries` — **không tự gán bừa** khi chưa có chỉ định.
 

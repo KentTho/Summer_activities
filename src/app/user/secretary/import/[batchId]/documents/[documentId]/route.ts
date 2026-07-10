@@ -14,12 +14,17 @@ import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { logAudit } from "@/lib/admin/audit";
+import { hasServiceRoleKey } from "@/lib/env";
+import { logError, logEvent } from "@/lib/monitoring/server-log";
 import { ROLES } from "@/modules/auth/domain/roles";
 import {
   downloadAiImportImage,
   extForMime,
   getAiImportDocForBatch,
 } from "@/lib/storage/ai-import";
+
+const STORAGE_NOT_CONFIGURED =
+  "Dịch vụ lưu trữ chưa được cấu hình, vui lòng liên hệ Admin hệ thống.";
 
 export const dynamic = "force-dynamic";
 
@@ -53,11 +58,25 @@ export async function GET(
     .maybeSingle();
   if (!batch) return new Response("Không tìm thấy.", { status: 404 });
 
-  // (2) Ảnh phải thuộc ĐÚNG lô này + bucket ai-import-uploads (service role, đã có quyền lô).
-  const doc = await getAiImportDocForBatch(documentId, batchId);
-  if (!doc) return new Response("Không tìm thấy ảnh.", { status: 404 });
+  // (2a) Phần đọc nhị phân cần SERVICE ROLE. Thiếu key (vd chưa cấu hình env production)
+  //      ⇒ trả 503 THÂN THIỆN thay vì 500 trần. KHÔNG log key/path/PII.
+  if (!hasServiceRoleKey()) {
+    logEvent("ai_image_storage_not_configured", { role: profile.role });
+    return new Response(STORAGE_NOT_CONFIGURED, { status: 503 });
+  }
 
-  const buffer = await downloadAiImportImage(doc.path);
+  // (2b) Ảnh phải thuộc ĐÚNG lô này + bucket ai-import-uploads (service role, đã có quyền lô).
+  //      Bọc try/catch: admin client/Storage lỗi bất ngờ ⇒ 503, KHÔNG để 500 trần lộ stack.
+  let doc: Awaited<ReturnType<typeof getAiImportDocForBatch>>;
+  let buffer: Awaited<ReturnType<typeof downloadAiImportImage>>;
+  try {
+    doc = await getAiImportDocForBatch(documentId, batchId);
+    if (!doc) return new Response("Không tìm thấy ảnh.", { status: 404 });
+    buffer = await downloadAiImportImage(doc.path);
+  } catch (err) {
+    logError("ai_image_storage_error", err, { role: profile.role });
+    return new Response(STORAGE_NOT_CONFIGURED, { status: 503 });
+  }
   if (!buffer) return new Response("Không đọc được ảnh từ kho lưu trữ.", { status: 404 });
 
   const download = new URL(request.url).searchParams.get("download") === "1";

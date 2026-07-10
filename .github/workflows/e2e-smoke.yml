@@ -1,0 +1,87 @@
+name: E2E Smoke
+
+# Chạy smoke E2E thật (Auth/JWT + HTTP cookie route) với Repository Secrets.
+# KHÔNG in secret/cookie/password. Không destructive (retention apply KHÔNG chạy ở đây).
+#
+# Kích hoạt:
+#   - workflow_dispatch: bấm tay bất cứ lúc nào.
+#   - schedule: hằng ngày, CHỈ chạy nếu repo variable RUN_E2E_SMOKE == 'true'.
+#
+# Secrets bắt buộc (Settings → Secrets and variables → Actions → Secrets):
+#   NEXT_PUBLIC_SUPABASE_URL
+#   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+#   SUPABASE_SERVICE_ROLE_KEY
+#   E2E_BASE_URL   (vd https://summer-activities-theta.vercel.app)
+# Variable (tùy chọn): RUN_E2E_SMOKE = 'true' để bật lịch chạy tự động.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 19 * * *" # 02:00 giờ VN mỗi ngày
+
+concurrency:
+  group: e2e-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Auth · Password · AI image HTTP smoke
+    runs-on: ubuntu-latest
+    # Lịch chỉ chạy khi bật cờ; dispatch tay luôn chạy.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.RUN_E2E_SMOKE == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fail-fast nếu thiếu secrets
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
+        run: |
+          missing=""
+          [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] && missing="$missing NEXT_PUBLIC_SUPABASE_URL"
+          [ -z "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ] && missing="$missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+          [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] && missing="$missing SUPABASE_SERVICE_ROLE_KEY"
+          [ -z "$E2E_BASE_URL" ] && missing="$missing E2E_BASE_URL"
+          if [ -n "$missing" ]; then
+            echo "::error::Thiếu secrets:$missing — thêm ở Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          echo "Đủ secrets (không in giá trị)."
+
+      - name: Preflight
+        run: npm run preflight
+
+      # Gọi node trực tiếp: env đến từ job (KHÔNG cần .env.local, KHÔNG in secret).
+      - name: Smoke admin login
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/e2e-admin-login-smoke.mjs
+
+      - name: Smoke password request
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/e2e-password-request-smoke.mjs
+
+      - name: Smoke AI image HTTP (cookie thật)
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
+        run: node scripts/e2e-ai-image-route-http-smoke.mjs

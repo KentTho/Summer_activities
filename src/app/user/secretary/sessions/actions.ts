@@ -10,6 +10,41 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth/session";
+import { logAudit } from "@/lib/admin/audit";
+import {
+  getSessionRecipientProfileIds,
+  sendNotificationToProfiles,
+} from "@/lib/data/notifications";
+
+/**
+ * Tự gửi thông báo (scope SESSION) cho phụ huynh liên quan buổi khi hủy/dời.
+ * Best-effort: lỗi thông báo KHÔNG chặn nghiệp vụ chính. Ghi audit (không PII).
+ */
+async function autoNotifySession(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  sessionId: string,
+  title: string,
+  body: string,
+): Promise<void> {
+  try {
+    const profile = await getCurrentProfile();
+    if (!profile) return;
+    const recipients = await getSessionRecipientProfileIds(supabase, sessionId);
+    if (recipients.length === 0) return;
+    const count = await sendNotificationToProfiles(
+      supabase,
+      { title, body, scope: "SESSION", sessionId, createdBy: profile.profileId },
+      recipients,
+    );
+    await logAudit(supabase, profile, {
+      action: "NOTIFY_SESSION_PARENTS",
+      entity: "notifications",
+      detail: `session ${sessionId} · ${count} người nhận`,
+    });
+  } catch {
+    // Không chặn hủy/dời buổi nếu gửi thông báo lỗi.
+  }
+}
 
 export interface SessionActionState {
   error?: string;
@@ -122,12 +157,28 @@ export async function reopenSession(formData: FormData): Promise<void> {
 export async function cancelSession(formData: FormData): Promise<void> {
   const id = z.string().uuid().safeParse(formData.get("session_id"));
   if (!id.success) return;
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
   const supabase = await createSupabaseServerClient();
-  await supabase
+  const { data: session } = await supabase
+    .from("activity_sessions")
+    .select("title, session_date, canceled_at")
+    .eq("id", id.data)
+    .maybeSingle();
+  const { error } = await supabase
     .from("activity_sessions")
     .update({ canceled_at: new Date().toISOString() })
     .eq("id", id.data)
     .is("canceled_at", null);
+
+  // Chỉ thông báo khi vừa chuyển sang HỦY (trước đó chưa hủy).
+  if (!error && session && !session.canceled_at) {
+    const body =
+      `Buổi sinh hoạt "${session.title}"` +
+      (session.session_date ? ` (ngày ${session.session_date})` : "") +
+      ` đã bị hủy.` +
+      (reason ? ` Lý do: ${reason}` : "");
+    await autoNotifySession(supabase, id.data, `Hủy buổi: ${session.title}`, body);
+  }
   revalidatePath(`${SESSIONS_PATH}/${id.data}`);
   revalidatePath(SESSIONS_PATH);
 }
@@ -161,13 +212,28 @@ export async function rescheduleSession(formData: FormData): Promise<void> {
   });
   if (!parsed.success) return;
   const supabase = await createSupabaseServerClient();
+  const { data: before } = await supabase
+    .from("activity_sessions")
+    .select("title, session_date, start_time")
+    .eq("id", parsed.data.session_id)
+    .maybeSingle();
   const patch: { session_date: string; start_time?: string | null } = {
     session_date: parsed.data.session_date,
   };
   if (parsed.data.start_time !== undefined) {
     patch.start_time = parsed.data.start_time ? parsed.data.start_time : null;
   }
-  await supabase.from("activity_sessions").update(patch).eq("id", parsed.data.session_id);
+  const { error } = await supabase
+    .from("activity_sessions")
+    .update(patch)
+    .eq("id", parsed.data.session_id);
+
+  if (!error && before) {
+    const oldWhen = `${before.session_date}${before.start_time ? ` ${before.start_time}` : ""}`;
+    const newWhen = `${patch.session_date}${patch.start_time ? ` ${patch.start_time}` : ""}`;
+    const body = `Buổi sinh hoạt "${before.title}" đổi lịch từ ${oldWhen} sang ${newWhen}.`;
+    await autoNotifySession(supabase, parsed.data.session_id, `Đổi lịch: ${before.title}`, body);
+  }
   revalidatePath(`${SESSIONS_PATH}/${parsed.data.session_id}`);
   revalidatePath(SESSIONS_PATH);
 }

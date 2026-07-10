@@ -18,7 +18,8 @@
     "assign:secretaries": "node --env-file=.env.local scripts/assign-secretaries-neighborhoods.mjs",
     "smoke:admin-login": "node --env-file=.env.local scripts/e2e-admin-login-smoke.mjs",
     "smoke:password-request": "node --env-file=.env.local scripts/e2e-password-request-smoke.mjs",
-    "smoke:ai-image-http": "node --env-file=.env.local scripts/e2e-ai-image-route-http-smoke.mjs"
+    "smoke:ai-image-http": "node --env-file=.env.local scripts/e2e-ai-image-route-http-smoke.mjs",
+    "smoke:notification": "node --env-file=.env.local scripts/e2e-notification-smoke.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

@@ -360,7 +360,8 @@
 - [x] node --check 4 script + preflight/lint/typecheck/build pass.
 - [x] Report 09G + Codex review prompt.
 - [x] **RUNTIME smoke ĐÃ CHẠY THẬT** (có `.env.local`): `smoke:admin-login` **4/4**, `smoke:password-request`
-      **8/8**, `smoke:ai-image-http` **local 19/19** (mọi status/header/audit đúng). Cleanup sạch.
+      **8/8**, `smoke:ai-image-http` **local 19/19** trước Codex review hardening; script hiện thêm fail-fast
+      `E2E_BASE_URL` + header leak asserts (rerun kỳ vọng **25/25**). Cleanup sạch.
 - [ ] 🔴 **PRODUCTION: set `SUPABASE_SERVICE_ROLE_KEY` trên Vercel** — smoke HTTP prod cho thấy ADMIN/SEC-in
       → **500** (thiếu service role env), dù gating đúng (307/403/404). Route ảnh AI **hỏng trên prod** tới khi set env.
 - [ ] **Gán Khu phố thật cho 2 Bí thư mới** — chờ **Admin chỉ định** Khu phố (dry-run đã sẵn, không tự gán bừa).
@@ -369,6 +370,29 @@
 > Runtime cần secret `.env.local` (bị gitignore, không mở trong sandbox) → smoke chạy khi vận hành. Cookie
 > HTTP dựng khớp `@supabase/ssr` (đã đối chiếu `node_modules`: `sb-<ref>-auth-token`, `base64-`+base64url,
 > chunk `.0/.1` khi > 3180). Audit append-only theo policy → dòng smoke `SMOKE_09G_` giữ lại (đã ghi rõ).
+
+### Prompt 09H — Production service role closure + Defensive hardening + CI smoke + Retention + Notifications
+- [x] **Vercel service role env checked**: `vercel env ls` xác nhận `SUPABASE_SERVICE_ROLE_KEY` có trên
+      Production + Preview (không in giá trị). Blocker 09G **đã gỡ**.
+- [x] **AI image route defensive 503**: thiếu service role/admin client lỗi → **503 thân thiện** + log
+      `ai_image_storage_not_configured`/`ai_image_storage_error` (không PII/path), **không 500 trần**.
+- [x] **Local smoke rerun**: `smoke:ai-image-http` **25/25**; `smoke:notification` **6/6**.
+- [x] **Production smoke rerun**: sau redeploy → **25/25** (ADMIN/SECRETARY **200**, health `serviceRoleConfigured:true`).
+- [x] **CI smoke workflow** `e2e-smoke.yml` (Repository Secrets, fail-fast, không lộ secret).
+- [x] **Retention workflow** `ai-import-retention.yml` (dry-run mặc định; apply chỉ khi `vars.AI_IMPORT_RETENTION_APPLY`).
+- [x] **Notification cancel/reschedule auto-send** (best-effort + audit `NOTIFY_SESSION_PARENTS`).
+- [x] **Admin system notification** `/admin/notifications` (SYSTEM/NEIGHBORHOOD, audit `SEND_SYSTEM_NOTIFICATION`).
+- [x] **Unread count / mark read** (Phụ huynh) + helper `countMyUnreadNotifications`/`mark*` qua RLS nr_update.
+- [x] **README/architecture docs sync** (README 09H + env production; `folder-architecture-standard`; mới
+      `notification-system.md`, `production-env-checklist.md`).
+- [x] **Health phase** `09h-prod-hardening-ci-notifications` + cờ `serviceRoleConfigured`/`notificationCoreReady`/
+      `retentionWorkflowReady`/`ciSmokeReady`.
+- [x] **Deploy production + verify** (health 09h, endpoints 200) + Report 09H + Codex prompt.
+- [ ] Nav badge unread cho Secretary/Admin + realtime subscription (backlog — hiện near-real-time).
+
+> Ghi chú: **không** đổi RLS/schema (cột `read_at` đã có), không migration, không public bucket, không
+> refactor `src/modules/*`. Notification qua RLS + helper SECURITY DEFINER (không đệ quy 42P17). Service
+> role chỉ ở route/script server. Blocker service role production **đóng hoàn toàn** (prod smoke 25/25).
 
 ## 4. Next planned prompts
 1. Prompt 06B — Full CRUD Admin (Khu phố/Bí thư/Phân công) + tạo tài khoản Phụ huynh

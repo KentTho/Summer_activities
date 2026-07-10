@@ -1,0 +1,70 @@
+name: AI Import Retention
+
+# Dọn ảnh AI import cũ trong bucket private `ai-import-uploads`.
+# AN TOÀN: MẶC ĐỊNH DRY-RUN (chỉ thống kê). Chỉ XÓA THẬT khi repo variable
+# AI_IMPORT_RETENTION_APPLY == 'true'. KHÔNG in path/profileId/secret.
+#
+# Kích hoạt:
+#   - schedule: hằng tuần (dry-run mặc định).
+#   - workflow_dispatch: bấm tay, chọn số ngày giữ lại.
+#
+# Secrets bắt buộc: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
+# Variable (tùy chọn): AI_IMPORT_RETENTION_APPLY = 'true' để bật xóa thật (sau khi
+#   đã kiểm dry-run + backup). Không bật cờ ⇒ chỉ dry-run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Số ngày giữ lại (xóa ảnh cũ hơn)"
+        required: false
+        default: "90"
+  schedule:
+    - cron: "0 20 * * 1" # 03:00 giờ VN thứ Hai hằng tuần
+
+concurrency:
+  group: ai-import-retention
+  cancel-in-progress: false
+
+jobs:
+  retention:
+    name: Retention (dry-run mặc định)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fail-fast nếu thiếu secrets
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::Thiếu NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY."
+            exit 1
+          fi
+          echo "Đủ secrets (không in giá trị)."
+
+      - name: Retention cleanup
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DAYS: ${{ github.event.inputs.days || '90' }}
+          # Apply CHỈ khi repo variable bật rõ ràng. Mặc định rỗng ⇒ dry-run.
+          APPLY_FLAG: ${{ vars.AI_IMPORT_RETENTION_APPLY == 'true' && '--apply' || '' }}
+        run: |
+          if [ -n "$APPLY_FLAG" ]; then
+            echo "::warning::AI_IMPORT_RETENTION_APPLY=true → CHẠY XÓA THẬT (--apply)."
+          else
+            echo "DRY-RUN (không xóa). Bật vars.AI_IMPORT_RETENTION_APPLY='true' để xóa thật."
+          fi
+          node scripts/cleanup-ai-import-images.mjs --days="$DAYS" $APPLY_FLAG

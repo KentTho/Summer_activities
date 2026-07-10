@@ -1,4 +1,4 @@
-import { hasGeminiConfigured, hasSupabaseEnv, isAiImportReady } from "@/lib/env";
+import { hasGeminiConfigured, hasServiceRoleKey, hasSupabaseEnv, isAiImportReady } from "@/lib/env";
 
 /**
  * Health check cơ bản — dùng cho CI/smoke test và giám sát.
@@ -7,7 +7,7 @@ import { hasGeminiConfigured, hasSupabaseEnv, isAiImportReady } from "@/lib/env"
 export async function GET() {
   return Response.json({
     status: "ok",
-    phase: "09g-e2e-image-admin-assignment",
+    phase: "09h-prod-hardening-ci-notifications",
     supabaseConfigured: hasSupabaseEnv(),
     databaseTypesReady: true,
     geminiConfigured: hasGeminiConfigured(),
@@ -40,6 +40,14 @@ export async function GET() {
     aiImageHttpSmokeReady: true,
     // 09G — công cụ gán Khu phố cho Bí thư (dry-run mặc định, chỉ ghi khi có chỉ định + APPLY).
     secretaryAssignmentReady: true,
+    // 09H — server hiện tại có SERVICE ROLE KEY? (route storage cần; production phải set trên Vercel).
+    serviceRoleConfigured: hasServiceRoleKey(),
+    // 09H — thông báo tự động khi hủy/dời buổi + Admin gửi hệ thống + unread/mark-read.
+    notificationCoreReady: true,
+    // 09H — workflow retention ảnh AI (dry-run mặc định, apply chỉ khi bật repo variable).
+    retentionWorkflowReady: true,
+    // 09H — workflow CI chạy smoke E2E với Repository Secrets (fail-fast khi thiếu).
+    ciSmokeReady: true,
     docxExportReady: true,
     passwordChangeReady: true,
     time: new Date().toISOString(),
