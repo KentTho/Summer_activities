@@ -451,9 +451,29 @@
 > phải đăng nhập `/admin/login`, guard + RLS chặn thật). Không suy đoán giới tính/năm sinh/chữ ký; chữ ký chỉ
 > metadata. Parent KHÔNG tự sửa dữ liệu học sinh (chỉ xem + liên hệ Bí thư). Migration additive-only.
 
+### Prompt 10D — UI/UX polish Admin/User (không đổi nghiệp vụ)
+- [x] UI inventory audit (`docs/ui-ux-audit-10D.md`)
+- [x] Design system light components (`SectionCard`/`EmptyState`/`StatusBadge`/`InlineAlert`/
+      `ActionBar`/`DataTableShell`/`SkeletonBlock`/`FormField`+`fieldClass`)
+- [x] Admin portal polish (Button primary indigo, students EmptyState/StatusBadge, shared header)
+- [x] Secretary portal polish (dashboard EmptyState; đồng bộ qua design system)
+- [x] Parent portal polish (InlineAlert cảnh báo chưa liên kết + EmptyState)
+- [x] Public/auth polish (LoginForm dùng FormField/InlineAlert; giữ tách cổng Admin)
+- [x] Responsive/accessibility pass (focus-visible, table cuộn/`.dt`, label form, Button focus ring)
+- [x] Portal separation re-check (public/User KHÔNG có link Admin — smoke pass)
+- [x] Health phase update → `10d-ui-ux-polish` + cờ `uiPolishReady`/`adminUiPolishReady`/
+      `userUiPolishReady`/`responsivePassReady` (giữ cờ cũ)
+- [x] Report + Codex prompt (`docs/reports/PROMPT-10D-ui-ux-polish-admin-user-report.md`)
+- [x] Validation/deploy (preflight/lint/typecheck/build/healthcheck/smoke portal)
+
+> Ghi chú: 10D **thuần trình bày** — không đổi route/DB/RLS/Auth/RBAC, không đổi logic
+> AI import/DOCX/notification. Nâng cấp `Button`/`PageHeader`/`globals.css` giúp polish lan
+> tỏa toàn cục; component mới sẵn sàng cho các trang bảng áp dần ở 10E. KHÔNG tick
+> avatar/parent-request-edit/realtime (thuộc 10E).
+
 ## 4. Next planned prompts
 > (Danh sách cũ 06B/07/08/09/10 đã hoàn thành — thay bằng kế hoạch hiện tại.)
-1. **Prompt 10D** — UI/UX polish toàn bộ Admin/User (nhất quán màu/nhịp/skeleton/responsive) — không đổi nghiệp vụ.
+1. **Prompt 10D** — ✅ UI/UX polish toàn bộ Admin/User (nhất quán màu/nhịp/skeleton/responsive) — không đổi nghiệp vụ.
 2. **Prompt 10E** — Avatar private storage + Parent gửi yêu cầu sửa thông tin học sinh (Bí thư/Admin duyệt) + realtime notification.
 3. **Prompt 10F** — Load test + monitoring nâng cao (alert) + production readiness final.
 4. **Prompt 10G** — Final acceptance pass: docs sync, smoke matrix, rollback checklist.

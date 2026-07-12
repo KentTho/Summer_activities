@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Badge, Card } from "@/components/ui";
+import { Badge, Card, EmptyState, InlineAlert } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
 import { listSessions } from "@/lib/data/sessions";
 import { listParentAttendance, listParentChildren } from "@/lib/data/parent";
@@ -42,12 +42,14 @@ export default async function ParentDashboard() {
       />
 
       {children.length === 0 ? (
-        <Card className="mb-4 border-amber-200 bg-amber-50">
-          <p className="text-sm text-amber-800">
-            Tài khoản của bạn chưa được liên kết với học sinh nào. Vui lòng liên hệ Bí thư
-            Khu phố để được liên kết và xem dữ liệu.
-          </p>
-        </Card>
+        <InlineAlert
+          tone="warning"
+          title="Chưa liên kết học sinh"
+          className="mb-4"
+        >
+          Tài khoản của bạn chưa được liên kết với học sinh nào. Vui lòng liên hệ Bí thư
+          Khu phố để được liên kết và xem dữ liệu.
+        </InlineAlert>
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -83,7 +85,7 @@ export default async function ParentDashboard() {
 
         <Card title="Điểm danh gần đây">
           {recent.length === 0 ? (
-            <p className="text-sm text-slate-500">Chưa có dữ liệu điểm danh.</p>
+            <EmptyState icon="✅" title="Chưa có dữ liệu điểm danh" />
           ) : (
             <ul className="divide-y divide-slate-100">
               {recent.map((h, i) => (

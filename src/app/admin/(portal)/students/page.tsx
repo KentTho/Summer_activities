@@ -1,4 +1,4 @@
-import { Badge, Card, StatCard } from "@/components/ui";
+import { Card, EmptyState, StatCard, StatusBadge } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
 import { ADMIN_STUDENTS_PAGE_SIZES, listAllStudents, listNeighborhoodsDetailed } from "@/lib/data/admin";
 
@@ -102,7 +102,11 @@ export default async function AdminStudentsOverviewPage({ searchParams }: PagePr
       </p>
       <Card className="p-0">
         {result.rows.length === 0 ? (
-          <p className="px-4 py-6 text-center text-sm text-slate-500">Không có học sinh nào khớp.</p>
+          <EmptyState
+            icon="🎓"
+            title="Không có học sinh nào khớp"
+            description="Thử bỏ bớt bộ lọc hoặc đổi từ khóa tìm kiếm. Thêm học sinh được thực hiện ở cổng Bí thư theo Khu phố."
+          />
         ) : (
           <ul className="divide-y divide-slate-100">
             {result.rows.map((s) => (
@@ -118,7 +122,7 @@ export default async function AdminStudentsOverviewPage({ searchParams }: PagePr
                     {s.guardianPhone ? ` · ${s.guardianPhone}` : ""}
                   </p>
                 </div>
-                <Badge tone={s.active ? "green" : "slate"}>{s.active ? "Hoạt động" : "Ngừng"}</Badge>
+                <StatusBadge status={s.active ? "active" : "inactive"} />
               </li>
             ))}
           </ul>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Badge, Card, StatCard } from "@/components/ui";
+import { Badge, Card, EmptyState, StatCard } from "@/components/ui";
 import { PageHeader } from "@/components/layout";
 import { getSecretaryOverview } from "@/lib/data/secretary-dashboard";
 import { SESSION_TYPE_LABEL, SESSION_TONE } from "@/modules/sessions/domain/session-type";
@@ -43,7 +43,7 @@ export default async function SecretaryDashboard() {
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <Card title="Buổi hôm nay">
           {o.todaySessions.length === 0 ? (
-            <p className="text-sm text-slate-500">Hôm nay không có buổi nào.</p>
+            <EmptyState icon="📅" title="Hôm nay không có buổi nào" />
           ) : (
             <ul className="divide-y divide-slate-100">
               {o.todaySessions.map((s) => (
@@ -69,7 +69,7 @@ export default async function SecretaryDashboard() {
 
         <Card title="Buổi sắp tới">
           {o.upcomingSessions.length === 0 ? (
-            <p className="text-sm text-slate-500">Chưa có buổi nào sắp tới.</p>
+            <EmptyState icon="🗓️" title="Chưa có buổi nào sắp tới" />
           ) : (
             <ul className="divide-y divide-slate-100">
               {o.upcomingSessions.map((s) => (

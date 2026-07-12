@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useActionState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui";
+import { Button, FormField, InlineAlert, fieldClass } from "@/components/ui";
 import type { SignInState } from "@/lib/auth/actions";
 
 type SignInAction = (
@@ -43,13 +43,7 @@ export function LoginForm({
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <form action={formAction} className="space-y-4">
-        <div>
-          <label
-            htmlFor="identifier"
-            className="mb-1 block text-sm font-medium text-slate-700"
-          >
-            {accountLabel}
-          </label>
+        <FormField label={accountLabel} htmlFor="identifier" required>
           <input
             id="identifier"
             name="identifier"
@@ -57,16 +51,10 @@ export function LoginForm({
             required
             autoComplete="username"
             placeholder={accountPlaceholder}
-            className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            className={fieldClass}
           />
-        </div>
-        <div>
-          <label
-            htmlFor="password"
-            className="mb-1 block text-sm font-medium text-slate-700"
-          >
-            Mật khẩu
-          </label>
+        </FormField>
+        <FormField label="Mật khẩu" htmlFor="password" required>
           <input
             id="password"
             name="password"
@@ -74,18 +62,11 @@ export function LoginForm({
             required
             autoComplete="current-password"
             placeholder="••••••••"
-            className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            className={fieldClass}
           />
-        </div>
+        </FormField>
 
-        {state.error ? (
-          <p
-            role="alert"
-            className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
-          >
-            {state.error}
-          </p>
-        ) : null}
+        {state.error ? <InlineAlert tone="error">{state.error}</InlineAlert> : null}
 
         <Button type="submit" disabled={pending} className="w-full">
           {pending ? "Đang đăng nhập…" : submitLabel}

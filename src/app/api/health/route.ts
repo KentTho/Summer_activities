@@ -7,7 +7,7 @@ import { hasGeminiConfigured, hasServiceRoleKey, hasSupabaseEnv, isAiImportReady
 export async function GET() {
   return Response.json({
     status: "ok",
-    phase: "10c-portal-separation-student-fields",
+    phase: "10d-ui-ux-polish",
     supabaseConfigured: hasSupabaseEnv(),
     databaseTypesReady: true,
     geminiConfigured: hasGeminiConfigured(),
@@ -64,6 +64,14 @@ export async function GET() {
     codex10bPatchApplied: true,
     // 10C — PROJECT_PROGRESS cập nhật đầy đủ + kế hoạch 10D/10E/10F.
     progressPlanUpdated: true,
+    // 10D — design system light + polish giao diện toàn dự án (không đổi nghiệp vụ).
+    uiPolishReady: true,
+    // 10D — cổng Admin đã polish (dashboard/bảng/form/trạng thái nhất quán).
+    adminUiPolishReady: true,
+    // 10D — cổng Người dùng (Bí thư + Phụ huynh) đã polish.
+    userUiPolishReady: true,
+    // 10D — rà soát responsive/accessibility (focus rõ, bảng cuộn, label form).
+    responsivePassReady: true,
     docxExportReady: true,
     passwordChangeReady: true,
     time: new Date().toISOString(),

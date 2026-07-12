@@ -448,3 +448,22 @@ không log PII; không public bucket; không auto-import.
 - Docs: `portal-separation.md`; cập nhật PROJECT_PROGRESS (kế hoạch 10D/10E/10F/10G + rủi ro).
 
 **An toàn:** ẩn link Admin KHÔNG thay Auth/RBAC/RLS; không suy đoán giới tính/chữ ký; Parent chỉ xem HS; migration additive.
+
+## Chi tiết Prompt 10D (UI/UX polish Admin/User — không đổi nghiệp vụ)
+
+**Đã làm:**
+- **Design system light** (`src/components/ui/`): mới `SectionCard`, `EmptyState`, `StatusBadge`,
+  `InlineAlert`, `ActionBar`, `DataTableShell`, `SkeletonBlock`, `FormField`(+`fieldClass`).
+- **Nâng cấp component sẵn có**: `Button` primary `slate-800→indigo-600` + biến thể `danger` + size `sm/md`
+  + `focus-visible` ring (backward-compatible); `PageHeader` (layout) thêm slot `eyebrow`/`actions`.
+- **Global visual language** (`globals.css`): `:focus-visible` indigo, `::selection`, lớp `.dt` chuẩn hóa
+  spacing bảng, font smoothing.
+- **Trang polish trực tiếp**: `LoginForm` (FormField/InlineAlert — dùng cho cả user/admin login);
+  `admin/students` (EmptyState/StatusBadge); `secretary` dashboard (EmptyState); `parent` dashboard
+  (InlineAlert cảnh báo chưa liên kết + EmptyState).
+- Health phase `10d-ui-ux-polish` + cờ `uiPolishReady`/`adminUiPolishReady`/`userUiPolishReady`/
+  `responsivePassReady`; `check-production-health` default 10d; preflight OLD_PHASES thêm 10c.
+- Docs: `ui-ux-audit-10D.md`, `ui-ux-polish-10D.md`, report 10D; PROJECT_PROGRESS checklist 10D.
+
+**An toàn:** không đổi route/DB/RLS/Auth/RBAC; không đổi logic AI import/DOCX/notification; không public
+bucket; không thêm avatar/parent-request-edit/realtime; public/User vẫn KHÔNG có link Admin (smoke pass).
