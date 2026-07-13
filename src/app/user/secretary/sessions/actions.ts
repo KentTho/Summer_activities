@@ -55,6 +55,10 @@ export interface SessionActionState {
 
 const SESSIONS_PATH = "/user/secretary/sessions";
 
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 const sessionSchema = z.object({
   title: z.string().trim().min(2, "Tên buổi quá ngắn.").max(150),
   session_date: z
@@ -136,12 +140,16 @@ export async function closeSession(
   const id = z.string().uuid().safeParse(formData.get("session_id"));
   if (!id.success) return { error: "Buổi không hợp lệ." };
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("activity_sessions")
     .update({ closed_at: new Date().toISOString() })
     .eq("id", id.data)
-    .is("closed_at", null);
+    .is("closed_at", null)
+    .is("canceled_at", null)
+    .select("id")
+    .maybeSingle();
   if (error) return { error: "Không thể chốt buổi. Vui lòng thử lại." };
+  if (!updated) return { error: "Buổi đã chốt/hủy hoặc trạng thái đã thay đổi. Vui lòng tải lại." };
   revalidatePath(`${SESSIONS_PATH}/${id.data}`);
   revalidatePath(SESSIONS_PATH);
   return { ok: true, message: "Đã chốt buổi." };
@@ -155,11 +163,16 @@ export async function reopenSession(
   const id = z.string().uuid().safeParse(formData.get("session_id"));
   if (!id.success) return { error: "Buổi không hợp lệ." };
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("activity_sessions")
     .update({ closed_at: null })
-    .eq("id", id.data);
+    .eq("id", id.data)
+    .not("closed_at", "is", null)
+    .is("canceled_at", null)
+    .select("id")
+    .maybeSingle();
   if (error) return { error: "Không thể mở lại buổi. Vui lòng thử lại." };
+  if (!updated) return { error: "Buổi đã hủy hoặc trạng thái đã thay đổi. Vui lòng tải lại." };
   revalidatePath(`${SESSIONS_PATH}/${id.data}`);
   revalidatePath(SESSIONS_PATH);
   return { ok: true, message: "Đã mở lại buổi." };
@@ -176,25 +189,35 @@ export async function cancelSession(
   const supabase = await createSupabaseServerClient();
   const { data: session } = await supabase
     .from("activity_sessions")
-    .select("title, session_date, canceled_at")
+    .select("title, session_date, closed_at, canceled_at")
     .eq("id", id.data)
     .maybeSingle();
-  const { error } = await supabase
+  if (!session) return { error: "Không tìm thấy buổi sinh hoạt." };
+  if (session.canceled_at) return { error: "Buổi đã hủy." };
+  if (session.closed_at) return { error: "Buổi đã chốt — mở lại nếu cần hủy." };
+  if (session.session_date < todayISO()) {
+    return { error: "Buổi đã qua — chỉ nên chốt để tổng kết." };
+  }
+
+  const { data: updated, error } = await supabase
     .from("activity_sessions")
     .update({ canceled_at: new Date().toISOString() })
     .eq("id", id.data)
-    .is("canceled_at", null);
+    .is("canceled_at", null)
+    .is("closed_at", null)
+    .gte("session_date", todayISO())
+    .select("id")
+    .maybeSingle();
   if (error) return { error: "Không thể hủy buổi. Vui lòng thử lại." };
+  if (!updated) return { error: "Trạng thái buổi đã thay đổi. Vui lòng tải lại." };
 
   // Chỉ thông báo khi vừa chuyển sang HỦY (trước đó chưa hủy).
-  if (session && !session.canceled_at) {
-    const body =
-      `Buổi sinh hoạt "${session.title}"` +
-      (session.session_date ? ` (ngày ${session.session_date})` : "") +
-      ` đã bị hủy.` +
-      (reason ? ` Lý do: ${reason}` : "");
-    await autoNotifySession(supabase, id.data, `Hủy buổi: ${session.title}`, body);
-  }
+  const body =
+    `Buổi sinh hoạt "${session.title}"` +
+    (session.session_date ? ` (ngày ${session.session_date})` : "") +
+    ` đã bị hủy.` +
+    (reason ? ` Lý do: ${reason}` : "");
+  await autoNotifySession(supabase, id.data, `Hủy buổi: ${session.title}`, body);
   revalidatePath(`${SESSIONS_PATH}/${id.data}`);
   revalidatePath(SESSIONS_PATH);
   return { ok: true, message: "Đã hủy buổi và gửi thông báo phụ huynh (nếu có)." };
@@ -207,11 +230,15 @@ export async function uncancelSession(
   const id = z.string().uuid().safeParse(formData.get("session_id"));
   if (!id.success) return { error: "Buổi không hợp lệ." };
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("activity_sessions")
     .update({ canceled_at: null })
-    .eq("id", id.data);
+    .eq("id", id.data)
+    .not("canceled_at", "is", null)
+    .select("id")
+    .maybeSingle();
   if (error) return { error: "Không thể khôi phục buổi. Vui lòng thử lại." };
+  if (!updated) return { error: "Buổi chưa hủy hoặc trạng thái đã thay đổi. Vui lòng tải lại." };
   revalidatePath(`${SESSIONS_PATH}/${id.data}`);
   revalidatePath(SESSIONS_PATH);
   return { ok: true, message: "Đã khôi phục buổi." };
@@ -242,20 +269,35 @@ export async function rescheduleSession(
   const supabase = await createSupabaseServerClient();
   const { data: before } = await supabase
     .from("activity_sessions")
-    .select("title, session_date, start_time")
+    .select("title, session_date, start_time, closed_at, canceled_at")
     .eq("id", parsed.data.session_id)
     .maybeSingle();
+  if (!before) return { error: "Không tìm thấy buổi sinh hoạt." };
+  if (before.canceled_at) return { error: "Buổi đã hủy — khôi phục trước khi dời lịch." };
+  if (before.closed_at) return { error: "Buổi đã chốt — mở lại trước khi dời lịch." };
+  if (before.session_date < todayISO()) {
+    return { error: "Buổi đã qua — không thể dời lịch từ cổng Bí thư." };
+  }
+  if (parsed.data.session_date < todayISO()) {
+    return { error: "Không thể dời buổi về ngày đã qua." };
+  }
   const patch: { session_date: string; start_time?: string | null } = {
     session_date: parsed.data.session_date,
   };
   if (parsed.data.start_time !== undefined) {
     patch.start_time = parsed.data.start_time ? parsed.data.start_time : null;
   }
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("activity_sessions")
     .update(patch)
-    .eq("id", parsed.data.session_id);
+    .eq("id", parsed.data.session_id)
+    .is("closed_at", null)
+    .is("canceled_at", null)
+    .gte("session_date", todayISO())
+    .select("id")
+    .maybeSingle();
   if (error) return { error: "Không thể dời buổi. Vui lòng thử lại." };
+  if (!updated) return { error: "Trạng thái buổi đã thay đổi. Vui lòng tải lại." };
 
   const nextStartTime =
     parsed.data.start_time !== undefined
@@ -305,6 +347,14 @@ export async function notifySessionParents(
   if (!profile) return { error: "Phiên đăng nhập không hợp lệ." };
 
   const supabase = await createSupabaseServerClient();
+
+  const { data: session } = await supabase
+    .from("activity_sessions")
+    .select("canceled_at")
+    .eq("id", parsed.data.session_id)
+    .maybeSingle();
+  if (!session) return { error: "Không tìm thấy buổi sinh hoạt." };
+  if (session.canceled_at) return { error: "Buổi đã hủy — không thể gửi thông báo mới." };
 
   const profileIds = await getSessionRecipientProfileIds(supabase, parsed.data.session_id);
   if (profileIds.length === 0) {

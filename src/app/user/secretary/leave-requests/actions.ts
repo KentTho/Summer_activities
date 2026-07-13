@@ -11,6 +11,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth/session";
+import { LEAVE_STATUS } from "@/modules/leave-requests/domain/leave-status";
 
 const OPERATIONS_PATH = "/user/secretary/operations";
 
@@ -38,23 +39,30 @@ async function handleLeave(
     .eq("id", id.data)
     .maybeSingle();
   if (!leave) return { error: "Không tìm thấy đơn xin nghỉ." };
+  if (leave.status !== LEAVE_STATUS.SUBMITTED) {
+    return { error: "Đơn này đã được xử lý. Vui lòng tải lại danh sách." };
+  }
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("leave_requests")
     .update({ status: decision, handled_by: profile.profileId })
-    .eq("id", id.data);
+    .eq("id", id.data)
+    .eq("status", LEAVE_STATUS.SUBMITTED)
+    .select("id")
+    .maybeSingle();
   if (error) return { error: "Không cập nhật được đơn. Vui lòng thử lại." };
+  if (!updated) return { error: "Đơn này đã được xử lý. Vui lòng tải lại danh sách." };
 
   // Duyệt + có buổi cụ thể + buổi còn mở → ghi nghỉ có phép (gợi ý, có thể sửa sau).
   let markedExcused = false;
   if (decision === "ACKNOWLEDGED" && leave.session_id) {
     const { data: session } = await supabase
       .from("activity_sessions")
-      .select("closed_at")
+      .select("closed_at, canceled_at")
       .eq("id", leave.session_id)
       .maybeSingle();
-    if (session && !session.closed_at) {
-      await supabase.from("attendance_records").upsert(
+    if (session && !session.closed_at && !session.canceled_at) {
+      const { error: attendanceError } = await supabase.from("attendance_records").upsert(
         {
           session_id: leave.session_id,
           student_id: leave.student_id,
@@ -65,8 +73,10 @@ async function handleLeave(
         },
         { onConflict: "session_id,student_id" },
       );
-      markedExcused = true;
-      revalidatePath(`/user/secretary/sessions/${leave.session_id}`);
+      if (!attendanceError) {
+        markedExcused = true;
+        revalidatePath(`/user/secretary/sessions/${leave.session_id}`);
+      }
     }
   }
 

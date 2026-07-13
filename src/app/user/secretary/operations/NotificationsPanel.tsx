@@ -37,7 +37,8 @@ export function NotificationsPanel({
 }) {
   const [state, formAction, pending] = useActionState<NotifyState, FormData>(notifySessionParents, {});
   const { success, error } = useToast();
-  const [selected, setSelected] = useState(sessions[0]?.id ?? "");
+  const firstSendableSession = sessions.find((s) => !s.canceled);
+  const [selected, setSelected] = useState(firstSendableSession?.id ?? "");
 
   useEffect(() => {
     if (state.ok) success(`Đã gửi thông báo tới ${state.count} phụ huynh.`);
@@ -45,6 +46,7 @@ export function NotificationsPanel({
   }, [state, success, error]);
 
   const current = sessions.find((s) => s.id === selected);
+  const canSend = Boolean(current && !current.canceled);
 
   return (
     <div className="space-y-4">
@@ -63,8 +65,13 @@ export function NotificationsPanel({
                 onChange={(e) => setSelected(e.target.value)}
                 className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"
               >
+                {!firstSendableSession ? (
+                  <option value="" disabled>
+                    Không có buổi đang hoạt động
+                  </option>
+                ) : null}
                 {sessions.map((s) => (
-                  <option key={s.id} value={s.id}>
+                  <option key={s.id} value={s.id} disabled={s.canceled}>
                     {s.title} · {s.sessionDate}
                     {s.canceled ? " (đã hủy)" : ""}
                   </option>
@@ -76,6 +83,11 @@ export function NotificationsPanel({
                   {current.neighborhoods.map((n) => (
                     <Badge key={n} tone="slate">{n}</Badge>
                   ))}
+                </p>
+              ) : null}
+              {current?.canceled || !firstSendableSession ? (
+                <p className="mt-1 text-xs text-amber-700">
+                  Buổi đã hủy không nhận thông báo mới; dùng lịch sử đã gửi để đối chiếu.
                 </p>
               ) : null}
             </div>
@@ -92,7 +104,7 @@ export function NotificationsPanel({
               placeholder="Nội dung (tùy chọn)…"
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
             />
-            <Button type="submit" size="sm" disabled={pending}>
+            <Button type="submit" size="sm" disabled={pending || !canSend}>
               {pending ? "Đang gửi…" : "Gửi thông báo"}
             </Button>
           </form>

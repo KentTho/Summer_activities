@@ -18,9 +18,11 @@ Route cũ giữ lại dưới dạng redirect:
 ## 3. Operations page
 `/user/secretary/operations` — 2 tab (`OperationsTabs`):
 - **Đơn xin nghỉ** (`LeaveRequestsPanel`): filter chờ/tất cả, duyệt/từ chối →
-  toast (action trả `LeaveActionState`). Duyệt vẫn tự đánh "Nghỉ có phép" cho buổi mở.
+  toast (action trả `LeaveActionState`). Duyệt chỉ xử lý đơn còn chờ và chỉ tự đánh
+  "Nghỉ có phép" khi buổi còn mở, chưa hủy.
 - **Thông báo phụ huynh** (`NotificationsPanel`): composer chọn buổi → soạn → gửi
-  (tái dùng `notifySessionParents`, người nhận do buổi/RLS) + lịch sử đã gửi.
+  (tái dùng `notifySessionParents`, người nhận do buổi/RLS) + lịch sử đã gửi; buổi đã hủy
+  bị disable và server action từ chối gửi mới.
 - Tab khởi tạo theo `?tab=` (leave|notifications).
 
 ## 4. Session action logic cleanup
@@ -33,6 +35,8 @@ Route cũ giữ lại dưới dạng redirect:
 | Đang mở & chưa qua | Chốt · Dời · Hủy |
 | Gửi thông báo | ẩn khi đã hủy |
 `SessionControlsClient` gọi helper để ẩn/hiện + giải thích; server action guard cuối.
+Codex review hardening: server action `close/reopen/cancel/reschedule/notify` kiểm trạng thái
+buổi, nên forged form không đi vòng qua rule UI.
 
 ## 5. Joint session / multi-neighborhood attendance
 `AttendanceRosterClient`:

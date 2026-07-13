@@ -14,7 +14,7 @@ không avatar/parent-request-edit/realtime (10H).
 - 10E chưa deploy prod rõ ràng.
 
 ## 3. Deploy/smoke 10E
-- 10E đã commit/push (`94c6936`). Deploy prod thực hiện chung ở §20 (10F) → health phase
+- 10E đã commit/push (`94c6936` + hardening `02b52a8`). Deploy prod thực hiện chung ở §20 (10F) → health phase
   cập nhật `10f-...`; smoke portal-separation + endpoint HTTP kiểm tra sau deploy.
 
 ## 4. UI UX Pro Max + Taste Skill áp dụng thế nào
@@ -38,7 +38,7 @@ là hành động trong chi tiết buổi (một nơi duy nhất).
 ## 8. Leave + notification operations page
 `/user/secretary/operations` 2 tab (`OperationsTabs`):
 - Đơn xin nghỉ (`LeaveRequestsPanel`): filter chờ/tất cả, duyệt/từ chối → toast.
-- Thông báo (`NotificationsPanel`): composer chọn buổi → gửi (`notifySessionParents`) + lịch sử.
+- Thông báo (`NotificationsPanel`): composer chọn buổi đang hoạt động → gửi (`notifySessionParents`) + lịch sử; buổi đã hủy bị disable và server action cũng chặn.
 Route cũ `/leave-requests` `/notifications` redirect vào tab tương ứng (không 404).
 
 ## 9. Session action logic cleanup
@@ -46,6 +46,7 @@ Route cũ `/leave-requests` `/notifications` redirect vào tab tương ứng (kh
 - Đã hủy → chỉ Khôi phục; Đã chốt → chỉ Mở lại; Đã qua (còn mở) → chỉ Chốt (ẩn Dời/Hủy
   + InlineAlert giải thích); Đang mở & chưa qua → Chốt/Dời/Hủy; Notify ẩn khi đã hủy.
 - `SessionControlsClient` nhận `past`; server action + RLS vẫn guard cuối.
+- Codex review hardening: `close/reopen/cancel/reschedule/notify` kiểm trạng thái buổi trên server; không chỉ dựa vào việc ẩn nút UI.
 
 ## 10. Joint session neighborhood attendance
 `AttendanceRosterClient`: buổi >1 Khu phố → selector "Khu phố điểm danh" (Tất cả/từng
@@ -94,6 +95,7 @@ Toast cho AI extract + lưu/duyệt dòng (`AiImportForm`, `EditableRow`). Dense
 - Validation: preflight/lint/typecheck/build/smoke portal PASS.
 - Stage file scope 10F (không `git add .`), không đụng file ngoài scope/deletion 10A.
 - Commit: `feat(ux): redesign user portal flows and session operations`.
+- Codex review hardening patch: siết guard action buổi/đơn và disable gửi thông báo vào buổi đã hủy.
 
 ## 21. Chưa làm
 - Full dense redesign: dashboard, students/import table shell, reports loading, parent timeline.

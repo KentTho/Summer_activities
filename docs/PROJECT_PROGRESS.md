@@ -483,7 +483,7 @@
 - [x] Health phase update → `10e-interaction-speed-workflow-optimization` + cờ `interactionOptimizationReady`/`attendanceOptimisticReady`/`loginRedirectReady`/`workflowAuditReady`
 - [x] Runtime smoke gián tiếp qua build + smoke portal; runtime điểm danh trên prod chạy ở 10F deploy
 - [x] Report + Codex prompt (`docs/reports/PROMPT-10E-interaction-speed-workflow-optimization-report.md`)
-- [x] Commit/push (`94c6936`); deploy prod gộp vào 10F
+- [x] Commit/push (`94c6936` + Codex hardening `02b52a8`); deploy prod gộp vào 10F
 
 > Ghi chú: 10E tối ưu **tương tác** — không đổi RLS/schema/migration, không đổi logic AI import/DOCX.
 > Điểm danh chuyển từ 4 form-submit reload sang **1 client component optimistic** (server action trả kết
@@ -508,6 +508,8 @@
 > Ghi chú: 10F **không** đổi RLS/schema/migration; không avatar/parent-request-edit/realtime (dời 10H).
 > Route cũ giữ redirect để không 404. Không refactor `src/modules/*`. Full dense redesign của
 > dashboard/students/import/reports/parent để backlog (ưu tiên structural + feedback trước).
+> Codex 10F hardening: server actions buổi/đơn kiểm trạng thái thật trên server; buổi đã hủy không gửi
+> thông báo mới dù forged form gọi action.
 
 ## 4. Next planned prompts
 > (Danh sách cũ 06B/07/08/09/10 đã hoàn thành — thay bằng kế hoạch hiện tại.)
