@@ -32,6 +32,7 @@ lại (CRUD học sinh/đơn nghỉ/profile/Admin) ghi backlog.
 ## 5. Toast system
 - `src/components/ui/ToastProvider.tsx` (+ `useToast`) nhẹ, **không thư viện ngoài**.
 - Góc phải-trên, `aria-live="polite"` (lỗi/cảnh báo `role="alert"`), auto-dismiss ~3.2s, nút đóng.
+- Giới hạn tối đa 3 toast đang hiển thị để thao tác điểm danh nhanh không tạo spam UI.
 - Bọc trong `DashboardShell` → phủ toàn bộ cổng Admin + User.
 - `useToast()` an toàn khi chưa có provider (no-op). Không chứa logic nghiệp vụ.
 
@@ -41,7 +42,7 @@ lại (CRUD học sinh/đơn nghỉ/profile/Admin) ghi backlog.
   ngay + pending theo hàng → gọi action → OK toast / lỗi rollback + toast.
 - **Counter optimistic** (có mặt/có phép/không phép/chưa điểm danh).
 - **Tìm kiếm client** (`useDeferredValue`) — không reload, giữ cuộn.
-- **Chống double-click/race**: hàng đang gửi `disabled`; bỏ click trùng trạng thái.
+- **Chống double-click/race**: hàng đang gửi `disabled`; `pendingRef` chặn cả double-click cùng tick trước khi state React commit.
 - Buổi chốt/hủy → khóa UI + server chặn (`closed_at`/`canceled_at`); RLS guard cuối.
 - `AttendanceStatusButtons.tsx`: nhóm nút thuần trình bày, màu theo trạng thái.
 
@@ -82,6 +83,7 @@ lại (CRUD học sinh/đơn nghỉ/profile/Admin) ghi backlog.
 - Stage **file trong scope 10E** (không `git add .`), giữ nguyên các thay đổi ngoài
   scope đang có trong working tree (report cũ, script *.mjs, `.env.example`, deletion 10A).
 - Commit: `perf(ux): optimize attendance interactions and workflow redirects`.
+- Codex review hardening: vá `pendingRef` chống double-click cùng tick và giới hạn 3 toast hiển thị.
 
 ## 14. Chưa làm
 - Runtime smoke login-redirect + điểm danh optimistic trên môi trường thật (cần `.env.local`/deploy).

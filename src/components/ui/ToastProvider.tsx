@@ -44,6 +44,7 @@ const TONE_STYLE: Record<ToastTone, { box: string; icon: string }> = {
 };
 
 const AUTO_DISMISS_MS = 3200;
+const MAX_VISIBLE_TOASTS = 3;
 
 let nextId = 1;
 
@@ -57,7 +58,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const show = useCallback(
     (tone: ToastTone, message: string) => {
       const id = nextId++;
-      setItems((prev) => [...prev, { id, tone, message }]);
+      setItems((prev) => [...prev.slice(-(MAX_VISIBLE_TOASTS - 1)), { id, tone, message }]);
       // Tự ẩn — best-effort, không giữ ref timer vì mỗi toast độc lập.
       setTimeout(() => remove(id), AUTO_DISMISS_MS);
     },

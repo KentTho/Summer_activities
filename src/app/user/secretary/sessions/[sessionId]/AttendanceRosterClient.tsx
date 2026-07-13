@@ -9,7 +9,7 @@
  * - Tìm kiếm client-side (debounce bằng useDeferredValue) — không reload trang,
  *   không mất vị trí cuộn.
  */
-import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useMemo, useRef, useState } from "react";
 import { Badge, useToast } from "@/components/ui";
 import {
   ATTENDANCE_STATUS_LABEL,
@@ -48,6 +48,7 @@ export function AttendanceRosterClient({
     () => Object.fromEntries(initialRoster.map((r) => [r.studentId, r.status])),
   );
   const [pending, setPending] = useState<Set<string>>(() => new Set());
+  const pendingRef = useRef<Set<string>>(new Set());
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
 
@@ -78,12 +79,13 @@ export function AttendanceRosterClient({
 
   const handleSelect = useCallback(
     async (studentId: string, value: MarkValue) => {
-      if (pending.has(studentId)) return; // chống race/double-click
+      if (pendingRef.current.has(studentId)) return; // guard same-tick double-clicks
       const nextStatus = markValueToStatus(value);
       const prevStatus = statuses[studentId] ?? null;
       if (nextStatus === prevStatus) return; // không đổi → bỏ qua
 
       // Optimistic: đổi ngay + khóa hàng.
+      pendingRef.current.add(studentId);
       setStatuses((s) => ({ ...s, [studentId]: nextStatus }));
       setPending((p) => new Set(p).add(studentId));
 
@@ -99,6 +101,7 @@ export function AttendanceRosterClient({
         setStatuses((s) => ({ ...s, [studentId]: prevStatus }));
         error("Lỗi kết nối. Vui lòng thử lại.");
       } finally {
+        pendingRef.current.delete(studentId);
         setPending((p) => {
           const n = new Set(p);
           n.delete(studentId);
@@ -106,7 +109,7 @@ export function AttendanceRosterClient({
         });
       }
     },
-    [pending, statuses, sessionId, success, error],
+    [statuses, sessionId, success, error],
   );
 
   return (

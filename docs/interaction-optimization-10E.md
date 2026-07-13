@@ -7,6 +7,7 @@ vẫn là nơi kiểm tra nghiệp vụ, RLS là guard cuối.
 ## 1. Toast system
 - `src/components/ui/ToastProvider.tsx` — provider + hook `useToast()` nhẹ, không thư viện ngoài.
 - Góc phải-trên, `aria-live="polite"` (lỗi/cảnh báo `role="alert"`), tự ẩn ~3.2s, nút đóng.
+- Giới hạn tối đa 3 toast đang hiển thị để feedback khi điểm danh nhanh không spam màn hình.
 - Bọc trong `DashboardShell` → phủ toàn bộ cổng Admin + User.
 - `useToast()` an toàn khi chưa có provider (trả no-op) — không vỡ component tái dùng.
 - API: `toast.success/error/info/warning(message)`.
@@ -34,7 +35,7 @@ Luồng click:
 Đặc điểm:
 - **Counter optimistic** (Có mặt / có phép / không phép / chưa điểm danh) tính từ local state.
 - **Tìm kiếm client-side** (`useDeferredValue`) — không reload, không mất cuộn.
-- **Chống double-click/race**: nút hàng đang gửi bị `disabled`; bỏ qua click trùng trạng thái.
+- **Chống double-click/race**: nút hàng đang gửi bị `disabled`; `pendingRef` chặn cả double-click cùng tick trước khi state React commit.
 - **Không mất trạng thái**: search + scroll giữ nguyên vì không điều hướng.
 - **Buổi chốt/hủy**: `locked` → ẩn nút, action cũng chặn (server đọc `closed_at`/`canceled_at`).
 - Trang `force-dynamic` nên mỗi lần refresh/điều hướng vẫn fetch DB thật (đối chiếu được).
