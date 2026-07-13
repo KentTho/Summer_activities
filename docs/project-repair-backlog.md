@@ -128,7 +128,20 @@
 - [x] Workflow audit toàn Admin/User (`docs/workflow-logic-audit-10E.md`).
 
 ## Còn lại từ audit 10E (backlog toast/feedback — hệ thống toast đã sẵn)
-- [ ] Toast sau: lưu hồ sơ (profile), CRUD học sinh, duyệt/từ chối đơn nghỉ, thông báo Admin,
-      password requests, confirm/ update import row.
+- [x] (10F) Toast: lưu hồ sơ, thêm/sửa học sinh, duyệt/từ chối đơn nghỉ, import AI/lưu dòng.
+- [ ] Toast còn lại: thông báo Admin, password requests, xóa mềm học sinh, confirm batch.
 - [ ] Admin CRUD học sinh (hiện read-only tổng quan) — cân nhắc scope riêng.
-- [ ] Avatar private storage + Parent request-edit + realtime notification → 10F/10G.
+- [ ] Avatar private storage + Parent request-edit + realtime notification → 10H.
+
+## Đã xử lý ở 10F (user portal flow)
+- [x] Nav gộp (9→7), bỏ "Điểm danh" trùng, gộp "Đơn & thông báo" `/operations` + route compat.
+- [x] Session action logic: ẩn nút vô lý theo đã chốt/hủy/đã qua (`sessionActionRules.ts`) + giải thích.
+- [x] Joint session: selector Khu phố + đếm theo Khu phố/tổng (không nới RLS).
+- [x] Session detail layout 7xl split-pane; session list badge trạng thái đầy đủ.
+
+## Còn lại từ audit 10F (backlog — full dense redesign)
+- [ ] Dashboard Bí thư dense (command center: buổi cần điểm danh, đơn chờ, import gần đây, quick actions).
+- [ ] Students/Import dùng ActionBar + DataTableShell + side-panel form.
+- [ ] Reports: loading state khi xuất DOCX.
+- [ ] Parent portal timeline/card redesign.
+- [ ] Admin portal full UX refactor → 10G.

@@ -92,8 +92,8 @@ export default async function SecretaryDashboard() {
             <Link href="/user/secretary/sessions" className="font-medium text-indigo-600 hover:underline">
               Quản lý buổi →
             </Link>
-            <Link href="/user/secretary/leave-requests" className="font-medium text-indigo-600 hover:underline">
-              Đơn xin nghỉ →
+            <Link href="/user/secretary/operations?tab=leave" className="font-medium text-indigo-600 hover:underline">
+              Đơn & thông báo →
             </Link>
           </div>
         </Card>

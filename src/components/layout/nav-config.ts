@@ -26,14 +26,14 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: "Cấu hình", href: "/admin/settings" },
     { label: "Thông tin cá nhân", href: "/admin/profile" },
   ],
+  // 10F: gộp điều hướng — "Buổi sinh hoạt" là hub tạo buổi + điểm danh (bỏ mục
+  // "Điểm danh" trùng lặp); "Đơn & thông báo" gộp đơn xin nghỉ + thông báo phụ huynh.
   SECRETARY: [
     { label: "Tổng quan", href: "/user/secretary" },
     { label: "Học sinh", href: "/user/secretary/students" },
     { label: "Buổi sinh hoạt", href: "/user/secretary/sessions" },
-    { label: "Điểm danh", href: "/user/secretary/attendance" },
-    { label: "Đơn xin nghỉ", href: "/user/secretary/leave-requests" },
+    { label: "Đơn & thông báo", href: "/user/secretary/operations" },
     { label: "Nhập giấy tờ", href: "/user/secretary/import" },
-    { label: "Thông báo", href: "/user/secretary/notifications" },
     { label: "Báo cáo", href: "/user/secretary/reports" },
     { label: "Thông tin cá nhân", href: "/user/secretary/profile" },
   ],

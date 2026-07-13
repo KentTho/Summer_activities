@@ -28,7 +28,10 @@ export function SidebarNav({
           ? pathname === item.href
           : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
-        const showBadge = item.href.endsWith("/notifications") && unreadCount > 0;
+        // Badge chưa đọc: Parent ở mục "Thông báo"; Secretary gộp vào "Đơn & thông báo".
+        const showBadge =
+          (item.href.endsWith("/notifications") || item.href.endsWith("/operations")) &&
+          unreadCount > 0;
 
         return (
           <Link

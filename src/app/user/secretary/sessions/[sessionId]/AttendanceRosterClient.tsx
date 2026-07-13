@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * Roster điểm danh optimistic (10E).
+ * Roster điểm danh optimistic (10E/10F).
  * - Nhận roster ban đầu từ server (đã qua RLS). Không truy vấn DB ở client.
  * - Click trạng thái: cập nhật local ngay, khóa đúng hàng đang gửi, gọi server
  *   action; thành công → toast, thất bại → rollback + toast lỗi.
- * - Bộ đếm tổng cập nhật optimistic theo local state.
- * - Tìm kiếm client-side (debounce bằng useDeferredValue) — không reload trang,
- *   không mất vị trí cuộn.
+ * - Bộ đếm cập nhật optimistic theo local state (theo Khu phố đang chọn).
+ * - Tìm kiếm client-side (debounce bằng useDeferredValue) — không reload trang.
+ * - 10F: buổi chung nhiều Khu phố → selector chọn Khu phố để xem/điểm danh + tổng.
  */
 import { useCallback, useDeferredValue, useMemo, useRef, useState } from "react";
 import { Badge, useToast } from "@/components/ui";
@@ -24,9 +24,17 @@ import { AttendanceStatusButtons } from "./AttendanceStatusButtons";
 export interface RosterClientEntry {
   studentId: string;
   fullName: string;
+  neighborhoodId: string;
   guardianPhone: string | null;
   status: AttendanceStatus | null;
 }
+
+export interface NeighborhoodOption {
+  id: string;
+  name: string;
+}
+
+const ALL = "ALL";
 
 function markValueToStatus(value: MarkValue): AttendanceStatus | null {
   return value === NOT_MARKED ? null : value;
@@ -35,15 +43,17 @@ function markValueToStatus(value: MarkValue): AttendanceStatus | null {
 export function AttendanceRosterClient({
   sessionId,
   initialRoster,
+  neighborhoods,
   locked,
 }: {
   sessionId: string;
   initialRoster: RosterClientEntry[];
+  /** Khu phố của buổi (>1 = buổi chung → hiện selector). */
+  neighborhoods: NeighborhoodOption[];
   locked: boolean;
 }) {
   const { success, error } = useToast();
 
-  // Trạng thái điểm danh theo studentId (nguồn sự thật ở client cho optimistic UI).
   const [statuses, setStatuses] = useState<Record<string, AttendanceStatus | null>>(
     () => Object.fromEntries(initialRoster.map((r) => [r.studentId, r.status])),
   );
@@ -51,13 +61,25 @@ export function AttendanceRosterClient({
   const pendingRef = useRef<Set<string>>(new Set());
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
+  const [neighborhood, setNeighborhood] = useState<string>(ALL);
+
+  const isJoint = neighborhoods.length > 1;
+
+  // Danh sách theo Khu phố đang chọn (trước khi lọc tìm kiếm) — dùng cho bộ đếm.
+  const scoped = useMemo(
+    () =>
+      neighborhood === ALL
+        ? initialRoster
+        : initialRoster.filter((r) => r.neighborhoodId === neighborhood),
+    [initialRoster, neighborhood],
+  );
 
   const counters = useMemo(() => {
     let present = 0;
     let excused = 0;
     let unexcused = 0;
     let notMarked = 0;
-    for (const r of initialRoster) {
+    for (const r of scoped) {
       const s = statuses[r.studentId] ?? null;
       if (s === "PRESENT") present += 1;
       else if (s === "EXCUSED") excused += 1;
@@ -65,26 +87,25 @@ export function AttendanceRosterClient({
       else notMarked += 1;
     }
     return { present, excused, unexcused, notMarked };
-  }, [initialRoster, statuses]);
+  }, [scoped, statuses]);
 
   const filtered = useMemo(() => {
     const term = deferredQuery.trim().toLowerCase();
-    if (!term) return initialRoster;
-    return initialRoster.filter(
+    if (!term) return scoped;
+    return scoped.filter(
       (r) =>
         r.fullName.toLowerCase().includes(term) ||
         (r.guardianPhone ?? "").toLowerCase().includes(term),
     );
-  }, [initialRoster, deferredQuery]);
+  }, [scoped, deferredQuery]);
 
   const handleSelect = useCallback(
     async (studentId: string, value: MarkValue) => {
       if (pendingRef.current.has(studentId)) return; // guard same-tick double-clicks
       const nextStatus = markValueToStatus(value);
       const prevStatus = statuses[studentId] ?? null;
-      if (nextStatus === prevStatus) return; // không đổi → bỏ qua
+      if (nextStatus === prevStatus) return;
 
-      // Optimistic: đổi ngay + khóa hàng.
       pendingRef.current.add(studentId);
       setStatuses((s) => ({ ...s, [studentId]: nextStatus }));
       setPending((p) => new Set(p).add(studentId));
@@ -92,7 +113,7 @@ export function AttendanceRosterClient({
       try {
         const res = await markAttendanceAction({ sessionId, studentId, status: value });
         if (!res.ok) {
-          setStatuses((s) => ({ ...s, [studentId]: prevStatus })); // rollback
+          setStatuses((s) => ({ ...s, [studentId]: prevStatus }));
           error(res.error ?? "Không thể cập nhật điểm danh.");
         } else {
           success("Đã cập nhật điểm danh.");
@@ -114,6 +135,38 @@ export function AttendanceRosterClient({
 
   return (
     <div className="space-y-3">
+      {isJoint ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50/50 px-3 py-2">
+          <span className="text-xs font-medium text-slate-600">Khu phố điểm danh:</span>
+          <button
+            type="button"
+            onClick={() => setNeighborhood(ALL)}
+            className={
+              "h-7 rounded-md px-2.5 text-xs font-medium " +
+              (neighborhood === ALL ? "bg-indigo-600 text-white" : "bg-white text-slate-700 hover:bg-slate-100")
+            }
+          >
+            Tất cả ({initialRoster.length})
+          </button>
+          {neighborhoods.map((n) => {
+            const count = initialRoster.filter((r) => r.neighborhoodId === n.id).length;
+            return (
+              <button
+                key={n.id}
+                type="button"
+                onClick={() => setNeighborhood(n.id)}
+                className={
+                  "h-7 rounded-md px-2.5 text-xs font-medium " +
+                  (neighborhood === n.id ? "bg-indigo-600 text-white" : "bg-white text-slate-700 hover:bg-slate-100")
+                }
+              >
+                {n.name} ({count})
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Counter label="Có mặt" value={counters.present} tone="text-emerald-700" />
         <Counter label="Nghỉ có phép" value={counters.excused} tone="text-amber-700" />

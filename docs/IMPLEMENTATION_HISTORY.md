@@ -489,3 +489,28 @@ bucket; không thêm avatar/parent-request-edit/realtime; public/User vẫn KHÔ
 
 **An toan:** khong doi RLS/schema/migration; server action van kiem tra buoi chot/huy, RLS la guard cuoi;
 khong avatar/parent-request-edit/realtime (10F/10G); khong public bucket; khong doi logic AI import/DOCX.
+
+## Chi tiet Prompt 10F (User portal full UX refactor + flow consolidation)
+
+**Da lam:**
+- **Nav consolidation** (`nav-config.ts`): Bi thu 9 -> 7 muc. Bo "Diem danh" (trung chi tiet buoi);
+  gop "Don xin nghi" + "Thong bao" -> "Don & thong bao" (`/user/secretary/operations`).
+- **Route compat** (khong 404): `/attendance` -> `/sessions`; `/leave-requests` -> `/operations?tab=leave`;
+  `/notifications` -> `/operations?tab=notifications`.
+- **Operations page** `/operations` 2 tab (`OperationsTabs`): Don xin nghi (`LeaveRequestsPanel`, filter
+  cho/tat ca, duyet/tu choi -> toast, action tra `LeaveActionState`) + Thong bao (`NotificationsPanel`,
+  composer chon buoi gui + lich su, tai dung `notifySessionParents`).
+- **Session action logic** (`sessionActionRules.ts`): an nut vo ly theo da chot/huy/da qua + InlineAlert
+  giai thich; `SessionControlsClient` nhan them `past`; notify an khi huy. Server action van guard.
+- **Joint session** (`AttendanceRosterClient`): buoi >1 Khu pho -> selector Khu pho + dem theo Khu
+  pho/tong; loc client tren roster da qua RLS (khong noi quyen). Chi tiet buoi hien badge Khu pho.
+- **Layout**: shell `max-w-6xl -> max-w-7xl`; session list them badge huy/da qua + Khu pho, label link dung.
+- **Toast coverage**: don xin nghi, hoc sinh (them/sua), import (AI extract/luu dong), ho so ca nhan (ProfileForm dung chung 3 cong).
+- Health phase `10f-user-portal-flow-redesign` + co userPortalFlowReady/sessionLayoutRedesigned/
+  navConsolidated/operationsPageReady/jointSessionAttendanceReady; healthcheck default + preflight OLD_PHASES them 10e.
+- Docs: user-portal-redesign-principles-10F, user-portal-full-audit-10F, user-portal-flow-redesign-10F,
+  user-portal-navigation-map, report 10F; PROJECT_PROGRESS checklist 10F.
+
+**An toan:** khong doi RLS/schema/migration; route cu redirect (khong 404); khong avatar/parent-request-edit/
+realtime (10H); khong refactor modules; server action + RLS guard cuoi. Full dense redesign dashboard/students/
+import/reports/parent de backlog.

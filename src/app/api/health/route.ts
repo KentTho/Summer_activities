@@ -7,7 +7,7 @@ import { hasGeminiConfigured, hasServiceRoleKey, hasSupabaseEnv, isAiImportReady
 export async function GET() {
   return Response.json({
     status: "ok",
-    phase: "10e-interaction-speed-workflow-optimization",
+    phase: "10f-user-portal-flow-redesign",
     supabaseConfigured: hasSupabaseEnv(),
     databaseTypesReady: true,
     geminiConfigured: hasGeminiConfigured(),
@@ -82,6 +82,16 @@ export async function GET() {
     loginRedirectReady: true,
     // 10E — đã rà soát workflow Admin/User (docs/workflow-logic-audit-10E.md).
     workflowAuditReady: true,
+    // 10F — User portal refactor luồng (nav gộp, layout, feedback) (docs/user-portal-flow-redesign-10F.md).
+    userPortalFlowReady: true,
+    // 10F — chi tiết buổi layout 2 cột rộng + roster cuộn + rail điều khiển sticky.
+    sessionLayoutRedesigned: true,
+    // 10F — gộp điều hướng: bỏ "Điểm danh" trùng; "Đơn & thông báo" gộp vào /operations.
+    navConsolidated: true,
+    // 10F — trang Vận hành (đơn xin nghỉ + gửi thông báo phụ huynh) 2 tab.
+    operationsPageReady: true,
+    // 10F — buổi chung nhiều Khu phố: selector Khu phố + bộ đếm theo Khu phố/tổng (RLS giữ nguyên).
+    jointSessionAttendanceReady: true,
     time: new Date().toISOString(),
   });
 }

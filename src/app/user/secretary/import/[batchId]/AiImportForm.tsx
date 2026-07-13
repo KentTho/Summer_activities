@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
-import { Button, Card } from "@/components/ui";
+import { useActionState, useEffect } from "react";
+import { Button, Card, useToast } from "@/components/ui";
 import { aiExtractRows, type ImportActionState } from "../actions";
 
 /**
@@ -23,7 +23,13 @@ export function AiImportForm({
     aiExtractRows,
     {},
   );
+  const { success, error } = useToast();
   const outOfQuota = remaining <= 0;
+
+  useEffect(() => {
+    if (state.ok) success(`AI tạo ${state.count} dòng nháp — hãy kiểm tra & sửa.`);
+    else if (state.error) error(state.error);
+  }, [state, success, error]);
 
   return (
     <Card title="AI đọc ảnh (Gemini)" className="mb-4">

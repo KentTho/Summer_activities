@@ -1,12 +1,13 @@
 "use client";
 
 /**
- * Bảng điều khiển buổi (10E) — chốt/mở/hủy/khôi phục/dời buổi.
+ * Bảng điều khiển buổi (10E/10F) — chốt/mở/hủy/khôi phục/dời buổi.
+ * 10F: chỉ hiện nút hợp logic theo trạng thái (đã chốt/hủy/đã qua) + giải thích khi ẩn.
  * Mỗi hành động dùng useActionState và hiện toast khi xong (thành công/thất bại).
- * Không đổi nghiệp vụ: server action vẫn là nơi kiểm tra & ghi (qua RLS).
+ * Server action vẫn là nơi kiểm tra & ghi (qua RLS).
  */
 import { useActionState, useEffect, type ReactNode } from "react";
-import { Button, useToast } from "@/components/ui";
+import { Button, InlineAlert, useToast } from "@/components/ui";
 import {
   closeSession,
   reopenSession,
@@ -15,6 +16,7 @@ import {
   rescheduleSession,
   type SessionActionState,
 } from "../actions";
+import { getSessionActionAvailability } from "./sessionActionRules";
 
 type Action = (
   prev: SessionActionState,
@@ -50,19 +52,25 @@ export function SessionControlsClient({
   sessionId,
   closed,
   canceled,
+  past,
   defaultDate,
   defaultTime,
 }: {
   sessionId: string;
   closed: boolean;
   canceled: boolean;
+  past: boolean;
   defaultDate: string;
   defaultTime: string;
 }) {
+  const a = getSessionActionAvailability({ closed, canceled, past });
+
+  const noPrimaryButton = !a.canClose && !a.canReopen && !a.canCancel && !a.canUncancel;
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        {!canceled && !closed ? (
+        {a.canClose ? (
           <ActionForm action={closeSession}>
             {(pending) => (
               <>
@@ -75,7 +83,7 @@ export function SessionControlsClient({
           </ActionForm>
         ) : null}
 
-        {closed && !canceled ? (
+        {a.canReopen ? (
           <ActionForm action={reopenSession}>
             {(pending) => (
               <>
@@ -88,7 +96,7 @@ export function SessionControlsClient({
           </ActionForm>
         ) : null}
 
-        {!canceled ? (
+        {a.canCancel ? (
           <ActionForm action={cancelSession}>
             {(pending) => (
               <>
@@ -99,7 +107,9 @@ export function SessionControlsClient({
               </>
             )}
           </ActionForm>
-        ) : (
+        ) : null}
+
+        {a.canUncancel ? (
           <ActionForm action={uncancelSession}>
             {(pending) => (
               <>
@@ -110,38 +120,46 @@ export function SessionControlsClient({
               </>
             )}
           </ActionForm>
-        )}
+        ) : null}
+
+        {noPrimaryButton ? (
+          <span className="text-sm text-slate-400">Không có thao tác khả dụng.</span>
+        ) : null}
       </div>
 
-      <ActionForm action={rescheduleSession} className="flex flex-wrap items-end gap-2 border-t border-slate-100 pt-3">
-        {(pending) => (
-          <>
-            <input type="hidden" name="session_id" value={sessionId} />
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600">Dời sang ngày</label>
-              <input
-                name="session_date"
-                type="date"
-                required
-                defaultValue={defaultDate}
-                className="h-9 rounded-lg border border-slate-200 px-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600">Giờ</label>
-              <input
-                name="start_time"
-                type="time"
-                defaultValue={defaultTime}
-                className="h-9 rounded-lg border border-slate-200 px-2 text-sm"
-              />
-            </div>
-            <Button type="submit" size="sm" disabled={pending}>
-              {pending ? "Đang dời…" : "Dời buổi"}
-            </Button>
-          </>
-        )}
-      </ActionForm>
+      {a.hiddenReason ? <InlineAlert tone="info">{a.hiddenReason}</InlineAlert> : null}
+
+      {a.canReschedule ? (
+        <ActionForm action={rescheduleSession} className="flex flex-wrap items-end gap-2 border-t border-slate-100 pt-3">
+          {(pending) => (
+            <>
+              <input type="hidden" name="session_id" value={sessionId} />
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600">Dời sang ngày</label>
+                <input
+                  name="session_date"
+                  type="date"
+                  required
+                  defaultValue={defaultDate}
+                  className="h-9 rounded-lg border border-slate-200 px-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600">Giờ</label>
+                <input
+                  name="start_time"
+                  type="time"
+                  defaultValue={defaultTime}
+                  className="h-9 rounded-lg border border-slate-200 px-2 text-sm"
+                />
+              </div>
+              <Button type="submit" size="sm" disabled={pending}>
+                {pending ? "Đang dời…" : "Dời buổi"}
+              </Button>
+            </>
+          )}
+        </ActionForm>
+      ) : null}
     </div>
   );
 }

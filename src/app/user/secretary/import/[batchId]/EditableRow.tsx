@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
-import { Badge, Button } from "@/components/ui";
+import { useActionState, useEffect } from "react";
+import { Badge, Button, useToast } from "@/components/ui";
 import { updateRow, deleteRow, type ImportActionState } from "../actions";
 
 const cls =
@@ -43,6 +43,12 @@ export function EditableRow({
     updateRow,
     {},
   );
+  const { success, error } = useToast();
+
+  useEffect(() => {
+    if (state.ok) success("Đã lưu & duyệt dòng.");
+    else if (state.error) error(state.error);
+  }, [state, success, error]);
 
   return (
     <li className="px-4 py-3">

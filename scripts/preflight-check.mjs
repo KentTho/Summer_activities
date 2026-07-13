@@ -101,6 +101,7 @@ const OLD_PHASES = [
   "10b-profile-ai-fields-logic-audit",
   "10c-portal-separation-student-fields",
   "10d-ui-ux-polish",
+  "10e-interaction-speed-workflow-optimization",
 ];
 const healthPath = "src/app/api/health/route.ts";
 if (existsSync(healthPath)) {

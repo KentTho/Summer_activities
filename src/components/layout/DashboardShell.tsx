@@ -63,7 +63,7 @@ export async function DashboardShell({
           <SidebarNav items={nav} unreadCount={unreadCount} />
         </aside>
         <main className="flex-1 px-4 py-6 md:px-8">
-          <div className="mx-auto w-full max-w-6xl">{children}</div>
+          <div className="mx-auto w-full max-w-7xl">{children}</div>
         </main>
       </div>
     </div>

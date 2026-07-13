@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Button, Card } from "@/components/ui";
+import { Button, Card, useToast } from "@/components/ui";
 import { createStudent, updateStudent, type StudentActionState } from "./actions";
 import type { StudentRow, NeighborhoodRow } from "@/lib/data/students";
 
@@ -22,11 +22,17 @@ export function StudentForm({ mode, neighborhoods, student }: StudentFormProps) 
     {},
   );
   const formRef = useRef<HTMLFormElement>(null);
+  const { success, error } = useToast();
 
-  // Sau khi TẠO thành công thì xóa trắng form để nhập tiếp.
+  // Sau khi TẠO thành công thì xóa trắng form để nhập tiếp; toast phản hồi rõ.
   useEffect(() => {
-    if (state.ok && mode === "create") formRef.current?.reset();
-  }, [state.ok, mode]);
+    if (state.ok) {
+      success(mode === "create" ? "Đã thêm học sinh." : "Đã lưu thay đổi.");
+      if (mode === "create") formRef.current?.reset();
+    } else if (state.error) {
+      error(state.error);
+    }
+  }, [state, mode, success, error]);
 
   return (
     <Card title={mode === "edit" ? "Sửa học sinh" : "Thêm học sinh"}>

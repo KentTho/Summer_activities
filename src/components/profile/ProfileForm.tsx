@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui";
+import { Button, useToast } from "@/components/ui";
 import { updateOwnProfile, type ProfileActionState } from "@/lib/data/profile-actions";
 
 const cls =
@@ -25,6 +25,12 @@ export function ProfileForm({
     updateOwnProfile,
     {},
   );
+  const { success, error } = useToast();
+
+  useEffect(() => {
+    if (state.ok) success("Đã cập nhật thông tin cá nhân.");
+    else if (state.error) error(state.error);
+  }, [state, success, error]);
 
   return (
     <form action={formAction} className="space-y-4">

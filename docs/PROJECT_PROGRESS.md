@@ -481,21 +481,41 @@
 - [x] Redundant step cleanup (bỏ form tìm kiếm reload trang ở roster; login không bắt "quay lại trang chủ")
 - [x] Admin/User flow small fixes (audit ghi backlog; ưu tiên điểm danh)
 - [x] Health phase update → `10e-interaction-speed-workflow-optimization` + cờ `interactionOptimizationReady`/`attendanceOptimisticReady`/`loginRedirectReady`/`workflowAuditReady`
-- [ ] Runtime smoke (login redirect + điểm danh optimistic) — cần `.env.local`/deploy
+- [x] Runtime smoke gián tiếp qua build + smoke portal; runtime điểm danh trên prod chạy ở 10F deploy
 - [x] Report + Codex prompt (`docs/reports/PROMPT-10E-interaction-speed-workflow-optimization-report.md`)
-- [ ] Deploy/commit/push
+- [x] Commit/push (`94c6936`); deploy prod gộp vào 10F
 
 > Ghi chú: 10E tối ưu **tương tác** — không đổi RLS/schema/migration, không đổi logic AI import/DOCX.
 > Điểm danh chuyển từ 4 form-submit reload sang **1 client component optimistic** (server action trả kết
 > quả, không `revalidatePath` cả trang). Server action vẫn là nơi kiểm tra buổi chốt/hủy + RLS là guard cuối.
-> KHÔNG làm avatar/parent-request-edit/realtime (dời sang 10F/10G).
+> Codex 10E hardening: `pendingRef` chống double-click cùng tick + giới hạn 3 toast.
+
+### Prompt 10F — User portal full UX refactor + flow consolidation
+- [x] 10E deploy/smoke gộp vào 10F (deploy prod + healthcheck phase)
+- [x] User portal full audit (`docs/user-portal-full-audit-10F.md`)
+- [x] Sidebar/nav consolidation (9 → 7 mục; `docs/user-portal-navigation-map.md`)
+- [x] Remove duplicate attendance nav (bỏ "Điểm danh" + redirect `/attendance` → `/sessions`)
+- [x] Merge leave requests + notifications → `/user/secretary/operations` (2 tab) + route compat
+- [x] Session action logic cleanup (`sessionActionRules.ts`: ẩn nút vô lý theo đã chốt/hủy/đã qua + giải thích)
+- [x] Joint session neighborhood selector (buổi chung: badge + selector + đếm theo Khu phố/tổng, không nới RLS)
+- [x] Session detail layout (container 7xl, split-pane, badge trạng thái/đã qua/Khu phố)
+- [x] Toast coverage expansion (đơn xin nghỉ, học sinh, import AI/lưu dòng, hồ sơ cá nhân)
+- [~] Secretary dashboard / students / import / reports / parent redesign — **light touch**; full dense redesign backlog
+- [x] Health phase update → `10f-user-portal-flow-redesign` + cờ `userPortalFlowReady`/`sessionLayoutRedesigned`/`navConsolidated`/`operationsPageReady`/`jointSessionAttendanceReady`
+- [ ] Runtime smoke đầy đủ trên prod (login redirect + điểm danh + operations) — chạy khi deploy
+- [x] Report + Codex prompt (`docs/reports/PROMPT-10F-user-portal-flow-redesign-report.md`)
+
+> Ghi chú: 10F **không** đổi RLS/schema/migration; không avatar/parent-request-edit/realtime (dời 10H).
+> Route cũ giữ redirect để không 404. Không refactor `src/modules/*`. Full dense redesign của
+> dashboard/students/import/reports/parent để backlog (ưu tiên structural + feedback trước).
 
 ## 4. Next planned prompts
 > (Danh sách cũ 06B/07/08/09/10 đã hoàn thành — thay bằng kế hoạch hiện tại.)
-1. **Prompt 10E** — ✅ Interaction speed + workflow logic audit + attendance UX optimization.
-2. **Prompt 10F** — Avatar private storage + Parent gửi yêu cầu sửa thông tin học sinh (Bí thư/Admin duyệt) + realtime notification.
-3. **Prompt 10G** — Load test + monitoring nâng cao (alert) + production readiness final.
-4. **Prompt 10H** — Final acceptance pass: docs sync, smoke matrix, rollback checklist.
+1. **Prompt 10F** — ✅ User portal full UX refactor + flow consolidation.
+2. **Prompt 10G** — Admin portal full UX refactor + management flow cleanup.
+3. **Prompt 10H** — Avatar private storage + Parent request-edit + realtime notification.
+4. **Prompt 10I** — Load test + monitoring nâng cao + production readiness final.
+5. **Prompt 10J** — Final acceptance pass: docs sync, smoke matrix, rollback checklist.
 
 ## 5. Rủi ro đang mở
 - **(10C) Rủi ro/việc mở hiện tại:**

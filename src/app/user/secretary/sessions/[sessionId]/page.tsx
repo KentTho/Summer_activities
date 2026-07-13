@@ -7,6 +7,7 @@ import { SESSION_TYPE_LABEL, SESSION_TONE } from "@/modules/sessions/domain/sess
 import { NotifyParentsForm } from "./NotifyParentsForm";
 import { SessionControlsClient } from "./SessionControlsClient";
 import { AttendanceRosterClient } from "./AttendanceRosterClient";
+import { getSessionActionAvailability, isPastSessionDate } from "./sessionActionRules";
 
 export const dynamic = "force-dynamic";
 
@@ -19,11 +20,14 @@ export default async function SessionDetailPage({ params }: PageProps) {
   const detail = await getSessionDetail(sessionId);
   if (!detail) notFound();
 
-  // Lấy toàn bộ roster (không lọc server) — tìm kiếm/lọc do client xử lý, không reload.
+  // Lấy toàn bộ roster (không lọc server) — tìm kiếm/lọc Khu phố do client xử lý, không reload.
   const roster = await getSessionRoster(sessionId);
   const closed = Boolean(detail.session.closed_at);
   const canceled = Boolean(detail.session.canceled_at);
+  const past = isPastSessionDate(detail.session.session_date);
   const locked = closed || canceled;
+  const isJoint = detail.neighborhoods.length > 1;
+  const availability = getSessionActionAvailability({ closed, canceled, past });
 
   return (
     <>
@@ -44,16 +48,28 @@ export default async function SessionDetailPage({ params }: PageProps) {
         ) : (
           <Badge tone={closed ? "slate" : "green"}>{closed ? "Đã chốt" : "Đang mở"}</Badge>
         )}
+        {past && !canceled ? <Badge tone="amber">Đã qua</Badge> : null}
         <span>
           {detail.session.session_date}
           {detail.session.start_time ? ` · ${detail.session.start_time.slice(0, 5)}` : ""}
           {detail.session.location ? ` · ${detail.session.location}` : ""}
         </span>
-        <span>Khu phố: {detail.neighborhoods.map((n) => n.name).join(", ") || "—"}</span>
+      </div>
+
+      {/* Khu phố tham gia (buổi chung hiển thị nhiều badge) */}
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-slate-500">{isJoint ? "Khu phố tham gia:" : "Khu phố:"}</span>
+        {detail.neighborhoods.length === 0 ? (
+          <span className="text-slate-400">—</span>
+        ) : (
+          detail.neighborhoods.map((n) => (
+            <Badge key={n.id} tone="slate">{n.name}</Badge>
+          ))
+        )}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
-        {/* Cột chính: điểm danh + roster (chiếm 2/3 trên desktop) */}
+        {/* Cột chính: điểm danh + roster (2/3 trên desktop) */}
         <div className="xl:col-span-2">
           <Card title="Điểm danh" className="p-4">
             {locked ? (
@@ -66,9 +82,11 @@ export default async function SessionDetailPage({ params }: PageProps) {
               initialRoster={roster.map((r) => ({
                 studentId: r.studentId,
                 fullName: r.fullName,
+                neighborhoodId: r.neighborhoodId,
                 guardianPhone: r.guardianPhone,
                 status: r.status,
               }))}
+              neighborhoods={detail.neighborhoods.map((n) => ({ id: n.id, name: n.name }))}
               locked={locked}
             />
           </Card>
@@ -81,15 +99,18 @@ export default async function SessionDetailPage({ params }: PageProps) {
               sessionId={sessionId}
               closed={closed}
               canceled={canceled}
+              past={past}
               defaultDate={detail.session.session_date}
               defaultTime={detail.session.start_time?.slice(0, 5) ?? ""}
             />
           </Card>
 
-          <NotifyParentsForm
-            sessionId={sessionId}
-            defaultTitle={`Thông báo buổi: ${detail.session.title}`}
-          />
+          {availability.canNotifyParents ? (
+            <NotifyParentsForm
+              sessionId={sessionId}
+              defaultTitle={`Thông báo buổi: ${detail.session.title}`}
+            />
+          ) : null}
         </div>
       </div>
     </>
