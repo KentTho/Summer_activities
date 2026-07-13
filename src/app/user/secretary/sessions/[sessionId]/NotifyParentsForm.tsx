@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
-import { Button, Card } from "@/components/ui";
+import { useActionState, useEffect } from "react";
+import { Button, Card, useToast } from "@/components/ui";
 import { notifySessionParents, type NotifyState } from "../actions";
 
 /** Gửi thông báo cho phụ huynh liên quan buổi (scope SESSION). */
@@ -16,9 +16,15 @@ export function NotifyParentsForm({
     notifySessionParents,
     {},
   );
+  const { success, error } = useToast();
+
+  useEffect(() => {
+    if (state.ok) success(`Đã gửi thông báo tới ${state.count} phụ huynh.`);
+    else if (state.error) error(state.error);
+  }, [state, success, error]);
 
   return (
-    <Card title="Gửi thông báo cho phụ huynh" className="mb-4">
+    <Card title="Gửi thông báo cho phụ huynh" className="mb-0">
       <form action={formAction} className="space-y-3">
         <input type="hidden" name="session_id" value={sessionId} />
         <input

@@ -49,6 +49,8 @@ async function autoNotifySession(
 export interface SessionActionState {
   error?: string;
   ok?: boolean;
+  /** Thông báo thành công (để client hiển thị toast). */
+  message?: string;
 }
 
 const SESSIONS_PATH = "/user/secretary/sessions";
@@ -127,36 +129,49 @@ export async function createSession(
 }
 
 /** Chốt buổi: đặt closed_at = now. Sau khi chốt không cho sửa điểm danh. */
-export async function closeSession(formData: FormData): Promise<void> {
+export async function closeSession(
+  _prev: SessionActionState,
+  formData: FormData,
+): Promise<SessionActionState> {
   const id = z.string().uuid().safeParse(formData.get("session_id"));
-  if (!id.success) return;
+  if (!id.success) return { error: "Buổi không hợp lệ." };
   const supabase = await createSupabaseServerClient();
-  await supabase
+  const { error } = await supabase
     .from("activity_sessions")
     .update({ closed_at: new Date().toISOString() })
     .eq("id", id.data)
     .is("closed_at", null);
+  if (error) return { error: "Không thể chốt buổi. Vui lòng thử lại." };
   revalidatePath(`${SESSIONS_PATH}/${id.data}`);
   revalidatePath(SESSIONS_PATH);
+  return { ok: true, message: "Đã chốt buổi." };
 }
 
 /** Mở lại buổi đã chốt (cho sửa tiếp). */
-export async function reopenSession(formData: FormData): Promise<void> {
+export async function reopenSession(
+  _prev: SessionActionState,
+  formData: FormData,
+): Promise<SessionActionState> {
   const id = z.string().uuid().safeParse(formData.get("session_id"));
-  if (!id.success) return;
+  if (!id.success) return { error: "Buổi không hợp lệ." };
   const supabase = await createSupabaseServerClient();
-  await supabase
+  const { error } = await supabase
     .from("activity_sessions")
     .update({ closed_at: null })
     .eq("id", id.data);
+  if (error) return { error: "Không thể mở lại buổi. Vui lòng thử lại." };
   revalidatePath(`${SESSIONS_PATH}/${id.data}`);
   revalidatePath(SESSIONS_PATH);
+  return { ok: true, message: "Đã mở lại buổi." };
 }
 
 /** Dừng/hủy buổi (canceled_at). Có thể hoàn tác bằng uncancelSession. */
-export async function cancelSession(formData: FormData): Promise<void> {
+export async function cancelSession(
+  _prev: SessionActionState,
+  formData: FormData,
+): Promise<SessionActionState> {
   const id = z.string().uuid().safeParse(formData.get("session_id"));
-  if (!id.success) return;
+  if (!id.success) return { error: "Buổi không hợp lệ." };
   const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
   const supabase = await createSupabaseServerClient();
   const { data: session } = await supabase
@@ -169,9 +184,10 @@ export async function cancelSession(formData: FormData): Promise<void> {
     .update({ canceled_at: new Date().toISOString() })
     .eq("id", id.data)
     .is("canceled_at", null);
+  if (error) return { error: "Không thể hủy buổi. Vui lòng thử lại." };
 
   // Chỉ thông báo khi vừa chuyển sang HỦY (trước đó chưa hủy).
-  if (!error && session && !session.canceled_at) {
+  if (session && !session.canceled_at) {
     const body =
       `Buổi sinh hoạt "${session.title}"` +
       (session.session_date ? ` (ngày ${session.session_date})` : "") +
@@ -181,15 +197,24 @@ export async function cancelSession(formData: FormData): Promise<void> {
   }
   revalidatePath(`${SESSIONS_PATH}/${id.data}`);
   revalidatePath(SESSIONS_PATH);
+  return { ok: true, message: "Đã hủy buổi và gửi thông báo phụ huynh (nếu có)." };
 }
 
-export async function uncancelSession(formData: FormData): Promise<void> {
+export async function uncancelSession(
+  _prev: SessionActionState,
+  formData: FormData,
+): Promise<SessionActionState> {
   const id = z.string().uuid().safeParse(formData.get("session_id"));
-  if (!id.success) return;
+  if (!id.success) return { error: "Buổi không hợp lệ." };
   const supabase = await createSupabaseServerClient();
-  await supabase.from("activity_sessions").update({ canceled_at: null }).eq("id", id.data);
+  const { error } = await supabase
+    .from("activity_sessions")
+    .update({ canceled_at: null })
+    .eq("id", id.data);
+  if (error) return { error: "Không thể khôi phục buổi. Vui lòng thử lại." };
   revalidatePath(`${SESSIONS_PATH}/${id.data}`);
   revalidatePath(SESSIONS_PATH);
+  return { ok: true, message: "Đã khôi phục buổi." };
 }
 
 const rescheduleSchema = z.object({
@@ -204,13 +229,16 @@ const rescheduleSchema = z.object({
 });
 
 /** Dời buổi sang ngày khác (+ giờ nếu có). */
-export async function rescheduleSession(formData: FormData): Promise<void> {
+export async function rescheduleSession(
+  _prev: SessionActionState,
+  formData: FormData,
+): Promise<SessionActionState> {
   const parsed = rescheduleSchema.safeParse({
     session_id: formData.get("session_id"),
     session_date: formData.get("session_date"),
     start_time: formData.get("start_time") ?? "",
   });
-  if (!parsed.success) return;
+  if (!parsed.success) return { error: "Ngày/giờ dời không hợp lệ." };
   const supabase = await createSupabaseServerClient();
   const { data: before } = await supabase
     .from("activity_sessions")
@@ -227,6 +255,7 @@ export async function rescheduleSession(formData: FormData): Promise<void> {
     .from("activity_sessions")
     .update(patch)
     .eq("id", parsed.data.session_id);
+  if (error) return { error: "Không thể dời buổi. Vui lòng thử lại." };
 
   const nextStartTime =
     parsed.data.start_time !== undefined
@@ -234,7 +263,7 @@ export async function rescheduleSession(formData: FormData): Promise<void> {
         ? parsed.data.start_time
         : null
       : before?.start_time ?? null;
-  if (!error && before && (before.session_date !== patch.session_date || before.start_time !== nextStartTime)) {
+  if (before && (before.session_date !== patch.session_date || before.start_time !== nextStartTime)) {
     const oldWhen = `${before.session_date}${before.start_time ? ` ${before.start_time}` : ""}`;
     const newWhen = `${patch.session_date}${nextStartTime ? ` ${nextStartTime}` : ""}`;
     const body = `Buổi sinh hoạt "${before.title}" đổi lịch từ ${oldWhen} sang ${newWhen}.`;
@@ -242,6 +271,7 @@ export async function rescheduleSession(formData: FormData): Promise<void> {
   }
   revalidatePath(`${SESSIONS_PATH}/${parsed.data.session_id}`);
   revalidatePath(SESSIONS_PATH);
+  return { ok: true, message: "Đã dời buổi và gửi thông báo phụ huynh (nếu có)." };
 }
 
 export interface NotifyState {

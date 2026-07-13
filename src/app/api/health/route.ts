@@ -7,7 +7,7 @@ import { hasGeminiConfigured, hasServiceRoleKey, hasSupabaseEnv, isAiImportReady
 export async function GET() {
   return Response.json({
     status: "ok",
-    phase: "10d-ui-ux-polish",
+    phase: "10e-interaction-speed-workflow-optimization",
     supabaseConfigured: hasSupabaseEnv(),
     databaseTypesReady: true,
     geminiConfigured: hasGeminiConfigured(),
@@ -74,6 +74,14 @@ export async function GET() {
     responsivePassReady: true,
     docxExportReady: true,
     passwordChangeReady: true,
+    // 10E — tối ưu tương tác: toast feedback + optimistic + layout desktop + redirect.
+    interactionOptimizationReady: true,
+    // 10E — điểm danh optimistic (click phản hồi ngay, rollback khi lỗi, không reload trang).
+    attendanceOptimisticReady: true,
+    // 10E — đã có phiên vào trang login → redirect thẳng đúng portal theo vai trò.
+    loginRedirectReady: true,
+    // 10E — đã rà soát workflow Admin/User (docs/workflow-logic-audit-10E.md).
+    workflowAuditReady: true,
     time: new Date().toISOString(),
   });
 }

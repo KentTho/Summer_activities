@@ -11,14 +11,16 @@ import { homeForRole } from "@/lib/auth/rbac";
  * Chiến lược định danh phụ huynh: xem docs/auth-strategy.md.
  */
 export default async function UserLoginPage() {
+  // Đã có phiên hợp lệ → vào thẳng đúng khu vực theo vai trò, không bắt quay lại.
+  // Nếu bị ép đổi mật khẩu lần đầu thì đi thẳng /change-password (tránh 1 hop thừa).
   const profile = await getCurrentProfile();
-  if (profile) redirect(homeForRole(profile.role));
+  if (profile) redirect(profile.mustChangePassword ? "/change-password" : homeForRole(profile.role));
 
   return (
     <LoginForm
       action={signInUser}
       accountLabel="Tài khoản (số điện thoại hoặc email)"
-      accountPlaceholder="0932077136"
+      accountPlaceholder="Số điện thoại hoặc email"
       submitLabel="Đăng nhập"
       forgotHref="/forgot-password?portal=user"
       footer={

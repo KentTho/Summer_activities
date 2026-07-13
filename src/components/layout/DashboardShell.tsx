@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ROLES, type Role } from "@/modules/auth/domain/roles";
 import { signOut } from "@/lib/auth/actions";
 import { countMyUnreadNotifications } from "@/lib/data/notifications";
+import { ToastProvider } from "@/components/ui";
 import { NAV_BY_ROLE, ROLE_LABEL } from "./nav-config";
 import { SidebarNav } from "./SidebarNav";
 
@@ -28,6 +29,7 @@ export async function DashboardShell({
   const unreadCount = await countMyUnreadNotifications();
 
   return (
+    <ToastProvider>
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur md:px-6">
         <div className="flex items-center gap-3">
@@ -61,9 +63,10 @@ export async function DashboardShell({
           <SidebarNav items={nav} unreadCount={unreadCount} />
         </aside>
         <main className="flex-1 px-4 py-6 md:px-8">
-          <div className="mx-auto w-full max-w-5xl">{children}</div>
+          <div className="mx-auto w-full max-w-6xl">{children}</div>
         </main>
       </div>
     </div>
+    </ToastProvider>
   );
 }

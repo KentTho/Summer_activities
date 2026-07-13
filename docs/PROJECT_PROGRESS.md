@@ -471,12 +471,31 @@
 > tỏa toàn cục; component mới sẵn sàng cho các trang bảng áp dần ở 10E. KHÔNG tick
 > avatar/parent-request-edit/realtime (thuộc 10E).
 
+### Prompt 10E — Interaction speed + Workflow logic audit + Attendance UX optimization
+- [x] Workflow logic audit (`docs/workflow-logic-audit-10E.md`)
+- [x] Login redirect fix (đã có session vào `/user/login` `/admin/login` → redirect thẳng đúng portal; `must_change_password` → `/change-password` không hop thừa)
+- [x] Toast system (`src/components/ui/ToastProvider.tsx` — góc phải, aria-live, auto-dismiss; bọc trong `DashboardShell`)
+- [x] Attendance optimistic UI (`AttendanceRosterClient` + `AttendanceStatusButtons`; click phản hồi ngay, pending theo hàng, rollback khi lỗi, counter optimistic, không reload trang)
+- [x] Session detail desktop layout (2 cột: roster cuộn riêng + cột phải sticky điều khiển/thông báo; tìm kiếm client debounce; mobile stack)
+- [x] Smooth feedback for key actions (chốt/mở/hủy/khôi phục/dời buổi + gửi thông báo phụ huynh → toast qua `SessionControlsClient`/`NotifyParentsForm`)
+- [x] Redundant step cleanup (bỏ form tìm kiếm reload trang ở roster; login không bắt "quay lại trang chủ")
+- [x] Admin/User flow small fixes (audit ghi backlog; ưu tiên điểm danh)
+- [x] Health phase update → `10e-interaction-speed-workflow-optimization` + cờ `interactionOptimizationReady`/`attendanceOptimisticReady`/`loginRedirectReady`/`workflowAuditReady`
+- [ ] Runtime smoke (login redirect + điểm danh optimistic) — cần `.env.local`/deploy
+- [x] Report + Codex prompt (`docs/reports/PROMPT-10E-interaction-speed-workflow-optimization-report.md`)
+- [ ] Deploy/commit/push
+
+> Ghi chú: 10E tối ưu **tương tác** — không đổi RLS/schema/migration, không đổi logic AI import/DOCX.
+> Điểm danh chuyển từ 4 form-submit reload sang **1 client component optimistic** (server action trả kết
+> quả, không `revalidatePath` cả trang). Server action vẫn là nơi kiểm tra buổi chốt/hủy + RLS là guard cuối.
+> KHÔNG làm avatar/parent-request-edit/realtime (dời sang 10F/10G).
+
 ## 4. Next planned prompts
 > (Danh sách cũ 06B/07/08/09/10 đã hoàn thành — thay bằng kế hoạch hiện tại.)
-1. **Prompt 10D** — ✅ UI/UX polish toàn bộ Admin/User (nhất quán màu/nhịp/skeleton/responsive) — không đổi nghiệp vụ.
-2. **Prompt 10E** — Avatar private storage + Parent gửi yêu cầu sửa thông tin học sinh (Bí thư/Admin duyệt) + realtime notification.
-3. **Prompt 10F** — Load test + monitoring nâng cao (alert) + production readiness final.
-4. **Prompt 10G** — Final acceptance pass: docs sync, smoke matrix, rollback checklist.
+1. **Prompt 10E** — ✅ Interaction speed + workflow logic audit + attendance UX optimization.
+2. **Prompt 10F** — Avatar private storage + Parent gửi yêu cầu sửa thông tin học sinh (Bí thư/Admin duyệt) + realtime notification.
+3. **Prompt 10G** — Load test + monitoring nâng cao (alert) + production readiness final.
+4. **Prompt 10H** — Final acceptance pass: docs sync, smoke matrix, rollback checklist.
 
 ## 5. Rủi ro đang mở
 - **(10C) Rủi ro/việc mở hiện tại:**

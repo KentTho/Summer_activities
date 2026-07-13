@@ -467,3 +467,25 @@ không log PII; không public bucket; không auto-import.
 
 **An toàn:** không đổi route/DB/RLS/Auth/RBAC; không đổi logic AI import/DOCX/notification; không public
 bucket; không thêm avatar/parent-request-edit/realtime; public/User vẫn KHÔNG có link Admin (smoke pass).
+
+## Chi tiết Prompt 10E (Interaction speed + Workflow logic audit + Attendance UX)
+
+**Da lam:**
+- **Toast system**: `src/components/ui/ToastProvider.tsx` (+`useToast`) nhe, aria-live, goc phai, tu an;
+  boc trong `DashboardShell` phu ca Admin/User. Khong logic nghiep vu.
+- **Attendance optimistic**: `markAttendanceAction` tra `{ok,error}` (bo `revalidatePath` ca trang);
+  `AttendanceRosterClient` + `AttendanceStatusButtons` — click phan hoi ngay, pending theo hang, rollback
+  khi loi, counter optimistic, tim kiem client `useDeferredValue`, chong double-click. Buoi chot/huy -> khoa.
+- **Session detail layout**: 2 cot `xl:grid-cols-3` (roster cuon rieng `max-h-[62vh]` + cot phai sticky dieu
+  khien/thong bao); `DashboardShell` container `max-w-5xl -> max-w-6xl` giam khoang trong desktop.
+- **Feedback thao tac buoi**: `closeSession/reopenSession/cancelSession/uncancelSession/rescheduleSession`
+  doi sang tra `SessionActionState`; `SessionControlsClient` + `NotifyParentsForm` toast success/error.
+- **Login redirect**: `/user/login` `/admin/login` da co phien -> redirect thang `homeForRole`;
+  `must_change_password` -> `/change-password` (khong hop thua). Xem `docs/auth-redirect-flow.md`.
+- Health phase `10e-interaction-speed-workflow-optimization` + co `interactionOptimizationReady`/
+  `attendanceOptimisticReady`/`loginRedirectReady`/`workflowAuditReady`; healthcheck default + preflight OLD_PHASES them 10d.
+- Docs: `workflow-logic-audit-10E.md`, `interaction-optimization-10E.md`, `auth-redirect-flow.md`,
+  cap nhat `project-repair-backlog.md`, PROJECT_PROGRESS checklist 10E.
+
+**An toan:** khong doi RLS/schema/migration; server action van kiem tra buoi chot/huy, RLS la guard cuoi;
+khong avatar/parent-request-edit/realtime (10F/10G); khong public bucket; khong doi logic AI import/DOCX.

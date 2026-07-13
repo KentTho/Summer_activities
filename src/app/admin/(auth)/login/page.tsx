@@ -10,8 +10,10 @@ import { homeForRole } from "@/lib/auth/rbac";
  * Nếu đã đăng nhập hợp lệ thì chuyển thẳng về khu vực theo vai trò.
  */
 export default async function AdminLoginPage() {
+  // Đã có phiên hợp lệ → vào thẳng khu vực theo vai trò (Admin → /admin, sai cổng →
+  // về đúng khu vực của vai trò). Ép đổi mật khẩu thì đi thẳng /change-password.
   const profile = await getCurrentProfile();
-  if (profile) redirect(homeForRole(profile.role));
+  if (profile) redirect(profile.mustChangePassword ? "/change-password" : homeForRole(profile.role));
 
   return (
     <LoginForm

@@ -12,3 +12,5 @@ export { ActionBar } from "./ActionBar";
 export { DataTableShell } from "./DataTableShell";
 export { SkeletonBlock } from "./SkeletonBlock";
 export { FormField, fieldClass } from "./FormField";
+// 10E — toast feedback góc phải (client)
+export { ToastProvider, useToast, type ToastTone } from "./ToastProvider";

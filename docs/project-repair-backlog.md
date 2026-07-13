@@ -115,4 +115,20 @@
 - [x] Portal separation: public/User bỏ link Admin; Admin vào riêng `/admin`.
 - [x] Student extended fields hiển thị/sửa (Bí thư sửa; Admin/Parent xem).
 - [ ] AI live smoke ảnh giới tính/chữ ký thật (chờ ảnh mẫu).
-- [ ] Parent gửi yêu cầu sửa thông tin học sinh → Bí thư/Admin duyệt (kế hoạch 10E).
+- [ ] Parent gửi yêu cầu sửa thông tin học sinh → Bí thư/Admin duyệt (dời sang 10F).
+
+## Đã xử lý ở 10E (interaction speed + workflow audit)
+- [x] Login redirect: đã có phiên vào `/user/login`/`/admin/login` → redirect thẳng portal;
+      `must_change_password` → `/change-password` (không hop thừa). Xem `auth-redirect-flow.md`.
+- [x] Toast system `ToastProvider`/`useToast` (góc phải, aria-live) bọc trong `DashboardShell`.
+- [x] Attendance optimistic UI (`AttendanceRosterClient`) — click phản hồi ngay, rollback khi lỗi,
+      counter optimistic, tìm kiếm client debounce, chống double-click; không reload trang.
+- [x] Session detail desktop layout 2 cột (roster cuộn riêng + cột phải sticky) + container 6xl.
+- [x] Toast feedback cho chốt/mở/hủy/khôi phục/dời buổi + gửi thông báo phụ huynh.
+- [x] Workflow audit toàn Admin/User (`docs/workflow-logic-audit-10E.md`).
+
+## Còn lại từ audit 10E (backlog toast/feedback — hệ thống toast đã sẵn)
+- [ ] Toast sau: lưu hồ sơ (profile), CRUD học sinh, duyệt/từ chối đơn nghỉ, thông báo Admin,
+      password requests, confirm/ update import row.
+- [ ] Admin CRUD học sinh (hiện read-only tổng quan) — cân nhắc scope riêng.
+- [ ] Avatar private storage + Parent request-edit + realtime notification → 10F/10G.

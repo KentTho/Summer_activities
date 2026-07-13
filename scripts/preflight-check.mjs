@@ -100,6 +100,7 @@ const OLD_PHASES = [
   "09h-prod-hardening-ci-notifications",
   "10b-profile-ai-fields-logic-audit",
   "10c-portal-separation-student-fields",
+  "10d-ui-ux-polish",
 ];
 const healthPath = "src/app/api/health/route.ts";
 if (existsSync(healthPath)) {
